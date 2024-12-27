@@ -37,8 +37,6 @@
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
 
     nix-flatpak.url = "github:gmodena/nix-flatpak";
-
-    zen-browser.url = "github:MarceColl/zen-browser-flake";
   };
 
   outputs = {

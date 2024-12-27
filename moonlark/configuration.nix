@@ -125,7 +125,6 @@
     pkgs.python3
     pkgs.qflipper
     pkgs.inkscape
-    inputs.zen-browser.packages.${pkgs.system}.specific
     pkgs.jdk23
     pkgs.unstable.zed-editor
     pkgs.gnome-disk-utility
