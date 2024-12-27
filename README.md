@@ -55,6 +55,9 @@ reboot
 ## Screenshots
 <details>
     <summary>I've stuck the rest of the screenshots in a spoiler to preserve space</summary>
+<br/>
+  
+**Last updated: 2024-12-27**  
 
 ![the github page of this repo](https://github.com/kcoderhtml/dots/raw/master/.github/images/github.webp)
 ![nautilus file manager](https://github.com/kcoderhtml/dots/raw/master/.github/images/nautilus.webp)
