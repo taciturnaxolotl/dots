@@ -3,7 +3,11 @@
 ![cool-retro-term with neofetch](.github/images/cool-retro-term.png)
 
 > [!CAUTION]
-> These dots are highly prone to change / breakage. I am not a nix os expert (this is my first time touching nix), so I'm not sure if this will work or not. I'm just trying to get my dots up on github. If you have any suggestions, please let me know.
+> These dots are highly prone to change / breakage.
+> 
+> ~I am not a nix os expert (this is my first time touching nix), so I'm not sure if this will work or not. I'm just trying to get my dots up on github.~
+>  
+> After `158` successfull days of these dots being in constant opperation, many many rebuilds, and `256` commits these dots have been rock solid and I have no complaints.
 
 ## The layout
 
