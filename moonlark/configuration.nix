@@ -29,7 +29,7 @@
     # tuigreet
     ./greetd.nix
   ];
-	
+
   nixpkgs = {
     # Configure your nixpkgs instance
     config = {
@@ -144,6 +144,7 @@
     pkgs.cargo
     pkgs.gobang
     pkgs.caido
+    inputs.ghostty.packages.x86_64-linux.default
   ];
 
   services.gnome.gnome-keyring.enable = true;
@@ -251,9 +252,9 @@
   services.hypridle.enable = true;
 
   virtualisation.docker.enable = true;
-  
+
   services.udev.packages = [ pkgs.qFlipper pkgs.via ];
-  
+
   # enable cups
   services.printing.enable = true;
   services.avahi = {
@@ -298,7 +299,7 @@
 
 
   services.devmon.enable = true;
-  services.gvfs.enable = true; 
+  services.gvfs.enable = true;
   services.udisks2.enable = true;
 
   services.logind.extraConfig = ''
