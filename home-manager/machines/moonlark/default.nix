@@ -18,6 +18,7 @@
     ../../app/tofi.nix
     ../../app/vscode.nix
     ../../app/obs.nix
+    ../../app/ghostty.nix
   ];
 
   nixpkgs = {
