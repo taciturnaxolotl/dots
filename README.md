@@ -1,6 +1,6 @@
 # Kieran's Dots
 
-![cool-retro-term with neofetch](.github/images/cool-retro-term.png)
+![cool-retro-term with neofetch](.github/images/cool-retro-term.webp)
 
 > [!CAUTION]
 > These dots are highly prone to change / breakage.
@@ -56,10 +56,10 @@ reboot
 <details>
     <summary>I've stuck the rest of the screenshots in a spoiler to preserve space</summary>
 
-![the github page of this repo](https://github.com/kcoderhtml/dots/raw/master/.github/images/github.png)
-![nautilus file manager](https://github.com/kcoderhtml/dots/raw/master/.github/images/nautilus.png)
-![neofetch](https://github.com/kcoderhtml/dots/raw/master/.github/images/neofetch.png)
-![spotify with cava next to it](.github/images/spotify.png)
+![the github page of this repo](https://github.com/kcoderhtml/dots/raw/master/.github/images/github.webp)
+![nautilus file manager](https://github.com/kcoderhtml/dots/raw/master/.github/images/nautilus.webp)
+![neofetch](https://github.com/kcoderhtml/dots/raw/master/.github/images/neofetch.webp)
+![spotify with cava next to it](.github/images/spotify.webp)
 </details>
 
 ## Credits
