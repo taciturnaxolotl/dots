@@ -60,6 +60,7 @@ reboot
 ![nautilus file manager](https://github.com/kcoderhtml/dots/raw/master/.github/images/nautilus.webp)
 ![neofetch](https://github.com/kcoderhtml/dots/raw/master/.github/images/neofetch.webp)
 ![spotify with cava next to it](.github/images/spotify.webp)
+![zed with the hyprland config open](.github/images/zed.webp)
 </details>
 
 ## Credits
