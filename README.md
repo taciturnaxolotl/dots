@@ -1,6 +1,6 @@
 # Kieran's Dots
 
-![spotify with cava next to it](.github/images/spotify.png)
+![cool-retro-term with neofetch](.github/images/cool-retro-term.png)
 
 > [!CAUTION]
 > These dots are highly prone to change / breakage. I am not a nix os expert (this is my first time touching nix), so I'm not sure if this will work or not. I'm just trying to get my dots up on github. If you have any suggestions, please let me know.
@@ -55,6 +55,7 @@ reboot
 ![the github page of this repo](https://github.com/kcoderhtml/dots/raw/master/.github/images/github.png)
 ![nautilus file manager](https://github.com/kcoderhtml/dots/raw/master/.github/images/nautilus.png)
 ![neofetch](https://github.com/kcoderhtml/dots/raw/master/.github/images/neofetch.png)
+![spotify with cava next to it](.github/images/spotify.png)
 </details>
 
 ## Credits
