@@ -5,12 +5,13 @@
   pkgs,
   ...
 }: {
-  home.file.".config/ghostty/config".source = (pkgs.formats.toml { }).generate "ghostty.toml" {
-        theme = "catppuccin-mocha";
-        foreground = "#a7b1d3";
-        "mouse-hide-while-typing" = true;
-        "window-decoration" = false;
-        "window-padding-y" = 12;
-        "window-padding-x" = 12;
-  };
+  home.file.".config/ghostty/config".text = ''
+    foreground = "#a7b1d3"
+    mouse-hide-while-typing = true
+    resize-overlay = "never"
+    theme = "catppuccin-mocha"
+    window-decoration = false
+    window-padding-x = 12
+    window-padding-y = 12
+  '';
 }

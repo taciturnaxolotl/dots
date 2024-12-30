@@ -113,7 +113,6 @@
     pkgs.invoice
     pkgs.pop
     pkgs.gum
-    pkgs.unstable.netlify-cli
     pkgs.unstable.kicad
     pkgs.unstable.mitmproxy
     pkgs.glow
@@ -145,6 +144,7 @@
     pkgs.gobang
     pkgs.caido
     inputs.ghostty.packages.x86_64-linux.default
+    pkgs.baobab
   ];
 
   services.gnome.gnome-keyring.enable = true;
