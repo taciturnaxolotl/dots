@@ -216,6 +216,7 @@
         "Everseen".pskRaw = "ext:psk_hotspot";
         "SAAC Sanctuary".pskRaw = "ext:psk_church";
         "MVNU-student" = {};
+        "Status Solutions Guest".pskRaw = "ext:psk_robotics";
       };
     };
   };
