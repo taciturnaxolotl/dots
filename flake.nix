@@ -41,6 +41,11 @@
     ghostty = {
       url = "github:ghostty-org/ghostty";
     };
+
+    cider = {
+      url = "github:taciturnaxolotl/cider.nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -55,6 +60,7 @@
     nixos-hardware,
     hyprland-contrib,
     ghostty,
+    cider,
     ...
   } @ inputs: let
     inherit (self) outputs;
