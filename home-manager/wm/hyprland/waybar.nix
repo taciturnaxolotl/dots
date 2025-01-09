@@ -185,19 +185,20 @@ in {
           window-rewrite-default =  " ";
           window-rewrite-seperator = "";
           window-rewrite = {
-            "title<.*github.*>" = "󰊤";
-            "title<.*youtube.*>" = "";
-            "title<*Gmail*>" = "󰊫";
-            "class<firefox>" = "";
-            "obs" = "";
-            "alacritty" = "";
-            "foot" = "";
-            "code" = "󰨞";
-            "slack" = "󰒱";
-            "spotify" = "󰓇";
+            "title<.*github.*>" = "󰊤 ";
+            "title<.*youtube.*>" = " ";
+            "title<*Gmail*>" = "󰊫 ";
+            "class<firefox>" = " ";
+            "obs" = " ";
+            "alacritty" = " ";
+            "class<com.mitchellh.ghostty>" = "󰊠 ";
+            "foot" = " ";
+            "code" = "󰨞 ";
+            "slack" = "󰒱 ";
+            "spotify" = "󰓇 ";
             "cider" = "󰊦 ";
-            "class<org.gnome.Nautilus>" = "󰉓";
-            "class<kicad>" = "";
+            "class<org.gnome.Nautilus>" = "󰉓 ";
+            "class<kicad>" = " ";
           };
         };
 
