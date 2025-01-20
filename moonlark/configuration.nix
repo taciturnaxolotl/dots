@@ -145,6 +145,7 @@
     pkgs.caido
     inputs.ghostty.packages.x86_64-linux.default
     pkgs.baobab
+    pkgs.nix-prefetch
   ];
 
   services.gnome.gnome-keyring.enable = true;
