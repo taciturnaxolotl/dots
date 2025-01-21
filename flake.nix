@@ -46,6 +46,11 @@
       url = "github:taciturnaxolotl/cider.nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    frc-nix = {
+      url = "github:frc4451/frc-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -61,6 +66,7 @@
     hyprland-contrib,
     ghostty,
     cider,
+    frc-nix,
     ...
   } @ inputs: let
     inherit (self) outputs;

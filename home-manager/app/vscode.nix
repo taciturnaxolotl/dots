@@ -45,7 +45,8 @@
     ]
     ++ [(pkgs.catppuccin-vsc.override {
       accent = "blue";
-    })]; 
+    })]
+    ++ [inputs.frc-nix.packages.${pkgs.system}.vscode-wpilib];
 
     userSettings = {
       "editor.semanticHighlighting.enabled" = true;

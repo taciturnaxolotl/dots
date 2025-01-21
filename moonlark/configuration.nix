@@ -146,6 +146,11 @@
     inputs.ghostty.packages.x86_64-linux.default
     pkgs.baobab
     pkgs.nix-prefetch
+    inputs.frc-nix.packages.${pkgs.system}.elastic-dashboard
+    inputs.frc-nix.packages.${pkgs.system}.pathplanner
+    inputs.frc-nix.packages.${pkgs.system}.roborioteamnumbersetter
+    inputs.frc-nix.packages.${pkgs.system}.sysid
+    inputs.frc-nix.packages.${pkgs.system}.wpilib-utility
   ];
 
   services.gnome.gnome-keyring.enable = true;
