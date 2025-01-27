@@ -159,6 +159,7 @@
     inputs.frc-nix.packages.${pkgs.system}.roborioteamnumbersetter
     inputs.frc-nix.packages.${pkgs.system}.sysid
     inputs.frc-nix.packages.${pkgs.system}.wpilib-utility
+    pkgs.hyprpaper
   ];
 
   services.gnome.gnome-keyring.enable = true;

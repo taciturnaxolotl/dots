@@ -21,6 +21,10 @@
   xdg.configFile."sunpaper/config".source = ../../dots/sunpaperconfig;
   xdg.configFile."sunpaper/images/".source = "${pkgs.sunpaper}/share/sunpaper/images";
 
+  # hyprpaper
+  xdg.configFile."hypr/hyprpaper.conf".source = ../../dots/hyprpaper.conf;
+  xdg.configFile."hypr/framework.jpeg".source = ../../dots/framework.jpeg;
+
   # portal
   xdg.portal = {
       enable = true;
