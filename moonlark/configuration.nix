@@ -160,6 +160,7 @@
     inputs.frc-nix.packages.${pkgs.system}.sysid
     inputs.frc-nix.packages.${pkgs.system}.wpilib-utility
     pkgs.hyprpaper
+    pkgs.lxde.lxsession
   ];
 
   services.gnome.gnome-keyring.enable = true;
@@ -275,6 +276,8 @@
   virtualisation.docker.enable = true;
 
   services.udev.packages = [ pkgs.qFlipper pkgs.via ];
+
+  security.polkit.enable = true;
 
   # enable cups
   services.printing.enable = true;
