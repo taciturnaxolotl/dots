@@ -161,6 +161,7 @@
     inputs.frc-nix.packages.${pkgs.system}.wpilib-utility
     pkgs.hyprpaper
     pkgs.lxde.lxsession
+    pkgs.godot3
   ];
 
   services.gnome.gnome-keyring.enable = true;
