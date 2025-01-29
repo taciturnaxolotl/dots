@@ -322,6 +322,10 @@
     allowedUDPPorts = [ 4455 51820 ];
   };
 
+  services.tailscale = {
+    enable = true;
+    useRoutingFeatures = "client";
+  };
 
   services.devmon.enable = true;
   services.gvfs.enable = true;
