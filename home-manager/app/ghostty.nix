@@ -13,5 +13,6 @@
     window-decoration = false
     window-padding-x = 12
     window-padding-y = 12
+    keybind = ctrl+shift+w=close_surface
   '';
 }
