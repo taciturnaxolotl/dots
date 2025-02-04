@@ -102,5 +102,18 @@
         ];
       };
     };
+    elwin = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+
+      specialArgs = {inherit inputs outputs;};
+
+      # > Our main nixos configuration file <
+      modules = [
+        lix-module.nixosModules.default
+        agenix.nixosModules.default
+        ./elwin/configuration.nix
+        unstable-overlays
+      ];
+    };
   };
 }
