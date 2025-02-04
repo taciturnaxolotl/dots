@@ -7,7 +7,6 @@
 }: {
   programs.oh-my-posh = {
     enable = true;
-    package = pkgs.unstable.oh-my-posh;
     enableZshIntegration = true;
     settings = {
       version = 2;
