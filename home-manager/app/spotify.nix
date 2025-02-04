@@ -8,7 +8,7 @@
   imports = [
     inputs.spicetify-nix.homeManagerModules.default
   ];
-  
+
   # spotify config
   programs.spicetify =
     let
@@ -16,7 +16,6 @@
     in
     {
       enable = true;
-      spicetifyPackage = pkgs.unstable.spicetify-cli;
       enabledExtensions = with spicePkgs.extensions; [
         adblock
         hidePodcasts
