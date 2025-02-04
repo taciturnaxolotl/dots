@@ -162,6 +162,7 @@
     pkgs.hyprpaper
     pkgs.lxde.lxsession
     pkgs.godot3
+    pkgs.bambu-studio
   ];
 
   services.gnome.gnome-keyring.enable = true;
