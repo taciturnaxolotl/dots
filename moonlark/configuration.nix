@@ -239,7 +239,7 @@
         "SAAC Sanctuary".pskRaw = "ext:psk_church";
         "MVNU-student" = {};
         "Status Solutions Guest".pskRaw = "ext:psk_robotics";
-        "FRC-1317-NATE".psk = "digitalfusion";
+        "FRC-1317-jane".psk = "digitalfusion";
         "1317-fortress-of-awesomeness" = {};
       };
     };
