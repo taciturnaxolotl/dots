@@ -157,6 +157,7 @@
     pkgs.lxde.lxsession
     pkgs.godot3
     pkgs.bambu-studio
+    pkgs.exiftool
   ];
 
   programs.nh = {
