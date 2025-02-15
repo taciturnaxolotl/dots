@@ -335,15 +335,16 @@
         ]
       },
       "locked": {
-        "lastModified": 1736610920,
-        "narHash": "sha256-H2ARat3pLUwt5WboeODMmUipcVXIp2MRIbZLokGdePk=",
-        "owner": "frc4451",
+        "lastModified": 1739641962,
+        "narHash": "sha256-hcqYLIO9tmHVwENCbR5ZNl4af30rvAh7b4eytSUaVa8=",
+        "owner": "taciturnaxolotl",
         "repo": "frc-nix",
-        "rev": "038f744485e1b9267e86d8898895ab96ff4957a5",
+        "rev": "a3791d7bba41ab429a5f685e882e7ee7473c12b5",
         "type": "github"
       },
       "original": {
-        "owner": "frc4451",
+        "owner": "taciturnaxolotl",
+        "ref": "2025.3.1",
         "repo": "frc-nix",
         "type": "github"
       }
