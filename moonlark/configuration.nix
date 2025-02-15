@@ -54,12 +54,6 @@
 
     optimise.automatic = true;
 
-    gc = {
-      automatic = true;
-      dates = "weekly";
-      options = "--delete-older-than 30d";
-    };
-
     # Opinionated: make flake registry and nix path match flake inputs
     registry = lib.mapAttrs (_: flake: {inherit flake;}) flakeInputs;
     nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
@@ -164,6 +158,14 @@
     pkgs.godot3
     pkgs.bambu-studio
   ];
+
+  programs.nh = {
+    enable = true;
+    clean.enable = true;
+    clean.extraArgs = "--keep-since 4d --keep 3";
+    flake = "/home/kierank/etc/nixos";
+  };
+
 
   services.gnome.gnome-keyring.enable = true;
   programs.dconf.enable = true;
