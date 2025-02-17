@@ -79,6 +79,9 @@
       "[html]" = {
         "editor.defaultFormatter" = "esbenp.prettier-vscode";
       };
+      "[java]" = {
+        "editor.defaultFormatter" = "redhat.java";
+      };
 
       "editor.linkedEditing" = true;
     };
