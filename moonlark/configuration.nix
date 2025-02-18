@@ -158,6 +158,7 @@
     pkgs.godot_4
     pkgs.bambu-studio
     pkgs.exiftool
+    pkgs.zenity
   ];
 
   programs.nh = {
