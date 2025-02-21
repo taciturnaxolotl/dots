@@ -80,7 +80,7 @@
         "editor.defaultFormatter" = "esbenp.prettier-vscode";
       };
       "[java]" = {
-        "editor.defaultFormatter" = "redhat.java";
+        "editor.defaultFormatter" = "esbenp.prettier-vscode";
       };
 
       "editor.linkedEditing" = true;
