@@ -36,7 +36,6 @@
       karunamurti.tera
       biomejs.biome
       bschulte.love
-      sumneko.lua
       yinfei.luahelper
       tamasfe.even-better-toml
       fill-labs.dependi
