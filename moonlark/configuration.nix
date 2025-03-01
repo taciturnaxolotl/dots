@@ -159,6 +159,7 @@
     pkgs.bambu-studio
     pkgs.exiftool
     pkgs.zenity
+    pkgs.iodine
   ];
 
   programs.nh = {
