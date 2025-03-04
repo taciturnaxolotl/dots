@@ -48,6 +48,10 @@
       flake-registry = "";
       # Workaround for https://github.com/NixOS/nix/issues/9574
       nix-path = config.nix.nixPath;
+
+      # cachix
+      substituters = ["https://hyprland.cachix.org"];
+      trusted-public-keys = ["hyprland.cachix.org-1:a7pgxzMz7+chwVL3/pzj6jIBMioiJM7ypFP8PwtkuGc="];
     };
     # Opinionated: disable channels
     channel.enable = false;
@@ -79,7 +83,7 @@
     pkgs.brightnessctl
     inputs.hyprland-contrib.packages.${pkgs.system}.grimblast
     pkgs.mako
-    pkgs.hyprpicker
+    pkgs.unstable.hyprpicker
     pkgs.notify-desktop
     pkgs.bc
     pkgs.wl-clipboard
@@ -153,7 +157,7 @@
     inputs.frc-nix.packages.${pkgs.system}.roborioteamnumbersetter
     inputs.frc-nix.packages.${pkgs.system}.sysid
     inputs.frc-nix.packages.${pkgs.system}.wpilib-utility
-    pkgs.hyprpaper
+    pkgs.unstable.hyprpaper
     pkgs.lxde.lxsession
     pkgs.godot_4
     pkgs.bambu-studio
@@ -280,8 +284,25 @@
     localNetworkGameTransfers.openFirewall = true; # Open ports in the firewall for Steam Local Network Game Transfers
   };
 
-  programs.hyprland.enable = true;
-  services.hypridle.enable = true;
+  programs.hyprland = {
+    enable = true;
+    # set the flake package
+    package = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.hyprland;
+    # make sure to also set the portal package, so that they are in sync
+    portalPackage = inputs.hyprland.packages.${pkgs.stdenv.hostPlatform.system}.xdg-desktop-portal-hyprland;
+  };
+  services.hypridle = {
+    enable = true;
+    package = pkgs.unstable.hypridle;
+  };
+
+  hardware.graphics = {
+    package = inputs.hyprland.inputs.nixpkgs.legacyPackages.${pkgs.stdenv.hostPlatform.system}.mesa.drivers;
+
+    # if you also want 32-bit support (e.g for Steam)
+    enable32Bit = true;
+    package32 = inputs.hyprland.inputs.nixpkgs.legacyPackages.${pkgs.stdenv.hostPlatform.system}.pkgsi686Linux.mesa.drivers;
+  };
 
   virtualisation.docker.enable = true;
 

@@ -51,6 +51,8 @@
       url = "github:frc4451/frc-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    hyprland.url = "github:hyprwm/Hyprland";
   };
 
   outputs = {
