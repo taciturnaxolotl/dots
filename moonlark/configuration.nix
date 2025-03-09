@@ -160,6 +160,7 @@
     pkgs.exiftool
     pkgs.zenity
     pkgs.iodine
+    pkgs.hexchat
   ];
 
   programs.nh = {
