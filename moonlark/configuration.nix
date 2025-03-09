@@ -161,6 +161,7 @@
     pkgs.zenity
     pkgs.iodine
     pkgs.hexchat
+    pkgs.irssi
   ];
 
   programs.nh = {
