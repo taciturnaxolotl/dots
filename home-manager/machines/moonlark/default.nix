@@ -20,6 +20,7 @@
     ../../app/obs.nix
     ../../app/ghostty.nix
     ../../app/cider.nix
+    ../../app/irssi.nix
   ];
 
   nixpkgs = {
