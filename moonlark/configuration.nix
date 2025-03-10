@@ -153,6 +153,7 @@
     inputs.frc-nix.packages.${pkgs.system}.roborioteamnumbersetter
     inputs.frc-nix.packages.${pkgs.system}.sysid
     inputs.frc-nix.packages.${pkgs.system}.wpilib-utility
+    inputs.frc-nix.packages.${pkgs.system}.advantagescope
     pkgs.hyprpaper
     pkgs.lxde.lxsession
     pkgs.godot_4
