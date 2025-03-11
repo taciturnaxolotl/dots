@@ -9,6 +9,11 @@
     enable = true;
     enableZshIntegration = true;
     settings = {
+      upgrade = {
+        notice = false;
+        interval = "2w";
+        auto = false;
+      };
       version = 2;
       final_space = true;
       console_title_template = "{{ .Shell }} in {{ .Folder }}";
