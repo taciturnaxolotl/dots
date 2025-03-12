@@ -284,6 +284,12 @@
   programs.hyprland.enable = true;
   services.hypridle.enable = true;
 
+  programs.niri = {
+    enable = true;
+  };
+
+  programs.xwayland.enable = lib.mkForce true;
+
   virtualisation.docker.enable = true;
 
   services.udev.packages = [ pkgs.qFlipper pkgs.via ];
