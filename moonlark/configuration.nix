@@ -161,6 +161,7 @@
     pkgs.exiftool
     pkgs.zenity
     pkgs.iodine
+    pkgs.libreoffice
   ];
 
   programs.nh = {
