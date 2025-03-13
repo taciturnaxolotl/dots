@@ -117,6 +117,7 @@
       gp = "git push";
       rr = "rm -Rf";
       ghrpc = "gh repo create -c";
+      goops = "git commit --amend --no-edit && git push --force-with-lease";
     };
     initExtra = ''
       #ssh auto reconnect
