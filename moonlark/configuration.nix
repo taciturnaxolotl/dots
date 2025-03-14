@@ -162,6 +162,7 @@
     pkgs.zenity
     pkgs.iodine
     pkgs.libreoffice
+    pkgs.blender
   ];
 
   programs.nh = {
