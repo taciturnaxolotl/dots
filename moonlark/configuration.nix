@@ -249,6 +249,7 @@
         "Status Solutions Guest".pskRaw = "ext:psk_robotics";
         "FRC-1317-jane".psk = "digitalfusion";
         "1317-fortress-of-awesomeness" = {};
+        "PAST PD".pskRaw = "ext:psk_past";
       };
     };
   };
