@@ -163,6 +163,7 @@
     pkgs.iodine
     pkgs.libreoffice
     pkgs.blender
+    pkgs.screen
   ];
 
   programs.nh = {
