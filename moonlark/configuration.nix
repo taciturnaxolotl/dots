@@ -158,6 +158,7 @@
     pkgs.lxde.lxsession
     pkgs.godot_4
     pkgs.bambu-studio
+    pkgs.unstable.orca-slicer
     pkgs.exiftool
     pkgs.zenity
     pkgs.iodine
