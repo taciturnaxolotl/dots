@@ -48,7 +48,7 @@
     };
 
     frc-nix = {
-      url = "github:frc4451/frc-nix";
+      url = "github:taciturnaxolotl/frc-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
