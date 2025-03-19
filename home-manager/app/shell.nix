@@ -132,7 +132,7 @@
       summary() {
         local user_id=$1
         curl -X 'GET' \
-          "https://waka.hackclub.com/api/summary?user=''${user_id}&interval=high_seas" \
+          "https://waka.hackclub.com/api/summary?user=''${user_id}&interval=month" \
             -H 'accept: application/json' \
             -H 'Authorization: Bearer 2ce9e698-8a16-46f0-b49a-ac121bcfd608' | jq '. + {
               "total_categories_sum": (.categories | map(.total) | add),
