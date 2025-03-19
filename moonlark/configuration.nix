@@ -165,6 +165,7 @@
     pkgs.libreoffice
     pkgs.blender
     pkgs.screen
+    pkgs.font-manager
   ];
 
   programs.nh = {
