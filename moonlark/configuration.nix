@@ -166,6 +166,7 @@
     pkgs.blender
     pkgs.screen
     pkgs.font-manager
+    pkgs.prismlauncher
   ];
 
   programs.nh = {
