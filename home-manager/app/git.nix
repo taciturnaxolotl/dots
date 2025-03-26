@@ -9,7 +9,7 @@
   programs.git = {
     enable = true;
     userName = "Kieran Klukas";
-    userEmail = "92754843+kcoderhtml@users.noreply.github.com";
+    userEmail = "me@dunkirk.sh";
     aliases = {
       c = "commit";
       p = "push";
