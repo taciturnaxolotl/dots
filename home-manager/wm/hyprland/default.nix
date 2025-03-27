@@ -23,7 +23,7 @@
 
   # hyprpaper
   xdg.configFile."hypr/hyprpaper.conf".source = ../../dots/hyprpaper.conf;
-  xdg.configFile."hypr/framework.jpeg".source = ../../dots/framework.jpeg;
+  xdg.configFile."hypr/frameworks.jpg".source = ../../dots/frameworks.jpg;
 
   # portal
   xdg.portal = {
