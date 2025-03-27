@@ -167,6 +167,7 @@
     pkgs.screen
     pkgs.font-manager
     pkgs.prismlauncher
+    pkgs.openboardview
   ];
 
   programs.nh = {
