@@ -169,6 +169,7 @@
     pkgs.prismlauncher
     pkgs.openboardview
     pkgs.unstable.claude-code
+    inputs.claude-desktop.packages.${pkgs.system}.claude-desktop-with-fhs
   ];
 
   programs.nh = {
