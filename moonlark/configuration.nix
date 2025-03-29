@@ -168,6 +168,7 @@
     pkgs.font-manager
     pkgs.prismlauncher
     pkgs.openboardview
+    pkgs.unstable.claude-code
   ];
 
   programs.nh = {
