@@ -115,7 +115,7 @@
     pkgs.invoice
     pkgs.pop
     pkgs.gum
-    pkgs.unstable.kicad
+    pkgs.unstable.kicad-testing
     pkgs.unstable.mitmproxy
     pkgs.glow
     pkgs.gnome-online-accounts
