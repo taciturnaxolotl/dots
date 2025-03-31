@@ -342,11 +342,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1743374211,
-        "narHash": "sha256-q38dXMgpdWDFvPaz3fSqSRA4a9hCstk0gHBNE9GXL4I=",
+        "lastModified": 1743393008,
+        "narHash": "sha256-PfRrqfMDh9fsnc8B7STB+tiIy1PqMKeMKqbYC5NudFs=",
         "owner": "taciturnaxolotl",
         "repo": "frc-nix",
-        "rev": "780d5c85b05b9c60c8ddf81c4cdd2e5c95f02033",
+        "rev": "686073e8ae17004f7ccce10b23338252f892fc16",
         "type": "github"
       },
       "original": {
