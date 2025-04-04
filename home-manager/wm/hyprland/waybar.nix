@@ -199,6 +199,7 @@ in {
             "cider" = "󰊦 ";
             "class<org.gnome.Nautilus>" = "󰉓 ";
             "class<kicad>" = " ";
+            "class<dev.zed.Zed>" = "󰬡 ";
           };
         };
 
