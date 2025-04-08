@@ -137,7 +137,7 @@
     pkgs.unstable.biome
     pkgs.gcc
     pkgs.love
-    pkgs.aseprite
+    pkgs.unstable.aseprite
     pkgs.audacity
     pkgs.imagemagick
     pkgs.wtype
