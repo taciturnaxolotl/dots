@@ -261,6 +261,7 @@
         "1317-fortress-of-awesomeness" = {};
         "PAST PD".pskRaw = "ext:psk_past";
         "Heartland".psk = "beourguest";
+        "WPL_Public_AccessII" = {};
       };
     };
   };
