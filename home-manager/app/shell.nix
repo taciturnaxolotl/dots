@@ -225,6 +225,12 @@
       search_mode = "fuzzy";
       session_path = config.age.secrets."atuin-session".path;
       key_path = config.age.secrets."atuin-key".path;
+      update_check = false;
+      theme.name = "autumn";
+      style = "auto";
+      enter_accept = true;
+      sync.records = true;
+      dotfiles.enabled = false;
     };
   };
 
