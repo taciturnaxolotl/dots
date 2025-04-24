@@ -228,6 +228,14 @@
       file = ../secrets/cider.age;
       owner = "kierank";
     };
+    atuin-session = {
+      file = ../secrets/atuin-session.age;
+      mode = "0444";
+    };
+    atuin-key = {
+      file = ../secrets/atuin-key.age;
+      mode = "0444";
+    };
   };
 
   environment.sessionVariables = {

@@ -10,4 +10,6 @@ in
   "resend.age".publicKeys = [ kierank moonlark ];
   "wakatime.age".publicKeys = [ kierank moonlark ];
   "cider.age".publicKeys = [ kierank moonlark ];
+  "atuin-key.age".publicKeys = [ kierank moonlark ];
+  "atuin-session.age".publicKeys = [ kierank moonlark ];
 }

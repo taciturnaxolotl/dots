@@ -215,4 +215,25 @@
       bg = lib.mkForce "";
     };
   };
+
+  programs.atuin = {
+    enable = true;
+    settings = {
+      auto_sync = true;
+      sync_frequency = "5m";
+      sync_address = "https://api.atuin.sh";
+      search_mode = "fuzzy";
+      session_path = config.age.secrets."atuin-session".path;
+      key_path = config.age.secrets."atuin-key".path;
+    };
+  };
+
+  age.secrets = {
+    atuin-session = {
+      file = ../../secrets/atuin-session.age;
+    };
+    atuin-key = {
+      file = ../../secrets/atuin-key.age;
+    };
+  };
 }
