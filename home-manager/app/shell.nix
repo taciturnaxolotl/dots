@@ -65,6 +65,13 @@
                 threshold = 3000;
               };
             }
+            {
+              type = "nix-shell";
+              style = "plain";
+              foreground = "red";
+              background = "transparent";
+              template = ''{{if ne .Type "unknown" }} {{ .Type }}{{ end }}'';
+            }
           ];
         }
         {

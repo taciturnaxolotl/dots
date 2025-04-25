@@ -182,7 +182,6 @@
     flake = "/home/kierank/etc/nixos";
   };
 
-
   services.gnome.gnome-keyring.enable = true;
   programs.dconf.enable = true;
 
@@ -279,6 +278,7 @@
   programs.nix-ld.enable = true;
 
   programs.zsh.enable = true;
+
   # TODO: Configure your system-wide user settings (groups, etc), add more users as needed.
   users.users = {
     kierank = {
