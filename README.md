@@ -51,6 +51,7 @@ reboot
 15. Link the config back to `/etc/nixos` with `sudo ln -s ~/etc/nixos /etc`
 16. Change the config permissions: `sudo chown -R $(id -un):users ~/etc/nixos`, `sudo chown kierank -R ~/etc/nixos`, and `sudo chown kierank -R ~/etc/nixos/.*`
 17. Setup the fingerprint reader with `sudo fprintd-enroll -f right-index-finger kierank` and then verify it worked with `sudo fprintd-verify kierank` (you may need to swipe your finger across the fingerprint sensor instead of simply laying it there)
+18. Run `atuin login` and then `atuin sync`
 
 ## Screenshots
 <details>
