@@ -230,23 +230,13 @@
       sync_frequency = "5m";
       sync_address = "https://api.atuin.sh";
       search_mode = "fuzzy";
-      session_path = config.age.secrets."atuin-session".path;
-      key_path = config.age.secrets."atuin-key".path;
+      #session_path = config.age.secrets."atuin-session".path;
+      #key_path = config.age.secrets."atuin-key".path;
       update_check = false;
       theme.name = "autumn";
       style = "auto";
-      enter_accept = true;
       sync.records = true;
       dotfiles.enabled = false;
-    };
-  };
-
-  age.secrets = {
-    atuin-session = {
-      file = ../../secrets/atuin-session.age;
-    };
-    atuin-key = {
-      file = ../../secrets/atuin-key.age;
     };
   };
 }
