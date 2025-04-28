@@ -223,10 +223,6 @@
       path = "/home/kierank/.wakatime.cfg";
       owner = "kierank";
     };
-    cider = {
-      file = ../secrets/cider.age;
-      owner = "kierank";
-    };
   };
 
   environment.sessionVariables = {

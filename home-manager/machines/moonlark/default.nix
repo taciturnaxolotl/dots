@@ -19,7 +19,6 @@
     ../../app/vscode.nix
     ../../app/obs.nix
     ../../app/ghostty.nix
-    ../../app/cider.nix
     ../../app/irssi.nix
   ];
 

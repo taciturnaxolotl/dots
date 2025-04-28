@@ -42,11 +42,6 @@
       url = "github:ghostty-org/ghostty";
     };
 
-    cider = {
-      url = "github:taciturnaxolotl/cider.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     frc-nix = {
       url = "github:frc4451/frc-nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -70,7 +65,6 @@
     nixos-hardware,
     hyprland-contrib,
     ghostty,
-    cider,
     frc-nix,
     ...
   } @ inputs: let

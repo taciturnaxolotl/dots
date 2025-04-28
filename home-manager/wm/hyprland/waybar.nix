@@ -196,7 +196,6 @@ in {
             "code" = "󰨞 ";
             "slack" = "󰒱 ";
             "spotify" = "󰓇 ";
-            "cider" = "󰊦 ";
             "class<org.gnome.Nautilus>" = "󰉓 ";
             "class<kicad>" = " ";
             "class<dev.zed.Zed>" = " ";
