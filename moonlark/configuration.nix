@@ -73,8 +73,6 @@
     pkgs.starship
     pkgs.gh
     pkgs.swww
-    pkgs.sunwait
-    pkgs.sunpaper
     pkgs.wluma
     pkgs.brightnessctl
     inputs.hyprland-contrib.packages.${pkgs.system}.grimblast

@@ -17,13 +17,9 @@
   xdg.configFile."face.jpeg".source = ../../dots/face.jpeg;
   programs.hyprlock.enable = true;
 
-  # sunpaper
-  xdg.configFile."sunpaper/config".source = ../../dots/sunpaperconfig;
-  xdg.configFile."sunpaper/images/".source = "${pkgs.sunpaper}/share/sunpaper/images";
-
   # hyprpaper
   xdg.configFile."hypr/hyprpaper.conf".source = ../../dots/hyprpaper.conf;
-  xdg.configFile."hypr/frameworks.jpg".source = ../../dots/frameworks.jpg;
+  xdg.configFile."hypr/acon-pier.png".source = ../../dots/acon-pier.png;
 
   # portal
   xdg.portal = {
