@@ -171,6 +171,7 @@
     pkgs.ruby
     pkgs.unstable.kikit
     pkgs.cmake
+    pkgs.unstable.zotero
   ];
 
   programs.nh = {
