@@ -23,6 +23,7 @@
   xdg.configFile."hypr/wall/acon-pier.jpg".source = ../../dots/acon-pier.jpg;
   xdg.configFile."hypr/wall/clouds-tongyu.jpg".source = ../../dots/clouds-tongyu.jpg;
   xdg.configFile."hypr/wall/frameworks.jpg".source = ../../dots/frameworks.jpg;
+  xdg.configFile."hypr/wall/acon-forest.jpg".source = ../../dots/acon-forest.jpg;
 
   # portal
   xdg.portal = {
