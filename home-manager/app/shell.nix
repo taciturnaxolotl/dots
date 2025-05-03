@@ -153,6 +153,91 @@
         }'
       }
 
+      tangled() {
+        # Configuration variables - set these to your defaults
+        local default_plc_id="did:plc:krxbvxvis5skq7jj6eot23ul"
+        local default_github_username="taciturnaxolotl"
+        local extracted_github_username=""
+
+        # Check if current directory is a git repository
+        if ! git rev-parse --is-inside-work-tree &>/dev/null; then
+          echo "Not a git repository"
+          return 1
+        fi
+
+        # Get the repository name from the current directory
+        local repo_name=$(basename "$(git rev-parse --show-toplevel)")
+
+        # Check if origin remote exists and points to ember
+        local origin_url=$(git remote get-url origin 2>/dev/null)
+        local origin_ember=false
+
+        if [[ -n "$origin_url" ]]; then
+          # Try to extract GitHub username if origin is a GitHub URL
+          if [[ "$origin_url" == *"github.com"* ]]; then
+            extracted_github_username=$(echo "$origin_url" | sed -E 's/.*github\.com[:/]([^/]+)\/.*$/\1/')
+            # Override the default username with the extracted one
+            default_github_username=$extracted_github_username
+          fi
+
+          if [[ "$origin_url" == *"ember"* ]]; then
+            origin_ember=true
+            echo "✅ Origin remote exists and points to ember"
+          else
+            echo "⚠️ Origin remote exists but doesn't point to ember"
+          fi
+        else
+          echo "⚠️ Origin remote doesn't exist"
+        fi
+
+        # Check if github remote exists
+        local github_exists=false
+        if git remote get-url github &>/dev/null; then
+          github_exists=true
+          echo "✅ GitHub remote exists"
+        else
+          echo "⚠️ GitHub remote doesn't exist"
+        fi
+
+        # Fix remotes if needed
+        if [[ "$origin_ember" = false || "$github_exists" = false ]]; then
+          echo "Setting up remotes..."
+
+          # Prompt for PLC identifier if needed
+          local plc_id=""
+          if [[ "$origin_ember" = false ]]; then
+            echo -n "Enter your PLC identifier [default: $default_plc_id]: "
+            read plc_input
+            plc_id=''${plc_input:-$default_plc_id}
+          fi
+
+          # Prompt for GitHub username with default from origin if available
+          local github_username=""
+          if [[ "$github_exists" = false ]]; then
+            echo -n "Enter your GitHub username [default: $default_github_username]: "
+            read github_input
+            github_username=''${github_input:-$default_github_username}
+          fi
+
+          # Set up origin remote if needed
+          if [[ "$origin_ember" = false && -n "$plc_id" ]]; then
+            if git remote get-url origin &>/dev/null; then
+              git remote remove origin
+            fi
+            git remote add origin "git@ember:''${plc_id}/''${repo_name}"
+            echo "✅ Set up origin remote: git@ember:''${plc_id}/''${repo_name}"
+          fi
+
+          # Set up GitHub remote if needed
+          if [[ "$github_exists" = false && -n "$github_username" ]]; then
+            git remote add github "git@github.com:''${github_username}/''${repo_name}.git"
+            echo "✅ Set up GitHub remote: git@github.com:''${github_username}/''${repo_name}.git"
+          fi
+        else
+          echo "Remotes are correctly configured"
+        fi
+      }
+
       zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
       zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
       zstyle ':completion:*' menu no
