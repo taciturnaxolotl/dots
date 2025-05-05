@@ -20,10 +20,11 @@
   # hyprpaper
   xdg.configFile."hypr/hyprpaper.conf".source = ../../dots/hyprpaper.conf;
   xdg.configFile."hypr/randomize.sh".source = ../../dots/randomize-wallpaper.sh;
-  xdg.configFile."hypr/wall/acon-pier.jpg".source = ../../dots/acon-pier.jpg;
-  xdg.configFile."hypr/wall/clouds-tongyu.jpg".source = ../../dots/clouds-tongyu.jpg;
-  xdg.configFile."hypr/wall/frameworks.jpg".source = ../../dots/frameworks.jpg;
-  xdg.configFile."hypr/wall/acon-forest.jpg".source = ../../dots/acon-forest.jpg;
+  xdg.configFile."hypr/wall/acon-pier.jpg".source = ../../dots/wallpapers/acon-pier.jpg;
+  xdg.configFile."hypr/wall/clouds-tongyu.jpg".source = ../../dots/wallpapers/clouds-tongyu.jpg;
+  xdg.configFile."hypr/wall/frameworks.jpg".source = ../../dots/wallpapers/frameworks.jpg;
+  xdg.configFile."hypr/wall/acon-forest.jpg".source = ../../dots/wallpapers/acon-forest.jpg;
+  xdg.configFile."hypr/wall/acon-gradient-clouds.jpg".source = ../../dots/wallpapers/acon-gradient-clouds.jpg;
 
   # portal
   xdg.portal = {
