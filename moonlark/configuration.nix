@@ -172,6 +172,13 @@
     pkgs.unstable.kikit
     pkgs.cmake
     pkgs.unstable.zotero
+    pkgs.wl-screenrec
+    pkgs.libnotify
+    pkgs.coreutils
+    pkgs.grim
+    pkgs.jq
+    pkgs.slurp
+    pkgs.xdg-user-dirs
   ];
 
   programs.nh = {

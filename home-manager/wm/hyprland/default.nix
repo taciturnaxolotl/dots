@@ -26,6 +26,9 @@
   xdg.configFile."hypr/wall/acon-forest.jpg".source = ../../dots/wallpapers/acon-forest.jpg;
   xdg.configFile."hypr/wall/acon-gradient-clouds.jpg".source = ../../dots/wallpapers/acon-gradient-clouds.jpg;
 
+  # hyprrec.sh
+  xdg.configFile."hypr/hyprrec.sh".source = ../../dots/hyprrec.sh;
+
   # portal
   xdg.portal = {
       enable = true;
