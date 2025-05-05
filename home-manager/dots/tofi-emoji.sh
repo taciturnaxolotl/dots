@@ -90,7 +90,7 @@ exit
 😰 anxious face with sweat face nervous sweat
 😥 sad but relieved face face phew sweat nervous
 😢 crying face face tears sad depressed upset :'(
-😭 loudly crying face face cry tears sad upset depressed
+😭 loudly crying face face cry tears sad upset depressed sob
 😱 face screaming in fear face munch scared omg
 😖 confounded face face confused sick unwell oops :S
 😣 persevering face face sick no upset oops
