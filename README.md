@@ -34,6 +34,27 @@
 
 Install NixOS via the [official guide](https://nixos.org/download.html)
 
+Connect to wifi
+
+```bash 
+wpa_passphrase your-ESSID your-passphrase | sudo tee /etc/wpa_supplicant.conf 
+sudo systemctl restart wpa_supplicant
+```
+
+Check with `ping 1.1.1.1` if that doesn't work then use `wpa_cli`
+
+```bash 
+wpa_cli
+
+add_network 0 ssid "put your ssid here"
+
+add_network 0 psk "put your password here"
+
+enable network 0
+
+exit
+```
+
 Aquire root permissions while keeping your current context with
 
 ```bash
