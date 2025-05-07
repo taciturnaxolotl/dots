@@ -44,6 +44,7 @@ sudo systemctl restart wpa_supplicant
 Check with `ping 1.1.1.1` if that doesn't work then use `wpa_cli`
 
 ```bash 
+sudo systemctl start wpa_supplicant
 wpa_cli
 
 add_network 0 ssid "put your ssid here"
