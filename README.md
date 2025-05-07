@@ -69,14 +69,14 @@ nixos-rebuild switch
 
 Download the disk configuration and run it 
 ```bash
-curl https://github.com/taciturnaxolotl/dots/raw/master/moonlark/disk-config.nix -o /tmp/disk-config.nix
-nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode disko /tmp/disk-config.nix
+curl -L https://github.com/taciturnaxolotl/dots/raw/main/moonlark/disk-config.nix -o /tmp/disk-config.nix
+nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode destroy,format,mount /tmp/disk-config.nix
 ```
 
-Mount disk with and cd into it
+Run nixos generate config and cd into it
 
 ```bash
-mount | grep /mnt
+nixos-generate-config --root /mnt
 cd /mnt/etc/nixos
 ```
 
