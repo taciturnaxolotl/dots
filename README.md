@@ -28,6 +28,8 @@
 
 ## Installation
 
+> ⚠️  This is being actively changed as I test installation on another computer
+
 ~~I have absolutely no idea~~ I kinda understand now?
 
 1. Install NixOS via the [official guide](https://nixos.org/download.html)
