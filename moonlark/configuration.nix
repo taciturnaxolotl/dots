@@ -263,6 +263,7 @@
         "PAST PD".pskRaw = "ext:psk_past";
         "Heartland".psk = "beourguest";
         "WPL_Public_AccessII" = {};
+        "Yowzaford".pskRaw = "ext:psk_rhoda";
       };
     };
   };
