@@ -83,10 +83,11 @@ cd /mnt/etc/nixos
 Clone this repo to your `/mnt/etc/nixos` folder
 
 ```bash
+rm *
 git clone https://github.com/taciturnaxolotl/dots.git .
 ```
 
-Add your ssh private key to `/mtn/etc/ssh/id_rsa` 
+Add your ssh private key to `/mnt/etc/ssh/id_rsa` 
 
 install the flake, and umount the filesystem, and then reboot 
 
