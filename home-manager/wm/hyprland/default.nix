@@ -27,6 +27,7 @@
   xdg.configFile."hypr/wall/acon-gradient-clouds.jpg".source = ../../dots/wallpapers/acon-gradient-clouds.jpg;
   xdg.configFile."hypr/wall/kailing-forest.jpg".source = ../../dots/wallpapers/kailing-forest.jpg;
   xdg.configFile."hypr/wall/acon-fsh.jpg".source = ../../dots/wallpapers/acon-fsh.jpg;
+  xdg.configFile."hypr/wall/tongyu-waves.jpg".source = ../../dots/wallpapers/tongyu-waves.jpg;
 
   # hyprrec.sh
   xdg.configFile."hypr/hyprrec.sh".source = ../../dots/hyprrec.sh;
