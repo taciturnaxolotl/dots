@@ -51,6 +51,11 @@
       url = "github:taciturnaxolotl/claude-desktop-linux-flake/patch-1";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    hyprland-contrib = {
+      url = "github:hyprwm/contrib";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
