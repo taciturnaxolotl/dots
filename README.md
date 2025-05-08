@@ -96,7 +96,6 @@ install the flake, and umount the filesystem, and then reboot
 
 ```bash
 nixos-install --flake .#moonlark --no-root-passwd
-umount /mnt
 reboot
 ```
 
