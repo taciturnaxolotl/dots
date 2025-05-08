@@ -30,7 +30,17 @@
 
 > ~~I have absolutely no idea how to install this~~ I kinda understand now?
 >   
-> ⚠️ These installation instructions are being actively worked on as I test installation on a friend's computer  
+> These instructions have been validated by installing on my friend's machine ([`Nat2-Dev/dots`](https://github.com/Nat2-Dev/dots))
+
+You have two options for installation: either the full guide as follows or the install script below and instructions in [INSTALL_GUIDE.md](/INSTALL_GUIDE.md)
+
+```bash
+curl -L https://raw.githubusercontent.com/taciturnaxolotl/dots/main/nixos/install.sh -o install.sh
+chmod +x install.sh
+./install.sh
+```
+
+### The manual way
 
 Install NixOS via the [official guide](https://nixos.org/download.html)
 
@@ -165,3 +175,19 @@ Thanks a bunch to the following people for their dots, configs, and general insp
 - [gtk with home manager](https://hoverbear.org/blog/declarative-gnome-configuration-in-nixos/)
 - [setting up the proper portals](https://github.com/NixOS/nixpkgs/issues/274554)
 - [tuigreet setup](https://github.com/sjcobb2022/nixos-config/blob/29077cee1fc82c5296908f0594e28276dacbe0b0/hosts/common/optional/greetd.nix)
+
+## 📜 License
+
+The code is licensed under `MIT`! That means MIT allows for free use, modification, and distribution of the software, requiring only that the original copyright notice and disclaimer are included in copies. All artwork and images are copyright reserved but may be used with proper attribution to the authors.
+
+<p align="center">
+        <img src="https://raw.githubusercontent.com/taciturnaxolotl/carriage/master/.github/images/line-break.svg" />
+</p>
+
+<p align="center">
+        <i><code>&copy 2025-present <a href="https://github.com/taciturnaxolotl">Kieran Klukas</a></code></i>
+</p>
+
+<p align="center">
+        <a href="https://github.com/taciturnaxolotl/dots/blob/master/LICENSE.md"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=MIT&logoColor=d9e0ee&colorA=363a4f&colorB=b7bdf8"/></a>
+</p>
