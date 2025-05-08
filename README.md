@@ -47,9 +47,11 @@ Check with `ping 1.1.1.1` if that doesn't work then use `wpa_cli`
 sudo systemctl start wpa_supplicant
 wpa_cli
 
-add_network 0 ssid "put your ssid here"
+add_network 0
 
-add_network 0 psk "put your password here"
+set_network 0 ssid "put your ssid here"
+
+set_network 0 psk "put your password here"
 
 enable network 0
 
