@@ -41,11 +41,10 @@
       fill-labs.dependi
       rust-lang.rust-analyzer
       dustypomerleau.rust-syntax
-    ]
-    ++ [(pkgs.catppuccin-vsc.override {
-      accent = "blue";
-    })]
-    ++ [inputs.frc-nix.packages.${pkgs.system}.vscode-wpilib];
+      # Add catppuccin theme
+      catppuccin.catppuccin-vsc
+      inputs.frc-nix.packages.${pkgs.system}.vscode-wpilib
+    ];
 
     userSettings = {
       "editor.semanticHighlighting.enabled" = true;
@@ -57,12 +56,12 @@
       };
       "workbench.colorTheme" = "Catppuccin Macchiato";
       "workbench.iconTheme" = "catppuccin-macchiato";
-      "catppuccin.accentColor" = "blue";
+      "catppuccin.accentColor" = lib.mkForce "blue";
       "editor.fontFamily" = "'FiraCode Nerd Font', 'monospace', monospace";
       "git.autofetch" = true;
       "git.confirmSync" = false;
       "github.copilot.editor.enableAutoCompletions" = false;
-      
+
       "editor.formatOnSave" = true;
 
       "editor.defaultFormatter" = "biomejs.biome";

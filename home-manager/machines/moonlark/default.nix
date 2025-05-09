@@ -1,7 +1,7 @@
 { self, config, lib, pkgs, inputs, nixpkgs-unstable, ... }: {
   imports = [
     # inputs
-    inputs.catppuccin.homeManagerModules.catppuccin
+    inputs.catppuccin.homeModules.catppuccin
 
     # window manager
     ../../wm/hyprland
@@ -79,6 +79,7 @@
       enable = true;
       tweaks = [ "normal" ];
     };
+    qutebrowser.enable = true;
   };
 
   dconf.settings = {

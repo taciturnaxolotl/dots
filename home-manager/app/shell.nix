@@ -319,7 +319,6 @@
       #session_path = config.age.secrets."atuin-session".path;
       #key_path = config.age.secrets."atuin-key".path;
       update_check = false;
-      theme.name = "autumn";
       style = "auto";
       sync.records = true;
       dotfiles.enabled = false;
