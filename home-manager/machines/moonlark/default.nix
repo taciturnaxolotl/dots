@@ -20,6 +20,7 @@
     ../../app/obs.nix
     ../../app/ghostty.nix
     ../../app/irssi.nix
+    ../../app/qutebrowser.nix
   ];
 
   nixpkgs = {
