@@ -8,7 +8,10 @@
   programs.qutebrowser = {
     enable = true;
     settings = {
-      colors.webpage.darkmode.enabled = true;
+      colors.webpage = {
+        darkmode.enabled = true;
+        preferred_color_scheme = "dark";
+      };
       content.blocking = {
         enabled = true;
         hosts.lists = [
