@@ -35,6 +35,9 @@
   # hyprrec.sh
   xdg.configFile."hypr/hyprrec.sh".source = ../../dots/hyprrec.sh;
 
+  # charge-dim.sh
+  xdg.configFile."hypr/charge-alert.sh".source = ../../dots/charge-alert.sh;
+
   # portal
   xdg.portal = {
       enable = true;
