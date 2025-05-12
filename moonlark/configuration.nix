@@ -179,6 +179,7 @@
     pkgs.jq
     pkgs.slurp
     pkgs.xdg-user-dirs
+    pkgs.hyprsunset
   ];
 
   programs.nh = {
