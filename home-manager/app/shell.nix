@@ -126,6 +126,8 @@
       ghrpc = "gh repo create -c";
       goops = "git commit --amend --no-edit && git push --force-with-lease";
       chngwall = "~/.config/hypr/randomize.sh";
+      vi = "nvim";
+      vim = "nvim";
     };
     initExtra = ''
       #ssh auto reconnect
