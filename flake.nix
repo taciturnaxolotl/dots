@@ -57,7 +57,7 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixvim.url = "github:dc-tec/nixvim";
+    nixvim.url = "github:taciturnaxolotl/nixvim";
   };
 
   outputs = {

@@ -843,15 +843,15 @@
         "pre-commit-hooks": "pre-commit-hooks"
       },
       "locked": {
-        "lastModified": 1741516548,
-        "narHash": "sha256-lvJ54We+yYHqCE4qlQcS8dxpykcrZRmVmu1dXXn9mz4=",
-        "owner": "dc-tec",
+        "lastModified": 1747155592,
+        "narHash": "sha256-j2WR2dvOV3ArPNtTP6EY7P30xNNXdQgHBQX0AXdqsPg=",
+        "owner": "taciturnaxolotl",
         "repo": "nixvim",
-        "rev": "feeb9b99bb61082edfc2d667b0e5e2aff32d7c54",
+        "rev": "1c691577db459d71663bcb0f5647050af2221db6",
         "type": "github"
       },
       "original": {
-        "owner": "dc-tec",
+        "owner": "taciturnaxolotl",
         "repo": "nixvim",
         "type": "github"
       }
