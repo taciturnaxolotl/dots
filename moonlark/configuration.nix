@@ -1,5 +1,3 @@
-
-
 # This is your system's configuration file.
 # Use this to configure your system environment (it replaces /etc/nixos/configuration.nix)
 {
@@ -9,7 +7,8 @@
   pkgs,
   pkgs-unstable,
   ...
-}: {
+}:
+{
   # You can import other NixOS modules here
   imports = [
     # If you want to use modules from other flakes (such as nixos-hardware):
@@ -38,26 +37,28 @@
     };
   };
 
-  nix = let
-    flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-  in {
-    settings = {
-      # Enable flakes and new 'nix' command
-      experimental-features = "nix-command flakes";
-      # Opinionated: disable global registry
-      flake-registry = "";
-      # Workaround for https://github.com/NixOS/nix/issues/9574
-      nix-path = config.nix.nixPath;
+  nix =
+    let
+      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+    in
+    {
+      settings = {
+        # Enable flakes and new 'nix' command
+        experimental-features = "nix-command flakes";
+        # Opinionated: disable global registry
+        flake-registry = "";
+        # Workaround for https://github.com/NixOS/nix/issues/9574
+        nix-path = config.nix.nixPath;
+      };
+      # Opinionated: disable channels
+      channel.enable = false;
+
+      optimise.automatic = true;
+
+      # Opinionated: make flake registry and nix path match flake inputs
+      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
     };
-    # Opinionated: disable channels
-    channel.enable = false;
-
-    optimise.automatic = true;
-
-    # Opinionated: make flake registry and nix path match flake inputs
-    registry = lib.mapAttrs (_: flake: {inherit flake;}) flakeInputs;
-    nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-  };
 
   time.timeZone = "America/New_York";
 
@@ -216,7 +217,11 @@
   ];
 
   # import the secret
-  age.identityPaths = [ "/home/kierank/.ssh/id_rsa" "/etc/ssh/id_rsa" "/mnt/etc/ssh/id_rsa" ];
+  age.identityPaths = [
+    "/home/kierank/.ssh/id_rsa"
+    "/etc/ssh/id_rsa"
+    "/mnt/etc/ssh/id_rsa"
+  ];
   age.secrets = {
     wifi = {
       file = ../secrets/wifi.age;
@@ -234,10 +239,10 @@
   };
 
   environment.sessionVariables = {
-    XDG_CACHE_HOME  = "$HOME/.cache";
+    XDG_CACHE_HOME = "$HOME/.cache";
     XDG_CONFIG_HOME = "$HOME/.config";
-    XDG_DATA_HOME   = "$HOME/.local/share";
-    XDG_STATE_HOME  = "$HOME/.local/state";
+    XDG_DATA_HOME = "$HOME/.local/share";
+    XDG_STATE_HOME = "$HOME/.local/state";
     NIXOS_OZONE_WL = "1";
     PRISMA_QUERY_ENGINE_LIBRARY = "${pkgs.prisma-engines}/lib/libquery_engine.node";
     PRISMA_QUERY_ENGINE_BINARY = "${pkgs.prisma-engines}/bin/query-engine";
@@ -249,7 +254,10 @@
   # setup the network
   networking = {
     hostName = "moonlark";
-    nameservers = [ "1.1.1.1" "9.9.9.9" ];
+    nameservers = [
+      "1.1.1.1"
+      "9.9.9.9"
+    ];
     wireless = {
       secretsFile = config.age.secrets.wifi.path;
       userControlled.enable = true;
@@ -258,19 +266,19 @@
         "KlukasNet".pskRaw = "ext:psk_home";
         "Everseen".pskRaw = "ext:psk_hotspot";
         "SAAC Sanctuary".pskRaw = "ext:psk_church";
-        "MVNU-student" = {};
+        "MVNU-student" = { };
         "Status Solutions Guest".pskRaw = "ext:psk_robotics";
         "FRC-1317-CECE".psk = "digitalfusion";
-        "1317-fortress-of-awesomeness" = {};
+        "1317-fortress-of-awesomeness" = { };
         "PAST PD".pskRaw = "ext:psk_past";
         "Heartland".psk = "beourguest";
-        "WPL_Public_AccessII" = {};
+        "WPL_Public_AccessII" = { };
         "Yowzaford".pskRaw = "ext:psk_rhoda";
       };
     };
   };
 
-  virtualisation.waydroid.enable = true;
+  virtualisation.libvirtd.enable = true;
 
   programs.nix-ld.enable = true;
 
@@ -287,7 +295,18 @@
       openssh.authorizedKeys.keys = [
         "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzEEjvbL/ttqmYoDjxYQmDIq36BabROJoXgQKeh9liBxApwp+2PmgxROzTg42UrRc9pyrkq5kVfxG5hvkqCinhL1fMiowCSEs2L2/Cwi40g5ZU+QwdcwI8a4969kkI46PyB19RHkxg54OUORiIiso/WHGmqQsP+5wbV0+4riSnxwn/JXN4pmnE//stnyAyoiEZkPvBtwJjKb3Ni9n3eNLNs6gnaXrCtaygEZdebikr9kS2g9mM696HvIFgM6cdR/wZ7DcLbG3IdTXuHN7PC3xxL+Y4ek5iMreQIPmuvs4qslbthPGYoYbYLUQiRa9XO5s/ksIj5Z14f7anHE6cuTQVpvNWdGDOigyIVS5qU+4ZF7j+rifzOXVL48gmcAvw/uV68m5Wl/p0qsC/d8vI3GYwEsWG/EzpAlc07l8BU2LxWgN+d7uwBFaJV9VtmUDs5dcslsh8IbzmtC9gq3OLGjklxTfIl6qPiL8U33oc/UwqzvZUrI2BlbagvIZYy6rP+q0= kierank@mockingjay"
       ];
-      extraGroups = ["wheel" "networkmanager" "audio" "video" "docker" "plugdev" "input" "dialout" "docker"];
+      extraGroups = [
+        "wheel"
+        "networkmanager"
+        "audio"
+        "video"
+        "docker"
+        "plugdev"
+        "input"
+        "dialout"
+        "docker"
+        "libvirtd"
+      ];
     };
     root.openssh.authorizedKeys.keys = [
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzEEjvbL/ttqmYoDjxYQmDIq36BabROJoXgQKeh9liBxApwp+2PmgxROzTg42UrRc9pyrkq5kVfxG5hvkqCinhL1fMiowCSEs2L2/Cwi40g5ZU+QwdcwI8a4969kkI46PyB19RHkxg54OUORiIiso/WHGmqQsP+5wbV0+4riSnxwn/JXN4pmnE//stnyAyoiEZkPvBtwJjKb3Ni9n3eNLNs6gnaXrCtaygEZdebikr9kS2g9mM696HvIFgM6cdR/wZ7DcLbG3IdTXuHN7PC3xxL+Y4ek5iMreQIPmuvs4qslbthPGYoYbYLUQiRa9XO5s/ksIj5Z14f7anHE6cuTQVpvNWdGDOigyIVS5qU+4ZF7j+rifzOXVL48gmcAvw/uV68m5Wl/p0qsC/d8vI3GYwEsWG/EzpAlc07l8BU2LxWgN+d7uwBFaJV9VtmUDs5dcslsh8IbzmtC9gq3OLGjklxTfIl6qPiL8U33oc/UwqzvZUrI2BlbagvIZYy6rP+q0= kierank@mockingjay"
@@ -312,7 +331,10 @@
 
   virtualisation.docker.enable = true;
 
-  services.udev.packages = [ pkgs.qFlipper pkgs.via ];
+  services.udev.packages = [
+    pkgs.qFlipper
+    pkgs.via
+  ];
 
   security.polkit.enable = true;
 
@@ -354,8 +376,14 @@
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 4455 51820 ];
-    allowedUDPPorts = [ 4455 51820 ];
+    allowedTCPPorts = [
+      4455
+      51820
+    ];
+    allowedUDPPorts = [
+      4455
+      51820
+    ];
   };
 
   services.tailscale = {
@@ -376,7 +404,9 @@
   # Requires at least 5.16 for working wi-fi and bluetooth.
   # https://community.frame.work/t/using-the-ax210-with-linux-on-the-framework-laptop/1844/89
   boot = {
-    kernelPackages = lib.mkIf (lib.versionOlder pkgs.linux.version "5.16") (lib.mkDefault pkgs.linuxPackages_latest);
+    kernelPackages = lib.mkIf (lib.versionOlder pkgs.linux.version "5.16") (
+      lib.mkDefault pkgs.linuxPackages_latest
+    );
     loader.grub = {
       # no need to set devices, disko will add all devices that have a EF02 partition to the list already
       device = "nodev";
@@ -384,6 +414,11 @@
       efiInstallAsRemovable = true;
     };
     supportedFilesystems = [ "ntfs" ];
+    extraModprobeConfig = ''
+      options kvm_intel nested=1
+      options kvm_intel emulate_invalid_guest_state=0
+      options kvm ignore_msrs=1
+    '';
   };
 
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
