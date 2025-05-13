@@ -56,6 +56,8 @@
       url = "github:hyprwm/contrib";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixvim.url = "github:dc-tec/nixvim";
   };
 
   outputs = {
@@ -71,6 +73,7 @@
     hyprland-contrib,
     ghostty,
     frc-nix,
+    nixvim,
     ...
   } @ inputs: let
     inherit (self) outputs;

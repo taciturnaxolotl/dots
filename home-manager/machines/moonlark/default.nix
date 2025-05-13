@@ -11,7 +11,7 @@
     ../../app/alacritty.nix
 
     # apps
-    ../../app/neovim.nix
+    # ../../app/neovim.nix
     ../../app/git.nix
     ../../app/foot.nix
     #../../app/spotify.nix
