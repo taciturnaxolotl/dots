@@ -29,18 +29,16 @@
   xdg.configFile."hypr/hyprpaper.conf".source = ../../dots/hyprpaper.conf;
   xdg.configFile."hypr/randomize.sh".source = ../../dots/randomize-wallpaper.sh;
   xdg.configFile."hypr/wall/acon-pier.jpg".source = ../../dots/wallpapers/acon-pier.jpg;
-  xdg.configFile."hypr/wall/clouds-tongyu.jpg".source = ../../dots/wallpapers/clouds-tongyu.jpg;
-  xdg.configFile."hypr/wall/frameworks.jpg".source = ../../dots/wallpapers/frameworks.jpg;
   xdg.configFile."hypr/wall/acon-forest.jpg".source = ../../dots/wallpapers/acon-forest.jpg;
   xdg.configFile."hypr/wall/acon-gradient-clouds.jpg".source =
     ../../dots/wallpapers/acon-gradient-clouds.jpg;
-  xdg.configFile."hypr/wall/kailing-forest.jpg".source = ../../dots/wallpapers/kailing-forest.jpg;
   xdg.configFile."hypr/wall/acon-fsh.jpg".source = ../../dots/wallpapers/acon-fsh.jpg;
   xdg.configFile."hypr/wall/tongyu-waves.jpg".source = ../../dots/wallpapers/tongyu-waves.jpg;
   xdg.configFile."hypr/wall/acon-rocks.jpg".source = ../../dots/wallpapers/acon-rocks.jpg;
   xdg.configFile."hypr/wall/kailing-comet.jpg".source = ../../dots/wallpapers/kailing-comet.jpg;
   xdg.configFile."hypr/wall/acon-star.jpg".source = ../../dots/wallpapers/acon-star.jpg;
   xdg.configFile."hypr/wall/kailing-canyon.jpg".source = ../../dots/wallpapers/kailing-canyon.jpg;
+  xdg.configFile."hypr/wall/kailing-swirls.jpg".source = ../../dots/wallpapers/kailing-swirls.jpg;
 
   # hyprrec.sh
   xdg.configFile."hypr/hyprrec.sh".source = ../../dots/hyprrec.sh;
