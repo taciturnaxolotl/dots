@@ -65,5 +65,5 @@ while true; do
         PREV_STATUS="$CURRENT_STATUS"
     fi
 
-    sleep 60  # Check battery status less frequently to reduce flashing
+    sleep 5
 done
