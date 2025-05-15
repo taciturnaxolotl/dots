@@ -1,9 +1,5 @@
 {
-  self,
-  config,
-  lib,
   pkgs,
-  inputs,
   ...
 }:
 {
@@ -39,6 +35,7 @@
   xdg.configFile."hypr/wall/acon-star.jpg".source = ../../dots/wallpapers/acon-star.jpg;
   xdg.configFile."hypr/wall/kailing-canyon.jpg".source = ../../dots/wallpapers/kailing-canyon.jpg;
   xdg.configFile."hypr/wall/kailing-swirls.jpg".source = ../../dots/wallpapers/kailing-swirls.jpg;
+  xdg.configFile."hypr/wall/highway.jpg".source = ../../dots/wallpapers/highway.jpg;
 
   # hyprrec.sh
   xdg.configFile."hypr/hyprrec.sh".source = ../../dots/hyprrec.sh;
