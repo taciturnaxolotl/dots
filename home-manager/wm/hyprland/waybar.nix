@@ -106,7 +106,7 @@ in {
         cpu = {
           format = "  {usage}%";
         };
-        
+
         memory = {
           format = "  {}%";
           interval = 5;
@@ -341,15 +341,19 @@ in {
             deps = [pkgs.jq pkgs.psmisc];
             script = ''
               # get programs using the video0 endpoint
-              ps -eo user,pid,cmd -q "$(fuser /dev/video0 2>/dev/null | xargs)" |\
-              # omit the column headings and the first line which is wireplumber
-              sed -n "1,2!p" |\
-              # just get the pid and program columns
-              awk '{print $2 " " $3}' |\
-              # filter out the program path
-              awk -F "/" '{print "{\"tooltip\": \"" $1 " " $NF "\"}"}' |\
-              jq -s 'if length > 0 then {text: "󰄀 ", tooltip: (map(.tooltip) | join("\r"))} else {text: "", tooltip: ""} end' |\
-              jq --unbuffered --compact-output
+              PIDS=$(fuser /dev/video0 2>/dev/null || echo "")
+              if [ -n "$PIDS" ]; then
+                # Using pgrep instead of grepping ps output
+                for pid in $PIDS; do
+                  process_info=$(ps -p "$pid" -o pid,cmd --no-headers)
+                  if [ -n "$process_info" ]; then
+                    echo "$process_info" | awk '{command=$2; for(i=3;i<=NF;i++) command=command" "$i; print "{\"tooltip\": \""command"\"}"}'
+                  fi
+                done | grep -v "grep" |\
+                jq -s 'if length > 0 then {text: "󰄀 ", tooltip: (map(.tooltip) | join("\r"))} else {text: "", tooltip: ""} end'
+              else
+                echo '{"text": "", "tooltip": ""}'
+              fi | jq --unbuffered --compact-output
             '';
           };
         };
