@@ -4,9 +4,9 @@
 
 > [!CAUTION]
 > These dots are highly prone to change / breakage.
-> 
+>
 > ~I am not a nix os expert (this is my first time touching nix), so I'm not sure if this will work or not. I'm just trying to get my dots up on github.~
->  
+>
 > After `284` successful days of these dots being in constant operation, many many rebuilds, and `364` commits these dots have been rock solid and I have no complaints.
 
 ## The layout
@@ -29,7 +29,7 @@
 ## Installation
 
 > ~~I have absolutely no idea how to install this~~ I kinda understand now?
->   
+>
 > These instructions have been validated by installing on my friend's machine ([`Nat2-Dev/dots`](https://github.com/Nat2-Dev/dots))
 
 You have two options for installation: either the full guide as follows or the install script below and instructions in [INSTALL_GUIDE.md](/INSTALL_GUIDE.md)
@@ -46,14 +46,14 @@ Install NixOS via the [official guide](https://nixos.org/download.html)
 
 Connect to wifi
 
-```bash 
-wpa_passphrase your-ESSID your-passphrase | sudo tee /etc/wpa_supplicant.conf 
+```bash
+wpa_passphrase your-ESSID your-passphrase | sudo tee /etc/wpa_supplicant.conf
 sudo systemctl restart wpa_supplicant
 ```
 
 Check with `ping 1.1.1.1` if that doesn't work then use `wpa_cli`
 
-```bash 
+```bash
 sudo systemctl start wpa_supplicant
 wpa_cli
 
@@ -75,12 +75,14 @@ sudo -i
 ```
 
 Enable git and rebuild your flake with the following
+
 ```bash
 sed -i 's/^{$/{\n  programs.git.enable = true;/' /etc/nixos/configuration.nix
 nixos-rebuild switch
 ```
 
-Download the disk configuration and run it 
+Download the disk configuration and run it
+
 ```bash
 curl -L https://github.com/taciturnaxolotl/dots/raw/main/moonlark/disk-config.nix -o /tmp/disk-config.nix
 nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode destroy,format,mount /tmp/disk-config.nix
@@ -100,9 +102,9 @@ rm *
 git clone https://github.com/taciturnaxolotl/dots.git .
 ```
 
-Add your ssh private key to `/mnt/etc/ssh/id_rsa` 
+Add your ssh private key to `/mnt/etc/ssh/id_rsa`
 
-install the flake, and umount the filesystem, and then reboot 
+install the flake, and umount the filesystem, and then reboot
 
 ```bash
 nixos-install --flake .#moonlark --no-root-passwd
@@ -114,12 +116,14 @@ Pray to the nix gods that it works 🙏
 If it worked then you should be able to login with the user `kierank` and the password `lolzthisaintsecure!`
 
 You should immediately change the password
+
 ```bash
 passwd kierank
 ```
 
 Move the config to your local directory, link to `/etc/nixos`, and change permissions
-```bash 
+
+```bash
 mkdir ~/etc; sudo mv /etc/nixos ~/etc
 sudo ln -s ~/etc/nixos /etc
 sudo chown -R $(id -un):users ~/etc/nixos
@@ -128,10 +132,12 @@ sudo chown kierank -R ~/etc/nixos/.*
 ```
 
 17. Setup the fingerprint reader and verify it works (you may need to swipe your finger across the fingerprint sensor instead of simply laying it there)
-```bash 
+
+```bash
 sudo fprintd-enroll -f right-index-finger kierank
 sudo fprintd-verify kierank
 ```
+
 Finally enable [atuin](https://atuin.sh/)
 
 ```bash
@@ -140,11 +146,12 @@ atuin sync
 ```
 
 ## Screenshots
+
 <details>
     <summary>I've stuck the rest of the screenshots in a spoiler to preserve space</summary>
 <br/>
   
-**Last updated: 2024-12-27**  
+**Last updated: 2024-12-27**
 
 ![the github page of this repo](https://github.com/kcoderhtml/dots/raw/master/.github/images/github.webp)
 ![nautilus file manager](https://github.com/kcoderhtml/dots/raw/master/.github/images/nautilus.webp)
@@ -152,6 +159,7 @@ atuin sync
 ![spotify with cava next to it](.github/images/spotify.webp)
 ![zed with the hyprland config open](.github/images/zed.webp)
 ![cool-retro-term with neofetch](.github/images/cool-retro-term.webp)
+
 </details>
 
 ## Credits
