@@ -65,9 +65,7 @@ in {
         position = "top";
         modules-left =
           [
-            "custom/menu"
-            "custom/currentplayer"
-            "custom/player"
+            "custom/os"
             "hyprland/workspaces"
             "hyprland/submap"
           ];
@@ -80,11 +78,9 @@ in {
           "pulseaudio"
           "battery"
           "idle_inhibitor"
-          # "custom/unread-mail"
         ];
 
         modules-right = [
-          # "custom/gammastep" TODO: currently broken for some reason
           "network"
           "bluetooth"
           "tray"
@@ -115,7 +111,7 @@ in {
         disk = {
           interval = 5;
           unit = "GB";
-          format = "󰋊 {percentage_used}%";
+          format = "󰋊  {percentage_used}%";
         };
 
         pulseaudio = {
@@ -168,16 +164,16 @@ in {
           # the wiki lies about this, does not match
           # /sys/class/power_supply/BAT0/status
           format-plugged = "󰚥 AC";
-          format-charging-battery-10 = "󰢜 {capacity}%";
-          format-charging-battery-20 = "󰂆 {capacity}%";
-          format-charging-battery-30 = "󰂇 {capacity}%";
-          format-charging-battery-40 = "󰂈 {capacity}%";
-          format-charging-battery-50 = "󰢝 {capacity}%";
-          format-charging-battery-60 = "󰂉 {capacity}%";
-          format-charging-battery-70 = "󰢞 {capacity}%";
-          format-charging-battery-80 = "󰂊 {capacity}%";
-          format-charging-battery-90 = "󰂋 {capacity}%";
-          format-charging-battery-100 = "󰂅 {capacity}%";
+          format-charging-battery-10 = "󰢜  {capacity}%";
+          format-charging-battery-20 = "󰂆  {capacity}%";
+          format-charging-battery-30 = "󰂇  {capacity}%";
+          format-charging-battery-40 = "󰂈  {capacity}%";
+          format-charging-battery-50 = "󰢝  {capacity}%";
+          format-charging-battery-60 = "󰂉  {capacity}%";
+          format-charging-battery-70 = "󰢞  {capacity}%";
+          format-charging-battery-80 = "󰂊  {capacity}%";
+          format-charging-battery-90 = "󰂋  {capacity}%";
+          format-charging-battery-100 = "󰂅  {capacity}%";
         };
 
         "hyprland/workspaces" = {
@@ -229,86 +225,18 @@ in {
           on-click = "overskride";
         };
 
-        "custom/menu" = {
+        "custom/os" = {
           interval = 1;
           return-type = "json";
           exec = mkScriptJson {
-            deps = lib.optional hyprlandCfg.enable hyprlandCfg.package;
             text = " ";
             tooltip = ''$(grep PRETTY_NAME /etc/os-release | cut -d '"' -f2)'';
-            class = let
-              isFullScreen =
-                if hyprlandCfg.enable
-                then "hyprctl activewindow -j | jq -e '.fullscreen' &>/dev/null"
-                else "false";
-            in "$(if ${isFullScreen}; then echo fullscreen; fi)";
           };
         };
 
         "custom/hostname" = {
           exec = mkScript {script = ''echo "$USER@$HOSTNAME"'';};
           on-click = mkScript {script = "systemctl --user restart waybar";};
-        };
-
-        "custom/unread-mail" = {
-          interval = 5;
-          return-type = "json";
-          exec = mkScriptJson {
-            deps = [pkgs.findutils pkgs.procps];
-            pre = ''
-              count=$(find ~/Mail/*/Inbox/new -type f | wc -l)
-              if pgrep mbsync &>/dev/null; then
-                status="syncing"
-              else
-                if [ "$count" == "0" ]; then
-                  status="read"
-                else
-                  status="unread"
-                fi
-              fi
-            '';
-            text = "$count";
-            alt = "$status";
-          };
-          format = "{icon}  ({})";
-          format-icons = {
-            "read" = "󰇯";
-            "unread" = "󰇮";
-            "syncing" = "󰁪";
-          };
-        };
-
-        "custom/currentplayer" = {
-          interval = 2;
-          return-type = "json";
-          exec = mkScriptJson {
-            deps = [pkgs.playerctl];
-            pre = ''
-              player="$(playerctl status -f "{{playerName}}" 2>/dev/null || echo "No player active" | cut -d '.' -f1)"
-              count="$(playerctl -l 2>/dev/null | wc -l)"
-              if ((count > 1)); then
-                more=" +$((count - 1))"
-              else
-                more=""
-              fi
-            '';
-            alt = "$player";
-            tooltip = "$player ($count available)";
-            text = "$more";
-          };
-          format = "{icon}{}";
-          format-icons = {
-            "No player active" = " ";
-            "Celluloid" = "󰎁 ";
-            "spotify" = "󰓇 ";
-            "ncspot" = "󰓇 ";
-            "qutebrowser" = "󰖟 ";
-            "firefox" = " ";
-            "discord" = " 󰙯 ";
-            "sublimemusic" = " ";
-            "kdeconnect" = "󰄡 ";
-            "chromium" = " ";
-          };
         };
 
         privacy = {
@@ -357,35 +285,9 @@ in {
             '';
           };
         };
-
-        "custom/player" = {
-          exec-if = mkScript {
-            deps = [pkgs.playerctl];
-            script = "playerctl status 2>/dev/null";
-          };
-          exec = let
-            format = ''{"text": "{{title}} - {{artist}}", "alt": "{{status}}", "tooltip": "{{title}} - {{artist}} ({{album}})"}'';
-          in
-            mkScript {
-              deps = [pkgs.playerctl];
-              script = "playerctl metadata --format '${format}' 2>/dev/null";
-            };
-          return-type = "json";
-          interval = 2;
-          max-length = 30;
-          format = "{icon} {}";
-          format-icons = {
-            "Playing" = "󰐊";
-            "Paused" = "󰏤 ";
-            "Stopped" = "󰓛";
-          };
-          on-click = mkScript {
-            deps = [pkgs.playerctl];
-            script = "playerctl play-pause";
-          };
-        };
       };
     };
+
     # Cheatsheet:
     # x -> all sides
     # x y -> vertical, horizontal
@@ -456,17 +358,13 @@ in {
           border-radius: 0.5em;
         }
 
-        #custom-menu {
+        #custom-os {
           background-color: @surface3;
           color: @blue;
-          padding-right: 1.5em;
+          padding-right: 1em;
           padding-left: 1em;
           margin-right: 0;
           border-radius: 0.5em;
-        }
-        #custom-menu.fullscreen {
-          background-color: @blue;
-          color: @green;
         }
         #custom-hostname {
           background-color: @surface3;
@@ -475,9 +373,6 @@ in {
           padding-left: 1em;
           margin-left: 0;
           border-radius: 0.5em;
-        }
-        #custom-currentplayer {
-          padding-right: 0;
         }
         #custom-gpu, #cpu, #memory {
           margin-left: 0.05em;
