@@ -21,6 +21,30 @@
         "type": "github"
       }
     },
+    "appimage-file-beta": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-IOeTokpWqwUl7vWDrx+zN76vgePnPaUj0WPYrDKO5xY=",
+        "type": "file",
+        "url": "https://github.com/zen-browser/desktop/releases/download/1.7.3b/zen-x86_64.AppImage"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/zen-browser/desktop/releases/download/1.7.3b/zen-x86_64.AppImage"
+      }
+    },
+    "appimage-file-twilight": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-lHjcqtHoNZu1/7HTsTziH8f92EopTKk5Z8kwEIqb52A=",
+        "type": "file",
+        "url": "https://github.com/zen-browser/desktop/releases/download/twilight/zen-x86_64.AppImage"
+      },
+      "original": {
+        "type": "file",
+        "url": "https://github.com/zen-browser/desktop/releases/download/twilight/zen-x86_64.AppImage"
+      }
+    },
     "catppuccin": {
       "inputs": {
         "nixpkgs": "nixpkgs_2"
@@ -940,7 +964,8 @@
         "nixpkgs": "nixpkgs_6",
         "nixpkgs-unstable": "nixpkgs-unstable_2",
         "nixvim": "nixvim",
-        "spicetify-nix": "spicetify-nix"
+        "spicetify-nix": "spicetify-nix",
+        "zed": "zed"
       }
     },
     "spicetify-nix": {
@@ -1096,6 +1121,28 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "zed": {
+      "inputs": {
+        "appimage-file-beta": "appimage-file-beta",
+        "appimage-file-twilight": "appimage-file-twilight",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1740167776,
+        "narHash": "sha256-86/0MaH9d2JQRdSD2Z36Mh0wtW79Nq79a+1b7vlXgQ8=",
+        "owner": "oscilococcinum",
+        "repo": "zen-browser-nix",
+        "rev": "0d24484ef3571b6ee5c19150fc0f880e12f91588",
+        "type": "github"
+      },
+      "original": {
+        "owner": "oscilococcinum",
+        "repo": "zen-browser-nix",
         "type": "github"
       }
     },

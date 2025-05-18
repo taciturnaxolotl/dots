@@ -58,67 +58,76 @@
     };
 
     nixvim.url = "github:taciturnaxolotl/nixvim";
+
+    zed = {
+      url = "github:oscilococcinum/zen-browser-nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
-  outputs = {
-    self,
-    nixpkgs,
-    nixpkgs-unstable,
-    lix-module,
-    nix-flatpak,
-    cursor,
-    agenix,
-    home-manager,
-    nixos-hardware,
-    hyprland-contrib,
-    ghostty,
-    frc-nix,
-    nixvim,
-    ...
-  } @ inputs: let
-    inherit (self) outputs;
-    system = "x86_64-linux";
-    unstable-overlays = {
-      nixpkgs.overlays = [
-        (final: prev: {
-          unstable = import nixpkgs-unstable {
-            inherit system;
-            config.allowUnfree = true;
-          };
-
-          bambu-studio = prev.bambu-studio.overrideAttrs (oldAttrs: {
-            version = "01.00.01.50";
-            src = prev.fetchFromGitHub {
-              owner = "bambulab";
-              repo = "BambuStudio";
-              rev = "v01.00.01.50";
-              hash = "sha256-7mkrPl2CQSfc1lRjl1ilwxdYcK5iRU//QGKmdCicK30=";
+  outputs =
+    {
+      self,
+      nixpkgs,
+      nixpkgs-unstable,
+      lix-module,
+      nix-flatpak,
+      cursor,
+      agenix,
+      home-manager,
+      nixos-hardware,
+      hyprland-contrib,
+      ghostty,
+      frc-nix,
+      nixvim,
+      zed,
+      ...
+    }@inputs:
+    let
+      inherit (self) outputs;
+      system = "x86_64-linux";
+      unstable-overlays = {
+        nixpkgs.overlays = [
+          (final: prev: {
+            unstable = import nixpkgs-unstable {
+              inherit system;
+              config.allowUnfree = true;
             };
-          });
 
-        })
-      ];
-    };
-  in {
-    # NixOS configuration entrypoint
-    # Available through 'nixos-rebuild --flake .#your-hostname'
-    nixosConfigurations = {
-      moonlark = nixpkgs.lib.nixosSystem {
-        system = "x86_64-linux";
+            bambu-studio = prev.bambu-studio.overrideAttrs (oldAttrs: {
+              version = "01.00.01.50";
+              src = prev.fetchFromGitHub {
+                owner = "bambulab";
+                repo = "BambuStudio";
+                rev = "v01.00.01.50";
+                hash = "sha256-7mkrPl2CQSfc1lRjl1ilwxdYcK5iRU//QGKmdCicK30=";
+              };
+            });
 
-        specialArgs = {inherit inputs outputs;};
-
-        # > Our main nixos configuration file <
-        modules = [
-          lix-module.nixosModules.default
-          nix-flatpak.nixosModules.nix-flatpak
-          inputs.disko.nixosModules.disko
-          { disko.devices.disk.disk1.device = "/dev/vda"; }
-          agenix.nixosModules.default
-          ./moonlark/configuration.nix
-          unstable-overlays
+          })
         ];
       };
+    in
+    {
+      # NixOS configuration entrypoint
+      # Available through 'nixos-rebuild --flake .#your-hostname'
+      nixosConfigurations = {
+        moonlark = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+
+          specialArgs = { inherit inputs outputs; };
+
+          # > Our main nixos configuration file <
+          modules = [
+            lix-module.nixosModules.default
+            nix-flatpak.nixosModules.nix-flatpak
+            inputs.disko.nixosModules.disko
+            { disko.devices.disk.disk1.device = "/dev/vda"; }
+            agenix.nixosModules.default
+            ./moonlark/configuration.nix
+            unstable-overlays
+          ];
+        };
+      };
     };
-  };
 }
