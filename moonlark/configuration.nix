@@ -183,6 +183,7 @@
     pkgs.hyprsunset
     inputs.nixvim.packages.x86_64-linux.default
     inputs.zed.packages.x86_64-linux.default
+    pkgs.unstable.ollama
   ];
 
   programs.nh = {
