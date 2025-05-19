@@ -123,9 +123,11 @@
   # notifications
   services.mako = {
     enable = true;
-    defaultTimeout = 4000;
-    margin = "58,6";
-    font = "Fira Sans 12";
-    borderRadius = 5;
+    settings = {
+      default-timeout = 4000;
+      margin = "58,6";
+      font = "Fira Sans 12";
+      border-radius = 5;
+    };
   };
 }

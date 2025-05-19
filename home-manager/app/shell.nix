@@ -129,7 +129,7 @@
       vi = "nvim";
       vim = "nvim";
     };
-    initExtra = ''
+    initContent = ''
       #ssh auto reconnect
       assh() {
           local host=$1

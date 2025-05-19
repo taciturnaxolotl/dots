@@ -214,10 +214,9 @@
   };
 
   fonts.packages = with pkgs; [
-    nerdfonts
     fira
     comic-neue
-  ];
+  ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
 
   # import the secret
   age.identityPaths = [
