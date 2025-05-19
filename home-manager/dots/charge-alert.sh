@@ -1,21 +1,5 @@
 #!/usr/bin/env bash
 
-# Function to set color temperature
-set_temperature() {
-    # Only set temperature if it's different from the current one
-    if [ "$1" != "$CURRENT_TEMP" ]; then
-        # Kill any existing hyprsunset process
-        if [ -n "$HYPRSUNSET_PID" ]; then
-            kill $HYPRSUNSET_PID 2>/dev/null || true
-        fi
-
-        # Set color temperature (in Kelvin) and save the PID
-        hyprsunset --temperature $1 &
-        HYPRSUNSET_PID=$!
-        CURRENT_TEMP=$1
-    fi
-}
-
 # Function to calculate temperature based on battery percentage
 calculate_temperature() {
     local bat_percent=$1
@@ -36,8 +20,6 @@ calculate_temperature() {
 }
 
 # Initialize variables
-HYPRSUNSET_PID=""
-CURRENT_TEMP=""
 PREV_STATUS=""
 
 # Main loop
@@ -56,10 +38,10 @@ while true; do
     if [ "$CURRENT_STATUS" != "$PREV_STATUS" ] || [ -z "$PREV_STATUS" ]; then
         if [ "$percent" -le 10 ] && [ "$is_plugged" != "Charging" ]; then
             temp=$(calculate_temperature $percent)
-            set_temperature $temp
+            hyprctl hyprsunset temperature $temp
         else
             # Reset to default temperature
-            set_temperature 6500
+            hyprctl hyprsunset identity
         fi
 
         PREV_STATUS="$CURRENT_STATUS"
