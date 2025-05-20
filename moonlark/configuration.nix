@@ -254,9 +254,9 @@
     PRISMA_SCHEMA_ENGINE_BINARY = "${pkgs.prisma-engines}/bin/schema-engine";
     RESEND_API_KEY = ''$(${pkgs.coreutils}/bin/cat ${config.age.secrets.resend.path})'';
     POP_FROM = "me@dunkirk.sh";
-    EDITOR = "neovim";
-    SYSTEMD_EDITOR = "neovim";
-    VISUAL = "neovim";
+    EDITOR = "nvim";
+    SYSTEMD_EDITOR = "nvim";
+    VISUAL = "nvim";
   };
 
   # setup the network
