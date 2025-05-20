@@ -213,10 +213,13 @@
     };
   };
 
-  fonts.packages = with pkgs; [
-    fira
-    comic-neue
-  ] ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+  fonts.packages =
+    with pkgs;
+    [
+      fira
+      comic-neue
+    ]
+    ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
 
   # import the secret
   age.identityPaths = [
