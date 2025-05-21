@@ -16,4 +16,8 @@ in
     kierank
     moonlark
   ];
+  "bluesky.age".publicKeys = [
+    kierank
+    moonlark
+  ];
 }

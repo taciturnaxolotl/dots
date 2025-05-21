@@ -241,6 +241,128 @@
         fi
       }
 
+      # Post AtProto status updates
+      now() {
+        local message=""
+        local prompt_message=true
+        local account1_name=""
+        local account2_name=""
+        local account1_jwt=""
+        local account2_jwt=""
+
+        # Load account information from agenix secrets
+        if [[ -f "/run/agenix/bluesky" ]]; then
+          source "/run/agenix/bluesky"
+        else
+          echo "Error: Bluesky credentials file not found at /run/agenix/bluesky"
+          return 1
+        fi
+
+        # Parse arguments
+        while [[ $# -gt 0 ]]; do
+          case "$1" in
+            -m|--message)
+              message="$2"
+              prompt_message=false
+              shift 2
+              ;;
+            *)
+              echo "Usage: now [-m|--message \"your message\"]"
+              return 1
+              ;;
+          esac
+        done
+
+        # Prompt for message if none provided
+        if [[ "$prompt_message" = true ]]; then
+          echo -n "$ACCOUNT1 is: "
+          read message
+
+          if [[ -z "$message" ]]; then
+            echo "No message provided. Aborting."
+            return 1
+          fi
+        fi
+
+        # Generate JWT for ACCOUNT1
+        local account1_response=$(curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -d '{
+            "identifier": "'$ACCOUNT1'",
+            "password": "'$ACCOUNT1_PASSWORD'"
+          }' \
+          "https://bsky.social/xrpc/com.atproto.server.createSession")
+
+        account1_jwt=$(echo "$account1_response" | jq -r '.accessJwt')
+
+        if [[ -z "$account1_jwt" || "$account1_jwt" == "null" ]]; then
+          echo "Failed to authenticate account $ACCOUNT1"
+          echo "Response: $account1_response"
+          return 1
+        fi
+
+        # Generate JWT for ACCOUNT2
+        local account2_response=$(curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -d '{
+            "identifier": "'$ACCOUNT2'",
+            "password": "'$ACCOUNT2_PASSWORD'"
+          }' \
+          "https://bsky.social/xrpc/com.atproto.server.createSession")
+
+        account2_jwt=$(echo "$account2_response" | jq -r '.accessJwt')
+
+        if [[ -z "$account2_jwt" || "$account2_jwt" == "null" ]]; then
+          echo "Failed to authenticate account $ACCOUNT2"
+          echo "Response: $account2_response"
+          return 1
+        fi
+
+        # Post to ACCOUNT1 as a.status.updates
+        local account1_post_response=$(curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $account1_jwt" \
+          -d '{
+            "collection": "a.status.update",
+            "repo": "'$ACCOUNT1'",
+            "record": {
+              "$type": "a.status.update",
+              "text": "'"$message"'",
+              "createdAt": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
+            }
+          }' \
+          "https://bsky.social/xrpc/com.atproto.repo.createRecord")
+
+        if [[ $(echo "$account1_post_response" | jq -r 'has("error")') == "true" ]]; then
+          echo "Error posting to $ACCOUNT1:"
+          echo "$account1_post_response" | jq
+          return 1
+        fi
+
+        # Post to ACCOUNT2 as normal post
+        local account2_post_response=$(curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer $account2_jwt" \
+          -d '{
+            "collection": "app.bsky.feed.post",
+            "repo": "'$ACCOUNT2'",
+            "record": {
+              "$type": "app.bsky.feed.post",
+              "text": "'"$message"'",
+              "createdAt": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
+            }
+          }' \
+          "https://bsky.social/xrpc/com.atproto.repo.createRecord")
+
+        if [[ $(echo "$account2_post_response" | jq -r 'has("error")') == "true" ]]; then
+          echo "Error posting to $ACCOUNT2:"
+          echo "$account2_post_response" | jq
+          return 1
+        fi
+
+        echo "done"
+      }
+
       zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
       zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
       zstyle ':completion:*' menu no

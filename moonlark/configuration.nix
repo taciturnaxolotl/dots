@@ -241,6 +241,10 @@
       path = "/home/kierank/.wakatime.cfg";
       owner = "kierank";
     };
+    bluesky = {
+      file = ../secrets/bluesky.age;
+      owner = "kierank";
+    };
   };
 
   environment.sessionVariables = {
