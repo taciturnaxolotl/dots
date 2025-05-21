@@ -36,6 +36,8 @@
   xdg.configFile."hypr/wall/kailing-canyon.jpg".source = ../../dots/wallpapers/kailing-canyon.jpg;
   xdg.configFile."hypr/wall/kailing-swirls.jpg".source = ../../dots/wallpapers/kailing-swirls.jpg;
   xdg.configFile."hypr/wall/highway.jpg".source = ../../dots/wallpapers/highway.jpg;
+  xdg.configFile."hypr/wall/kailing-shooting-star.jpg".source =
+    ../../dots/wallpapers/kailing-shooting-star.jpg;
 
   # hyprrec.sh
   xdg.configFile."hypr/hyprrec.sh".source = ../../dots/hyprrec.sh;
