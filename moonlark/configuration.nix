@@ -186,6 +186,8 @@
     pkgs.unstable.ollama
     pkgs.unstable.code-cursor
     pkgs.direnv
+    pkgs.gpgme
+    pkgs.gnupg
   ];
 
   programs.nh = {
