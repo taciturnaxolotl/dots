@@ -185,6 +185,7 @@
     inputs.zed.packages.x86_64-linux.default
     pkgs.unstable.ollama
     pkgs.unstable.code-cursor
+    pkgs.direnv
   ];
 
   programs.nh = {
@@ -295,6 +296,8 @@
   programs.nix-ld.enable = true;
 
   programs.zsh.enable = true;
+
+  programs.direnv.enable = true;
 
   # TODO: Configure your system-wide user settings (groups, etc), add more users as needed.
   users.users = {
