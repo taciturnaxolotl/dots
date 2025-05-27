@@ -103,7 +103,7 @@
     pkgs.pitivi
     pkgs.unstable.arduino-ide
     pkgs.unstable.arduino-cli
-    pkgs.lazygit
+    pkgs.gitui
     pkgs.vhs
     pkgs.video-trimmer
     pkgs.ffmpeg
@@ -188,6 +188,11 @@
     pkgs.direnv
     pkgs.gpgme
     pkgs.gnupg
+    pkgs.bat
+    pkgs.fd
+    pkgs.eza
+    pkgs.xh
+    pkgs.dust
   ];
 
   programs.nh = {

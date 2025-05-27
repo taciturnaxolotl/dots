@@ -4,7 +4,8 @@
   config,
   pkgs,
   ...
-}: {
+}:
+{
   programs.oh-my-posh = {
     enable = true;
     enableZshIntegration = true;
@@ -111,15 +112,17 @@
     };
   };
 
-
   programs.zsh = {
     enable = true;
     enableCompletion = true;
     syntaxHighlighting.enable = true;
 
     shellAliases = {
-      ll = "ls -l";
-      la = "ls -la";
+      lazygit = "gitui";
+      cat = "bat";
+      ls = "eza";
+      ll = "eza -l";
+      la = "eza -la";
       gc = "git commit";
       gp = "git push";
       rr = "rm -Rf";
@@ -383,7 +386,14 @@
 
     oh-my-zsh = {
       enable = true;
-      plugins = [ "git" "sudo" "docker" "git" "command-not-found" "colored-man-pages" ];
+      plugins = [
+        "git"
+        "sudo"
+        "docker"
+        "git"
+        "command-not-found"
+        "colored-man-pages"
+      ];
     };
 
     plugins = [
@@ -399,12 +409,12 @@
       }
       {
         # will source zsh-sytax-highlighting
-         name = "zsh-sytax-highlighting";
-         src = pkgs.fetchFromGitHub {
+        name = "zsh-sytax-highlighting";
+        src = pkgs.fetchFromGitHub {
           owner = "zsh-users";
           repo = "zsh-syntax-highlighting";
           rev = "0.8.0";
-         sha256 = "sha256-iJdWopZwHpSyYl5/FQXEW7gl/SrKaYDEtTH9cGP7iPo=";
+          sha256 = "sha256-iJdWopZwHpSyYl5/FQXEW7gl/SrKaYDEtTH9cGP7iPo=";
         };
       }
       {

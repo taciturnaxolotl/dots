@@ -1,10 +1,7 @@
 {
-  inputs,
-  lib,
-  config,
-  pkgs,
   ...
-}: {
+}:
+{
   # git config
   programs.git = {
     enable = true;
@@ -27,5 +24,6 @@
       pull.rebase = true;
       push.autoSetupRemote = true;
     };
+    delta.enable = true;
   };
 }
