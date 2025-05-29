@@ -193,6 +193,7 @@
     pkgs.eza
     pkgs.xh
     pkgs.dust
+    pkgs.ripgrep-all
   ];
 
   programs.nh = {
