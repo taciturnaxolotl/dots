@@ -40,6 +40,8 @@
     ../../dots/wallpapers/kailing-shooting-star.jpg;
   xdg.configFile."hypr/wall/yessa-cat.jpg".source = ../../dots/wallpapers/yessa-cat.jpg;
   xdg.configFile."hypr/wall/annie-athena.jpg".source = ../../dots/wallpapers/annie-athena.jpg;
+  xdg.configFile."hypr/wall/candy-stained-glass.jpg".source =
+    ../../dots/wallpapers/candy-stained-glass.jpg;
 
   # hyprrec.sh
   xdg.configFile."hypr/hyprrec.sh".source = ../../dots/hyprrec.sh;
