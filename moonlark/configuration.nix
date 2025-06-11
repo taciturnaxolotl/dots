@@ -296,6 +296,7 @@
         "WPL_Public_AccessII" = { };
         "Yowzaford".pskRaw = "ext:psk_rhoda";
         "cu-events".psk = "freesmile82";
+        "QargoCoffee-Guest".psk = "Lavazza@7";
       };
     };
   };
