@@ -944,6 +944,7 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nixvim": "nixvim",
         "spicetify-nix": "spicetify-nix",
+        "terminal-wakatime": "terminal-wakatime",
         "zed": "zed"
       }
     },
@@ -1100,6 +1101,26 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "terminal-wakatime": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1749670142,
+        "narHash": "sha256-xp7ydL0xDNVpcx9kUE/4g1t5E3UbtmlOH47UKvzdAlU=",
+        "owner": "taciturnaxolotl",
+        "repo": "terminal-wakatime",
+        "rev": "6621f0c8dd69c9f01d5c6877a5c2933066929ac4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "taciturnaxolotl",
+        "repo": "terminal-wakatime",
         "type": "github"
       }
     },

@@ -371,6 +371,8 @@
       zstyle ':completion:*' menu no
       zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
       zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
+
+      eval "$(terminal-wakatime init)"
     '';
     history = {
       size = 10000;

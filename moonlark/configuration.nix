@@ -5,7 +5,6 @@
   lib,
   config,
   pkgs,
-  pkgs-unstable,
   ...
 }:
 {
@@ -194,6 +193,7 @@
     pkgs.xh
     pkgs.dust
     pkgs.ripgrep-all
+    inputs.terminal-wakatime.packages.x86_64-linux.default
   ];
 
   programs.nh = {

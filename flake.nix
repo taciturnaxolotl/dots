@@ -63,6 +63,11 @@
       url = "github:oscilococcinum/zen-browser-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    terminal-wakatime = {
+      url = "github:taciturnaxolotl/terminal-wakatime";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -81,6 +86,7 @@
       frc-nix,
       nixvim,
       zed,
+      terminal-wakatime,
       ...
     }@inputs:
     let
