@@ -129,7 +129,6 @@
     pkgs.gnome-disk-utility
     pkgs.torrential
     pkgs.unstable.zola
-    pkgs.unstable.deno
     pkgs.unstable.amberol
     pkgs.unstable.apktool
     pkgs.unstable.biome
