@@ -296,6 +296,7 @@
         "Yowzaford".pskRaw = "ext:psk_rhoda";
         "cu-events".psk = "freesmile82";
         "QargoCoffee-Guest".psk = "Lavazza@7";
+        "Fulton".psk = "9064405930";
       };
     };
   };
