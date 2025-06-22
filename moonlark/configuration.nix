@@ -193,6 +193,7 @@
     pkgs.dust
     pkgs.ripgrep-all
     inputs.terminal-wakatime.packages.x86_64-linux.default
+    pkgs.unstable.metasploit
   ];
 
   programs.nh = {
@@ -308,6 +309,21 @@
   programs.zsh.enable = true;
 
   programs.direnv.enable = true;
+
+  services.postgresql = {
+    enable = true;
+    enableTCPIP = true;
+    authentication = pkgs.lib.mkOverride 10 ''
+      #type database DBuser origin-address auth-method
+      local all      all     trust
+      # ... other auth rules ...
+
+      # ipv4
+      host  all      all     127.0.0.1/32   trust
+      # ipv6
+      host  all      all     ::1/128        trust
+    '';
+  };
 
   # TODO: Configure your system-wide user settings (groups, etc), add more users as needed.
   users.users = {
