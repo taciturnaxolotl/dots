@@ -52,6 +52,18 @@
     ];
   };
 
+  fonts = {
+    packages =
+    with pkgs;
+    [
+      fira
+      comic-neue
+    ]
+    ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
+    fontconfig.enable = true;
+  };
+
+
   # Enable home-manager
   programs.home-manager.enable = true;
 
