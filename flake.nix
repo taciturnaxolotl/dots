@@ -135,5 +135,24 @@
           ];
         };
       };
+
+      # Standalone home-manager configurations
+      # Available through 'home-manager --flake .#username@hostname'
+      homeConfigurations = {
+        "pi@tacyon" = home-manager.lib.homeManagerConfiguration {
+          pkgs = import nixpkgs {
+            system = "aarch64-linux";
+            config.allowUnfree = true;
+          };
+          extraSpecialArgs = {
+            inherit inputs outputs;
+            nixpkgs-unstable = nixpkgs-unstable;
+          };
+          modules = [
+            ./home-manager/machines/tacyon
+            unstable-overlays
+          ];
+        };
+      };
     };
 }
