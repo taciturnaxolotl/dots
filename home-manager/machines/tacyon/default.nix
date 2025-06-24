@@ -48,6 +48,7 @@
       neofetch
       tmux
       unzip
+      inputs.nixvim.packages.aarch64-linux.default
     ];
   };
 
