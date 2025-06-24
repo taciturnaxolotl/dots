@@ -112,4 +112,6 @@
     platformTheme.name = "kvantum";
     enable = true;
   };
+
+  home.file.".config/openbox/lxde-pi-rc.xml".source = ../../dots/lxde-pi-rc.xml;
 }
