@@ -31,6 +31,7 @@
     homeDirectory = "/home/pi";
 
     packages = with pkgs; [
+      # CLI tools
       bat
       fd
       eza
@@ -49,20 +50,25 @@
       tmux
       unzip
       inputs.nixvim.packages.aarch64-linux.default
+
+      # Fonts
+      fira
+      fira-code
+      fira-code-symbols
+      noto-fonts
+      noto-fonts-cjk-sans
+      noto-fonts-emoji
+      liberation_ttf
+      comic-neue
+
+      # Nerd Fonts (individual packages)
+      nerd-fonts.fira-code
+      nerd-fonts.jetbrains-mono
+      nerd-fonts.ubuntu-mono
     ];
   };
 
-  fonts = {
-    packages =
-    with pkgs;
-    [
-      fira
-      comic-neue
-    ]
-    ++ builtins.filter lib.attrsets.isDerivation (builtins.attrValues pkgs.nerd-fonts);
-    fontconfig.enable = true;
-  };
-
+  fonts.fontconfig.enable = true;
 
   # Enable home-manager
   programs.home-manager.enable = true;
