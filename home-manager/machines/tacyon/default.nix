@@ -1,7 +1,11 @@
 { self, config, lib, pkgs, inputs, nixpkgs-unstable, ... }: {
   imports = [
+    # inputs
+    inputs.catppuccin.homeModules.catppuccin
+
     # shell
     ../../app/shell.nix
+    ../../app/git.nix
   ];
 
   nixpkgs = {
@@ -55,4 +59,38 @@
 
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
   home.stateVersion = "23.05";
+
+  # catppuccin
+  catppuccin = {
+    enable = true;
+    accent = "green";
+    flavor = "macchiato";
+    cursors = {
+      enable = true;
+      accent = "blue";
+      flavor = "macchiato";
+    };
+    gtk = {
+      enable = true;
+      tweaks = [ "normal" ];
+    };
+    qutebrowser.enable = true;
+  };
+
+  dconf.settings = {
+    "org/gnome/desktop/interface" = {
+      color-scheme = "prefer-dark";
+    };
+  };
+
+  gtk = {
+    enable = true;
+  };
+
+
+  qt = {
+    style.name = "kvantum";
+    platformTheme.name = "kvantum";
+    enable = true;
+  };
 }
