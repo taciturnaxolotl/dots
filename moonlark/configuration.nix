@@ -195,6 +195,7 @@
     inputs.terminal-wakatime.packages.x86_64-linux.default
     pkgs.unstable.metasploit
     pkgs.unstable.wakatime-cli
+    pkgs.nixd
   ];
 
   programs.nh = {
