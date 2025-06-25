@@ -23,6 +23,7 @@
       user.signingKey = "~/.ssh/id_rsa.pub";
       pull.rebase = true;
       push.autoSetupRemote = true;
+      init.defaultBranch = "main";
     };
     delta.enable = true;
   };
