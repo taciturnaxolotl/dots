@@ -1,4 +1,13 @@
-{ self, config, lib, pkgs, inputs, nixpkgs-unstable, ... }: {
+{
+  self,
+  config,
+  lib,
+  pkgs,
+  inputs,
+  nixpkgs-unstable,
+  ...
+}:
+{
   imports = [
     # inputs
     inputs.catppuccin.homeModules.catppuccin
@@ -50,6 +59,7 @@
       tmux
       unzip
       inputs.nixvim.packages.aarch64-linux.default
+      dog
 
       # Fonts
       fira
@@ -105,7 +115,6 @@
   gtk = {
     enable = true;
   };
-
 
   qt = {
     style.name = "kvantum";
