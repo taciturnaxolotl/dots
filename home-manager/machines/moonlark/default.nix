@@ -1,4 +1,4 @@
-{ self, config, lib, pkgs, inputs, nixpkgs-unstable, ... }: {
+{ inputs, ... }: {
   imports = [
     # inputs
     inputs.catppuccin.homeModules.catppuccin
