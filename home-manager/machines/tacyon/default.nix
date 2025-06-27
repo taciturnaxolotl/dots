@@ -1,10 +1,6 @@
 {
-  self,
-  config,
-  lib,
   pkgs,
   inputs,
-  nixpkgs-unstable,
   ...
 }:
 {
@@ -66,6 +62,9 @@
       gopls
       gotools
       go-tools
+
+      # my apps
+      inputs.ctfd-alerts.packages.aarch64-linux.default
 
       # Fonts
       fira

@@ -68,6 +68,11 @@
       url = "github:taciturnaxolotl/terminal-wakatime";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    ctfd-alerts = {
+      url = "github:taciturnaxolotl/ctfd-alerts";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -77,16 +82,8 @@
       nixpkgs-unstable,
       lix-module,
       nix-flatpak,
-      cursor,
       agenix,
       home-manager,
-      nixos-hardware,
-      hyprland-contrib,
-      ghostty,
-      frc-nix,
-      nixvim,
-      zed,
-      terminal-wakatime,
       ...
     }@inputs:
     let
