@@ -196,6 +196,7 @@
     pkgs.unstable.metasploit
     pkgs.unstable.wakatime-cli
     pkgs.nixd
+    pkgs.nil
   ];
 
   programs.nh = {
