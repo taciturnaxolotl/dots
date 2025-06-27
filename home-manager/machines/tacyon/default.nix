@@ -61,6 +61,12 @@
       inputs.nixvim.packages.aarch64-linux.default
       dog
 
+      # languages
+      go
+      gopls
+      gotools
+      go-tools
+
       # Fonts
       fira
       fira-code
