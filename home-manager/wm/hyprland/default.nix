@@ -42,6 +42,7 @@
   xdg.configFile."hypr/wall/annie-athena.jpg".source = ../../dots/wallpapers/annie-athena.jpg;
   xdg.configFile."hypr/wall/candy-stained-glass.jpg".source =
     ../../dots/wallpapers/candy-stained-glass.jpg;
+  xdg.configFile."hypr/wall/tongyu-catcat.jpg".source = ../../dots/wallpapers/tongyu-catcat.jpg;
 
   # hyprrec.sh
   xdg.configFile."hypr/hyprrec.sh".source = ../../dots/hyprrec.sh;
