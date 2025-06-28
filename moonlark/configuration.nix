@@ -301,6 +301,7 @@
         "cu-events".psk = "freesmile82";
         "QargoCoffee-Guest".psk = "Lavazza@7";
         "Fulton".psk = "9064405930";
+        "TP-LINK_ECF0".psk = "ad1066AD!";
       };
     };
   };
