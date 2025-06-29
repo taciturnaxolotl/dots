@@ -28,8 +28,38 @@
 
 ## Installation
 
-> ~~I have absolutely no idea how to install this~~ I kinda understand now?
->
+You could either install a NixOS machine (rn there is just `moonlark`) or you can use the home-manager instructions
+
+### Home Manager
+
+Install nix via the determinate systems installer
+
+```bash
+curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate
+```
+
+then copy ssh keys and chmod them
+
+```bash
+scp .ssh/id_rsa* nest:/home/kierank/.ssh/
+ssh nest chmod 600 ~/.ssh/id_rsa*
+```
+
+and then clone the repo
+
+```bash
+git clone git@github.com/taciturnaxolotl/dots
+cd dots
+```
+
+and execute the machine profile
+
+```bash
+home-manager switch --flake .#kierank@nest
+```
+
+### NixOS
+
 > These instructions have been validated by installing on my friend's machine ([`Nat2-Dev/dots`](https://github.com/Nat2-Dev/dots))
 
 You have two options for installation: either the full guide as follows or the install script below and instructions in [INSTALL_GUIDE.md](/INSTALL_GUIDE.md)
@@ -40,7 +70,7 @@ chmod +x install.sh
 ./install.sh
 ```
 
-### The manual way
+#### The manual way
 
 Install NixOS via the [official guide](https://nixos.org/download.html)
 

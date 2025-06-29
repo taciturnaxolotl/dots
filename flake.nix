@@ -144,6 +144,7 @@
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
+            system = "aarch64-linux";
           };
           modules = [
             ./home-manager/machines/tacyon
@@ -159,6 +160,7 @@
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
+            system = "x86_64-linux";
           };
           modules = [
             ./home-manager/machines/nest
