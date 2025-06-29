@@ -1,6 +1,7 @@
 {
   pkgs,
   inputs,
+  system,
   ...
 }:
 {
@@ -17,7 +18,7 @@
     overlays = [
       (final: prev: {
         unstable = import inputs.nixpkgs-unstable {
-          system = "aarch64-linux";
+          inherit system;
           config.allowUnfree = true;
         };
       })
@@ -43,7 +44,7 @@
       xh
       dust
       ripgrep-all
-      inputs.terminal-wakatime.packages.aarch64-linux.default
+      inputs.terminal-wakatime.packages.${system}.default
       jq
       htop
       btop
@@ -54,7 +55,7 @@
       neofetch
       tmux
       unzip
-      inputs.nixvim.packages.aarch64-linux.default
+      inputs.nixvim.packages.${system}.default
       dog
 
       # languages
@@ -64,7 +65,7 @@
       go-tools
 
       # my apps
-      inputs.ctfd-alerts.packages.aarch64-linux.default
+      inputs.ctfd-alerts.packages.${system}.default
 
       # Fonts
       fira
