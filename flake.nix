@@ -136,7 +136,7 @@
       # Standalone home-manager configurations
       # Available through 'home-manager --flake .#username@hostname'
       homeConfigurations = {
-        "pi@tacyon" = home-manager.lib.homeManagerConfiguration {
+        "tacyon" = home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs {
             system = "aarch64-linux";
             config.allowUnfree = true;
@@ -152,7 +152,7 @@
           ];
         };
 
-        "kierank@nest" = home-manager.lib.homeManagerConfiguration {
+        "nest" = home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs {
             system = "x86_64-linux";
             config.allowUnfree = true;
