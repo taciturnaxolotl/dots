@@ -150,6 +150,21 @@
             unstable-overlays
           ];
         };
+
+        "kierank@nest" = home-manager.lib.homeManagerConfiguration {
+          pkgs = import nixpkgs {
+            system = "x86_64-linux";
+            config.allowUnfree = true;
+          };
+          extraSpecialArgs = {
+            inherit inputs outputs;
+            nixpkgs-unstable = nixpkgs-unstable;
+          };
+          modules = [
+            ./home-manager/machines/nest
+            unstable-overlays
+          ];
+        };
       };
     };
 }
