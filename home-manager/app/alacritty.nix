@@ -1,10 +1,5 @@
-
-
 {
-  inputs,
   lib,
-  config,
-  pkgs,
   ...
 }: {
   catppuccin.alacritty.flavor = "mocha";

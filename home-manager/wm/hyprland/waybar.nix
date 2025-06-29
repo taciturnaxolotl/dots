@@ -1,9 +1,6 @@
 {
-  outputs,
-  config,
   lib,
   pkgs,
-  inputs,
   ...
 }: let
   commonDeps = with pkgs; [coreutils gnugrep systemd];
@@ -43,8 +40,6 @@
           '{text:$text,tooltip:$tooltip,alt:$alt,class:$class,percentage:$percentage}'
       '';
     };
-
-  hyprlandCfg = config.wayland.windowManager.hyprland;
 in {
   # Let it try to start a few more times
   systemd.user.services.waybar = {
@@ -293,11 +288,7 @@ in {
     # x y -> vertical, horizontal
     # x y z -> top, horizontal, bottom
     # w x y z -> top, right, bottom, left
-    style = let
-      inherit (inputs.nix-colors.lib.conversions) hexToRGBString;
-      inherit (config.colorscheme) colors;
-      toRGBA = color: opacity: "rgba(${hexToRGBString "," (lib.removePrefix "#" color)},${opacity})";
-    in
+    style =
       /*
       css
       */
