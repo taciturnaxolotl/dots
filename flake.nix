@@ -167,6 +167,22 @@
             unstable-overlays
           ];
         };
+
+        "ember" = home-manager.lib.homeManagerConfiguration {
+          pkgs = import nixpkgs {
+            system = "x86_64-linux";
+            config.allowUnfree = true;
+          };
+          extraSpecialArgs = {
+            inherit inputs outputs;
+            nixpkgs-unstable = nixpkgs-unstable;
+            system = "x86_64-linux";
+          };
+          modules = [
+            ./home-manager/machines/ember
+            unstable-overlays
+          ];
+        };
       };
     };
 }
