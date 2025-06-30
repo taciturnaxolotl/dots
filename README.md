@@ -48,14 +48,21 @@ ssh nest chmod 600 ~/.ssh/id_rsa*
 and then clone the repo
 
 ```bash
-git clone git@github.com/taciturnaxolotl/dots
+git clone git@github.com:taciturnaxolotl/dots.git
 cd dots
 ```
 
 and execute the machine profile
 
 ```bash
-home-manager switch --flake .#kierank@nest
+nix-shell -p home-manager
+home-manager switch --flake .#nest
+```
+
+setup atuin and import previous shell history
+```bash
+atuin login
+atuin import
 ```
 
 ### NixOS
