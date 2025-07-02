@@ -13,7 +13,7 @@
     # apps
     ../../app/git.nix
     ../../app/foot.nix
-    #../../app/spotify.nix
+    ../../app/spotify.nix
     ../../app/tofi.nix
     ../../app/vscode.nix
     ../../app/obs.nix
