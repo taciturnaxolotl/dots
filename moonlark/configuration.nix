@@ -199,6 +199,7 @@
     pkgs.networkmanagerapplet
     pkgs.networkmanager-iodine
     pkgs.mosh
+    pkgs.clipse
   ];
 
   programs.nh = {
