@@ -66,7 +66,6 @@
     pkgs.wget
     pkgs.dogdns
     inputs.agenix.packages.x86_64-linux.default
-    pkgs.wpa_supplicant_gui
     pkgs.overskride
     pkgs.alacritty
     pkgs.zsh
@@ -197,6 +196,8 @@
     pkgs.unstable.wakatime-cli
     pkgs.nixd
     pkgs.nil
+    pkgs.networkmanagerapplet
+    pkgs.networkmanager-iodine
   ];
 
   programs.nh = {
@@ -257,6 +258,10 @@
       file = ../secrets/bluesky.age;
       owner = "kierank";
     };
+    iodine = {
+      file = ../secrets/iodine.age;
+      owner = "kierank";
+    };
   };
 
   environment.sessionVariables = {
@@ -277,32 +282,333 @@
 
   # setup the network
   networking = {
+    networkmanager = {
+      enable = true;
+      dns = "none";
+      ensureProfiles = {
+        environmentFiles = [
+          config.age.secrets.wifi.path
+        ];
+        profiles = {
+          "KlukasNet" = {
+            connection = {
+              id = "KlukasNet";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "KlukasNet";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "$psk_home";
+            };
+          };
+          "Everseen" = {
+            connection = {
+              id = "Everseen";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "Everseen";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "$psk_hotspot";
+            };
+          };
+          "SAAC Sanctuary" = {
+            connection = {
+              id = "SAAC Sanctuary";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "SAAC Sanctuary";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "$psk_church";
+            };
+          };
+          "MVNU-student" = {
+            connection = {
+              id = "MVNU-student";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "MVNU-student";
+            };
+          };
+          "Status Solutions Guest" = {
+            connection = {
+              id = "Status Solutions Guest";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "Status Solutions Guest";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "$psk_robotics";
+            };
+          };
+          "FRC-1317-CECE" = {
+            connection = {
+              id = "FRC-1317-CECE";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "FRC-1317-CECE";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "digitalfusion";
+            };
+          };
+          "1317-fortress-of-awesomeness" = {
+            connection = {
+              id = "1317-fortress-of-awesomeness";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "1317-fortress-of-awesomeness";
+            };
+          };
+          "PAST PD" = {
+            connection = {
+              id = "PAST PD";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "PAST PD";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "$psk_past";
+            };
+          };
+          "Heartland" = {
+            connection = {
+              id = "Heartland";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "Heartland";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "beourguest";
+            };
+          };
+          "WPL_Public_AccessII" = {
+            connection = {
+              id = "WPL_Public_AccessII";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "WPL_Public_AccessII";
+            };
+          };
+          "Yowzaford" = {
+            connection = {
+              id = "Yowzaford";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "Yowzaford";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "$psk_rhoda";
+            };
+          };
+          "cu-events" = {
+            connection = {
+              id = "cu-events";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "cu-events";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "freesmile82";
+            };
+          };
+          "QargoCoffee-Guest" = {
+            connection = {
+              id = "QargoCoffee-Guest";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "QargoCoffee-Guest";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "Lavazza@7";
+            };
+          };
+          "Fulton" = {
+            connection = {
+              id = "Fulton";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "Fulton";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "9064405930";
+            };
+          };
+          "TP-LINK_ECF0" = {
+            connection = {
+              id = "TP-LINK_ECF0";
+              type = "wifi";
+            };
+            ipv4 = {
+              method = "auto";
+            };
+            ipv6 = {
+              addr-gen-mode = "stable-privacy";
+              method = "auto";
+            };
+            wifi = {
+              mode = "infrastructure";
+              ssid = "TP-LINK_ECF0";
+            };
+            wifi-security = {
+              key-mgmt = "wpa-psk";
+              psk = "ad1066AD!";
+            };
+          };
+        };
+      };
+    };
     hostName = "moonlark";
     nameservers = [
       "1.1.1.1"
       "9.9.9.9"
     ];
-    wireless = {
-      secretsFile = config.age.secrets.wifi.path;
-      userControlled.enable = true;
-      enable = true;
-      networks = {
-        "KlukasNet".pskRaw = "ext:psk_home";
-        "Everseen".pskRaw = "ext:psk_hotspot";
-        "SAAC Sanctuary".pskRaw = "ext:psk_church";
-        "MVNU-student" = { };
-        "Status Solutions Guest".pskRaw = "ext:psk_robotics";
-        "FRC-1317-CECE".psk = "digitalfusion";
-        "1317-fortress-of-awesomeness" = { };
-        "PAST PD".pskRaw = "ext:psk_past";
-        "Heartland".psk = "beourguest";
-        "WPL_Public_AccessII" = { };
-        "Yowzaford".pskRaw = "ext:psk_rhoda";
-        "cu-events".psk = "freesmile82";
-        "QargoCoffee-Guest".psk = "Lavazza@7";
-        "Fulton".psk = "9064405930";
-        "TP-LINK_ECF0".psk = "ad1066AD!";
-      };
+    useDHCP = false;
+    dhcpcd.enable = false;
+  };
+
+  services.iodine.clients = {
+    t1 = {
+      server = "t1.dunkirk.sh";
+      passwordFile = config.age.secrets.iodine.path;
     };
   };
 

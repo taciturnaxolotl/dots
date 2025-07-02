@@ -14,4 +14,7 @@ in
   "bluesky.age".publicKeys = [
     kierank
   ];
+  "iodine.age".publicKeys = [
+    kierank
+  ];
 }

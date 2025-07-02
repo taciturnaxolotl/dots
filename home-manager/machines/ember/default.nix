@@ -57,6 +57,9 @@
       unzip
       inputs.nixvim.packages.${system}.default
       dog
+
+      # apps
+      iodine
     ];
   };
 
