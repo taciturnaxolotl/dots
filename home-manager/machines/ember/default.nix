@@ -60,6 +60,9 @@
 
       # apps
       iodine
+      mosh
+      browsh
+      firefox
     ];
   };
 
