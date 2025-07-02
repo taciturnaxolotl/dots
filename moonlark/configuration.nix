@@ -200,6 +200,8 @@
     pkgs.networkmanager-iodine
     pkgs.mosh
     pkgs.clipse
+    pkgs.lazygit
+    pkgs.gh-dash
   ];
 
   programs.nh = {

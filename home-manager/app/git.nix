@@ -27,4 +27,17 @@
     };
     delta.enable = true;
   };
+
+  programs.gh.enable = true;
+  programs.lazygit =  {
+    enable = true;
+    settings = {
+      gui.theme = {
+        lightTheme = false;
+        activeBorderColor = [ "blue" "bold" ];
+        inactiveBorderColor = [ "black" ];
+        selectedLineBgColor = [ "default" ];
+      };
+    };
+  };
 }

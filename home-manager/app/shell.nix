@@ -124,7 +124,6 @@
       syntaxHighlighting.enable = true;
 
       shellAliases = {
-        lazygit = "gitui";
         cat = "bat";
         ls = "eza";
         ll = "eza -l";
