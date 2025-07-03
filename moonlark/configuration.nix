@@ -203,6 +203,7 @@
     pkgs.lazygit
     pkgs.gh-dash
     pkgs.vesktop
+    pkgs.inetutils
   ];
 
   programs.nh = {
