@@ -202,6 +202,7 @@
     pkgs.clipse
     pkgs.lazygit
     pkgs.gh-dash
+    pkgs.vesktop
   ];
 
   programs.nh = {

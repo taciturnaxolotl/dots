@@ -2,33 +2,42 @@
   lib,
   pkgs,
   ...
-}: let
-  commonDeps = with pkgs; [coreutils gnugrep systemd];
+}:
+let
+  commonDeps = with pkgs; [
+    coreutils
+    gnugrep
+    systemd
+  ];
   # Function to simplify making waybar outputs
-  mkScript = {
-    name ? "script",
-    deps ? [],
-    script ? "",
-  }:
-    lib.getExe (pkgs.writeShellApplication {
-      inherit name;
-      text = script;
-      runtimeInputs = commonDeps ++ deps;
-    });
+  mkScript =
+    {
+      name ? "script",
+      deps ? [ ],
+      script ? "",
+    }:
+    lib.getExe (
+      pkgs.writeShellApplication {
+        inherit name;
+        text = script;
+        runtimeInputs = commonDeps ++ deps;
+      }
+    );
   # Specialized for JSON outputs
-  mkScriptJson = {
-    name ? "script",
-    deps ? [],
-    pre ? "",
-    text ? "",
-    tooltip ? "",
-    alt ? "",
-    class ? "",
-    percentage ? "",
-  }:
+  mkScriptJson =
+    {
+      name ? "script",
+      deps ? [ ],
+      pre ? "",
+      text ? "",
+      tooltip ? "",
+      alt ? "",
+      class ? "",
+      percentage ? "",
+    }:
     mkScript {
       inherit name;
-      deps = [pkgs.jq] ++ deps;
+      deps = [ pkgs.jq ] ++ deps;
       script = ''
         ${pre}
         jq -cn \
@@ -40,7 +49,8 @@
           '{text:$text,tooltip:$tooltip,alt:$alt,class:$class,percentage:$percentage}'
       '';
     };
-in {
+in
+{
   # Let it try to start a few more times
   systemd.user.services.waybar = {
     Unit.StartLimitBurst = 30;
@@ -48,7 +58,7 @@ in {
   programs.waybar = {
     enable = true;
     package = pkgs.waybar.overrideAttrs (oa: {
-      mesonFlags = (oa.mesonFlags or []) ++ ["-Dexperimental=true"];
+      mesonFlags = (oa.mesonFlags or [ ]) ++ [ "-Dexperimental=true" ];
     });
     systemd.enable = true;
     settings = {
@@ -58,12 +68,11 @@ in {
         height = 46;
         margin = "6";
         position = "top";
-        modules-left =
-          [
-            "custom/os"
-            "hyprland/workspaces"
-            "hyprland/submap"
-          ];
+        modules-left = [
+          "custom/os"
+          "hyprland/workspaces"
+          "hyprland/submap"
+        ];
 
         modules-center = [
           "cpu"
@@ -131,10 +140,8 @@ in {
             activated = "󰅶 ";
             deactivated = "󰾫 ";
           };
-          tooltip-format-activated =
-            "Caffinated! device will not sleep.";
-          tooltip-format-deactivated =
-            "no caffeine :( device will sleep when not in use.";
+          tooltip-format-activated = "Caffinated! device will not sleep.";
+          tooltip-format-deactivated = "no caffeine :( device will sleep when not in use.";
         };
 
         battery = {
@@ -142,7 +149,18 @@ in {
           bat = "BAT1";
           # full-at = 94;
           format = "{icon} {capacity}%";
-          format-icons = [ "󰁺" "󰁻" "󰁼" "󰁽" "󰁾" "󰁿" "󰂀" "󰂁" "󰂂" "󰁹" ];
+          format-icons = [
+            "󰁺"
+            "󰁻"
+            "󰁼"
+            "󰁽"
+            "󰁾"
+            "󰁿"
+            "󰂀"
+            "󰂁"
+            "󰂂"
+            "󰁹"
+          ];
           states = {
             battery-10 = 10;
             battery-20 = 20;
@@ -172,8 +190,8 @@ in {
         };
 
         "hyprland/workspaces" = {
-          format =  "{icon}   {windows}";
-          window-rewrite-default =  " ";
+          format = "{icon}   {windows}";
+          window-rewrite-default = " ";
           window-rewrite-seperator = "";
           window-rewrite = {
             "title<.*github.*>" = "󰊤 ";
@@ -191,13 +209,19 @@ in {
             "class<kicad>" = " ";
             "class<dev.zed.Zed>" = " ";
             "class<chromium-browser>" = " ";
+            "class<vesktop>" = " ";
           };
         };
 
         network = {
           interval = 3;
           format-wifi = "{icon}   {essid}";
-          format-icons = [ "󰤟" "󰤢" "󰤥" "󰤨" ];
+          format-icons = [
+            "󰤟"
+            "󰤢"
+            "󰤥"
+            "󰤨"
+          ];
           format-ethernet = "󰈁 Connected";
           format-disconnected = "󱐤 ";
           tooltip-format = ''
@@ -206,7 +230,10 @@ in {
             Up: {bandwidthUpBits}
             Down: {bandwidthDownBits}'';
           on-click = mkScript {
-            deps = [pkgs.wpa_supplicant pkgs.notify-desktop];
+            deps = [
+              pkgs.wpa_supplicant
+              pkgs.notify-desktop
+            ];
             script = ''wpa_cli reconnect; notify-desktop "reconnecting to wifi" -t 1200'';
           };
         };
@@ -230,8 +257,8 @@ in {
         };
 
         "custom/hostname" = {
-          exec = mkScript {script = ''echo "$USER@$HOSTNAME"'';};
-          on-click = mkScript {script = "systemctl --user restart waybar";};
+          exec = mkScript { script = ''echo "$USER@$HOSTNAME"''; };
+          on-click = mkScript { script = "systemctl --user restart waybar"; };
         };
 
         privacy = {
@@ -261,7 +288,10 @@ in {
           return-type = "json";
           interval = 2;
           exec = mkScript {
-            deps = [pkgs.jq pkgs.psmisc];
+            deps = [
+              pkgs.jq
+              pkgs.psmisc
+            ];
             script = ''
               # get programs using the video0 endpoint
               PIDS=$(fuser /dev/video0 2>/dev/null || echo "")
@@ -289,9 +319,7 @@ in {
     # x y z -> top, horizontal, bottom
     # w x y z -> top, right, bottom, left
     style =
-      /*
-      css
-      */
+      # css
       ''
         * {
           font-family: Fira Sans, FiraCode Nerd Font;
