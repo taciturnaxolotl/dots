@@ -465,5 +465,10 @@
         dotfiles.enabled = false;
       };
     };
+
+    programs.yazi = {
+      enable = true;
+      enableZshIntegration = true;
+    };
   };
 }
