@@ -27,12 +27,11 @@ if [ -L "/etc/nixos" ]; then
     echo "Configuration is already properly set up."
 else
     echo "Moving configuration to home directory..."
-    mkdir -p ~/etc
-    sudo mv /etc/nixos ~/etc/
-    sudo ln -s ~/etc/nixos /etc/
+    sudo mv /etc/nixos ~/dots
+    sudo ln -s ~/dots /etc/
     echo "Fixing permissions..."
-    sudo chown -R $(id -un):users ~/etc/nixos
-    sudo chown -R $(id -un) ~/etc/nixos/.*
+    sudo chown -R $(id -un):users ~/dots
+    sudo chown -R $(id -un) ~/dots/.*
     echo "Configuration files moved and linked successfully!"
 fi
 
@@ -67,7 +66,7 @@ print_step "Rebuilding system"
 read -p "Do you want to rebuild the system to apply all changes? (y/n): " rebuild_system
 if [[ "$rebuild_system" =~ ^[Yy]$ ]]; then
     echo "Rebuilding system..."
-    cd ~/etc/nixos
+    cd ~/dots
 
     # Get the hostname to use for the rebuild
     hostname=$(hostname)
@@ -81,5 +80,5 @@ fi
 
 print_step "Post-installation complete!"
 echo "Your NixOS setup is now complete! You may need to restart some applications or services for all changes to take effect."
-echo "To rebuild your system in the future, run: cd ~/etc/nixos && sudo nixos-rebuild switch --flake .#$(hostname)"
+echo "To rebuild your system in the future, run: cd ~/dots && sudo nixos-rebuild switch --flake .#$(hostname)"
 echo "Enjoy your new NixOS installation!"

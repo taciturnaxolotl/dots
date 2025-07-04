@@ -60,6 +60,7 @@ home-manager switch --flake .#nest
 ```
 
 setup atuin and import previous shell history
+
 ```bash
 atuin login
 atuin import
@@ -161,11 +162,11 @@ passwd kierank
 Move the config to your local directory, link to `/etc/nixos`, and change permissions
 
 ```bash
-mkdir ~/etc; sudo mv /etc/nixos ~/etc
-sudo ln -s ~/etc/nixos /etc
-sudo chown -R $(id -un):users ~/etc/nixos
-sudo chown kierank -R ~/etc/nixos
-sudo chown kierank -R ~/etc/nixos/.*
+sudo mv /etc/nixos ~/dots
+sudo ln -s ~/dots /etc/nixos
+sudo chown -R $(id -un):users ~/dots
+sudo chown kierank -R ~/dots
+sudo chown kierank -R ~/dots/.*
 ```
 
 17. Setup the fingerprint reader and verify it works (you may need to swipe your finger across the fingerprint sensor instead of simply laying it there)

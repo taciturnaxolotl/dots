@@ -210,7 +210,7 @@
     enable = true;
     clean.enable = true;
     clean.extraArgs = "--keep-since 4d --keep 3";
-    flake = "/home/kierank/etc/nixos";
+    flake = "/home/kierank/dots";
   };
 
   services.gnome.gnome-keyring.enable = true;
