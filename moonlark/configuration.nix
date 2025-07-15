@@ -204,6 +204,7 @@
     pkgs.gh-dash
     pkgs.vesktop
     pkgs.inetutils
+    pkgs.calc
   ];
 
   programs.nh = {
