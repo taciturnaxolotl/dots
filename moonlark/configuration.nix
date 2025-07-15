@@ -605,6 +605,8 @@
     hostName = "moonlark";
     nameservers = [
       "1.1.1.1"
+      "1.0.0.1"
+      "8.8.8.8"
       "9.9.9.9"
     ];
     useDHCP = false;
