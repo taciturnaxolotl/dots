@@ -622,6 +622,9 @@
   };
 
   virtualisation.libvirtd.enable = true;
+  virtualisation.virtualbox.host.enable = true;
+  virtualisation.virtualbox.host.enableExtensionPack = true;
+  virtualisation.docker.enable = true;
 
   programs.nix-ld.enable = true;
 
@@ -666,6 +669,7 @@
         "dialout"
         "docker"
         "libvirtd"
+        "vboxusers"
       ];
     };
     root.openssh.authorizedKeys.keys = [
@@ -688,8 +692,6 @@
   };
 
   programs.xwayland.enable = lib.mkForce true;
-
-  virtualisation.docker.enable = true;
 
   services.udev.packages = [
     pkgs.qFlipper
