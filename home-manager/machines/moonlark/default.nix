@@ -1,4 +1,5 @@
-{ inputs, ... }: {
+{ inputs, ... }:
+{
   imports = [
     # inputs
     inputs.catppuccin.homeModules.catppuccin
@@ -58,7 +59,6 @@
   # https://nixos.wiki/wiki/FAQ/When_do_I_update_stateVersion
   home.stateVersion = "23.05";
 
-
   ###########
   # theming #
   ###########
@@ -89,7 +89,6 @@
   gtk = {
     enable = true;
   };
-
 
   qt = {
     style.name = "kvantum";

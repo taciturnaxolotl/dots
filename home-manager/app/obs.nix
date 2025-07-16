@@ -1,7 +1,8 @@
 {
   pkgs,
   ...
-}: {
+}:
+{
   # obs config
   programs.obs-studio = {
     enable = true;

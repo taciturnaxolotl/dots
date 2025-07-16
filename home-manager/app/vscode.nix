@@ -3,7 +3,8 @@
   lib,
   pkgs,
   ...
-}: {
+}:
+{
   # vscode config
   programs.vscode = {
     enable = true;
@@ -52,7 +53,7 @@
         "window.titleBarStyle" = "custom";
 
         "gopls" = {
-            "ui.semanticTokens" = true;
+          "ui.semanticTokens" = true;
         };
         "workbench.colorTheme" = "Catppuccin Macchiato";
         "workbench.iconTheme" = "catppuccin-macchiato";
@@ -66,23 +67,23 @@
 
         "editor.defaultFormatter" = "biomejs.biome";
         "[go]" = {
-            "editor.defaultFormatter" = "golang.go";
+          "editor.defaultFormatter" = "golang.go";
         };
         "[yaml]" = {
-            "editor.defaultFormatter" = "esbenp.prettier-vscode";
+          "editor.defaultFormatter" = "esbenp.prettier-vscode";
         };
         "[lua]" = {
-            "editor.defaultFormatter" = "yinfei.luahelper";
+          "editor.defaultFormatter" = "yinfei.luahelper";
         };
         "[html]" = {
-            "editor.defaultFormatter" = "esbenp.prettier-vscode";
+          "editor.defaultFormatter" = "esbenp.prettier-vscode";
         };
         "[java]" = {
-            "editor.defaultFormatter" = "esbenp.prettier-vscode";
+          "editor.defaultFormatter" = "esbenp.prettier-vscode";
         };
 
         "editor.linkedEditing" = true;
-        };
+      };
     };
   };
 }

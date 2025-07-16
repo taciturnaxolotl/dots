@@ -1,6 +1,7 @@
 {
   ...
-}: {
+}:
+{
   programs.vesktop = {
     settings = {
       minimizeToTray = true;
@@ -18,7 +19,7 @@
         themeLinks = [
           "https://refact0r.github.io/system24/build/system24.css"
         ];
-        enabledThemes = [];
+        enabledThemes = [ ];
         plugins = {
           FakeNitro = {
             enabled = true;

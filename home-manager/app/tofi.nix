@@ -1,8 +1,8 @@
 {
   ...
-}: {
+}:
+{
   catppuccin.tofi.enable = false;
-
 
   # tofi config
   programs.tofi = {

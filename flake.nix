@@ -184,5 +184,7 @@
           ];
         };
       };
+      formatter.x86_64-linux = nixpkgs.legacyPackages.${system}.nixfmt-tree;
+
     };
 }

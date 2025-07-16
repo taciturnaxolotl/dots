@@ -29,12 +29,15 @@
   };
 
   programs.gh.enable = true;
-  programs.lazygit =  {
+  programs.lazygit = {
     enable = true;
     settings = {
       gui.theme = {
         lightTheme = false;
-        activeBorderColor = [ "blue" "bold" ];
+        activeBorderColor = [
+          "blue"
+          "bold"
+        ];
         inactiveBorderColor = [ "black" ];
         selectedLineBgColor = [ "default" ];
       };

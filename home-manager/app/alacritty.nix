@@ -1,7 +1,8 @@
 {
   lib,
   ...
-}: {
+}:
+{
   catppuccin.alacritty.flavor = "mocha";
 
   # alacritty

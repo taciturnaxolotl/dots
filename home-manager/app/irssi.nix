@@ -1,6 +1,7 @@
 {
   ...
-}: {
+}:
+{
   programs.irssi = {
     enable = true;
     extraConfig = ''

@@ -1,6 +1,7 @@
 {
   ...
-}: {
+}:
+{
   home.file.".config/ghostty/config".text = ''
     foreground = "#a7b1d3"
     mouse-hide-while-typing = true
