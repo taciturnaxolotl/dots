@@ -32,7 +32,7 @@
 
     # catppuccin
     catppuccin.url = "github:catppuccin/nix";
-    catppuccin-vsc.url = "https://flakehub.com/f/catppuccin/vscode/\*.tar.gz";
+    catppuccin-vsc.url = "https://flakehub.com/f/catppuccin/vscode/*.tar.gz";
 
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
 
@@ -185,6 +185,5 @@
         };
       };
       formatter.x86_64-linux = nixpkgs.legacyPackages.${system}.nixfmt-tree;
-
     };
 }

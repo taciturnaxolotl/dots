@@ -11,10 +11,10 @@
         };
         typescript = {
           command = "typescript-language-server";
-          args = ["--stdio"];
+          args = [ "--stdio" ];
         };
         nix = {
-          command = "alejandra";
+          command = "nil";
         };
       };
       mcp = {

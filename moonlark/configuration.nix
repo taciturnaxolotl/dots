@@ -200,8 +200,7 @@
     pkgs.unstable.wakatime-cli
     pkgs.nixd
     pkgs.nil
-    pkgs.nixfmt-tree
-    pkgs.alejandra
+    pkgs.nixfmt-rfc-style
     pkgs.networkmanagerapplet
     pkgs.networkmanager-iodine
     pkgs.mosh
@@ -286,7 +285,7 @@
     PRISMA_QUERY_ENGINE_LIBRARY = "${pkgs.prisma-engines}/lib/libquery_engine.node";
     PRISMA_QUERY_ENGINE_BINARY = "${pkgs.prisma-engines}/bin/query-engine";
     PRISMA_SCHEMA_ENGINE_BINARY = "${pkgs.prisma-engines}/bin/schema-engine";
-    RESEND_API_KEY = ''$(${pkgs.coreutils}/bin/cat ${config.age.secrets.resend.path})'';
+    RESEND_API_KEY = "$(${pkgs.coreutils}/bin/cat ${config.age.secrets.resend.path})";
     POP_FROM = "me@dunkirk.sh";
     EDITOR = "nvim";
     SYSTEMD_EDITOR = "nvim";
@@ -299,9 +298,7 @@
       enable = true;
       dns = "none";
       ensureProfiles = {
-        environmentFiles = [
-          config.age.secrets.wifi.path
-        ];
+        environmentFiles = [ config.age.secrets.wifi.path ];
         profiles = {
           "KlukasNet" = {
             connection = {
