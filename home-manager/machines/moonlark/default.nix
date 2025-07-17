@@ -23,6 +23,7 @@
     ../../app/qutebrowser.nix
     ../../app/gh-dash.nix
     # ../../app/discord.nix
+    ../../app/crush.nix
   ];
 
   nixpkgs = {

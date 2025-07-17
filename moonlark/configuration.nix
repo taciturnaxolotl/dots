@@ -97,6 +97,9 @@
     pkgs.neofetch
     pkgs.cava
     pkgs.go
+    pkgs.gopls
+    pkgs.gotools
+    pkgs.go-tools
     pkgs.unstable.bun
     pkgs.pitivi
     pkgs.unstable.arduino-ide
@@ -197,6 +200,8 @@
     pkgs.unstable.wakatime-cli
     pkgs.nixd
     pkgs.nil
+    pkgs.nixfmt-tree
+    pkgs.alejandra
     pkgs.networkmanagerapplet
     pkgs.networkmanager-iodine
     pkgs.mosh
