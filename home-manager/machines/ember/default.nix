@@ -63,6 +63,9 @@
       mosh
       browsh
       firefox
+
+      # langs
+      go
     ];
   };
 
