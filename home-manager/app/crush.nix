@@ -3,7 +3,7 @@
   ...
 }:
 {
-  home.file.".config/crush/config.json" = {
+  home.file.".config/crush/crush.json" = {
     text = lib.strings.toJSON {
       lsp = {
         go = {
@@ -32,11 +32,11 @@
       };
       models = {
         large = {
-          model = "claude-sonnet-4";
+          model = "claude-3.7-sonnet";
           provider = "copilot";
         };
         small = {
-          model = "gpt-4o-mini";
+          model = "gemini-2.0-flash-001";
           provider = "copilot";
         };
       };
@@ -53,21 +53,21 @@
           };
           models = [
             {
-              id = "gpt-4o-mini";
-              model = "Copilot: GPT 4o Mini";
+              id = "claude-3.7-sonnet";
+              model = "Copilot: Claude 3.7 Sonnet";
               cost_per_1m_in = 0;
               cost_per_1m_out = 0;
               cost_per_1m_in_cached = 0;
               cost_per_1m_out_cached = 0;
-              context_window = 128000;
-              default_max_tokens = 2000;
+              context_window = 200000;
+              default_max_tokens = 8000;
               can_reason = false;
               has_reasoning_efforts = false;
-              supports_attachments = false;
+              supports_attachments = true;
             }
             {
-              id = "claude-sonnet-4";
-              model = "Copilot: Claude Sonnet 4";
+              id = "o3-mini";
+              model = "Copilot: o3-mini";
               cost_per_1m_in = 0;
               cost_per_1m_out = 0;
               cost_per_1m_in_cached = 0;
@@ -75,6 +75,19 @@
               context_window = 200000;
               default_max_tokens = 50000;
               can_reason = true;
+              has_reasoning_efforts = false;
+              supports_attachments = false;
+            }
+            {
+              id = "gemini-2.0-flash-001";
+              model = "Copilot: Gemini 2.0 Flash";
+              cost_per_1m_in = 0;
+              cost_per_1m_out = 0;
+              cost_per_1m_in_cached = 0;
+              cost_per_1m_out_cached = 0;
+              context_window = 1000000;
+              default_max_tokens = 8000;
+              can_reason = false;
               has_reasoning_efforts = false;
               supports_attachments = true;
             }
@@ -84,5 +97,8 @@
     };
   };
 
-  home.file.".config/crush/copilot.sh".source = ../dots/copilot.sh;
+  home.file.".config/crush/copilot.sh" = {
+    source = ../dots/copilot.sh;
+    executable = true;
+  };
 }
