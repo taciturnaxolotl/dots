@@ -1,10 +1,15 @@
 {
-  lib,
+  inputs,
   ...
 }:
 {
-  home.file.".config/crush/crush.json" = {
-    text = lib.strings.toJSON {
+  imports = [
+    inputs.crush.homeManagerModules.default
+  ];
+
+  programs.crush = {
+    enable = true;
+    settings = {
       lsp = {
         go = {
           command = "gopls";
@@ -108,10 +113,12 @@
         };
         claude-pro = {
           name = "Claude Pro";
-          provider_type = "anthropic";
+          provider_type = "openai";
           base_url = "https://api.anthropic.com";
-          api_key = "$(bash ~/.config/crush/opencode.sh)";
+          api_key = "$(bash ~/.config/crush/anthropic.sh)";
           extra_headers = {
+            "anthropic-version" = "2023-06-01";
+            "anthropic-beta" = "oauth-2025-04-20";
             "User-Agent" = "CRUSH/1.0";
           };
           models = [

@@ -101,6 +101,27 @@
         "type": "github"
       }
     },
+    "crush": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1752804151,
+        "narHash": "sha256-7Eg0DftN7pSf8vWOZjqN66rCKHH7T+VDcY/k5TNTrDs=",
+        "ref": "taciturnaxoltol/flake",
+        "rev": "d15583ac01e0a2f5f9a10a889f76b70eb5de3669",
+        "revCount": 812,
+        "type": "git",
+        "url": "ssh://git@github.com/charmbracelet/crush"
+      },
+      "original": {
+        "ref": "taciturnaxoltol/flake",
+        "type": "git",
+        "url": "ssh://git@github.com/charmbracelet/crush"
+      }
+    },
     "ctfd-alerts": {
       "inputs": {
         "nixpkgs": [
@@ -885,6 +906,7 @@
         "catppuccin": "catppuccin",
         "catppuccin-vsc": "catppuccin-vsc",
         "claude-desktop": "claude-desktop",
+        "crush": "crush",
         "ctfd-alerts": "ctfd-alerts",
         "disko": "disko",
         "frc-nix": "frc-nix",

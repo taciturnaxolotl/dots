@@ -73,6 +73,11 @@
       url = "github:taciturnaxolotl/ctfd-alerts";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    crush = {
+      url = "git+ssh://git@github.com/charmbracelet/crush?ref=taciturnaxoltol/flake";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
