@@ -48,7 +48,7 @@
       providers = {
         copilot = {
           name = "Copilot";
-          provider_type = "openai";
+          type = "openai";
           base_url = "https://api.githubcopilot.com";
           api_key = "$(bash ~/.config/crush/copilot.sh)";
           extra_headers = {
@@ -113,9 +113,9 @@
         };
         claude-pro = {
           name = "Claude Pro";
-          provider_type = "openai";
-          base_url = "https://api.anthropic.com";
-          api_key = "$(bash ~/.config/crush/anthropic.sh)";
+          type = "anthropic";
+          base_url = "https://api.anthropic.com/v1";
+          api_key = "Bearer $(bash ~/.config/crush/anthropic.sh)";
           extra_headers = {
             "anthropic-version" = "2023-06-01";
             "anthropic-beta" = "oauth-2025-04-20";

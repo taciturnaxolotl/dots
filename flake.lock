@@ -108,10 +108,10 @@
         ]
       },
       "locked": {
-        "lastModified": 1752804151,
-        "narHash": "sha256-7Eg0DftN7pSf8vWOZjqN66rCKHH7T+VDcY/k5TNTrDs=",
+        "lastModified": 1752850914,
+        "narHash": "sha256-EwTFOPr1Ta0vR6pi6vUS2kL75njXFDcyBxbw894AdJA=",
         "ref": "taciturnaxoltol/flake",
-        "rev": "d15583ac01e0a2f5f9a10a889f76b70eb5de3669",
+        "rev": "e9a24fb161e6e91e996f71b2e6ec1a0d068d2345",
         "revCount": 812,
         "type": "git",
         "url": "ssh://git@github.com/charmbracelet/crush"
