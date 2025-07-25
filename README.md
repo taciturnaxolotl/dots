@@ -73,7 +73,7 @@ atuin import
 You have two options for installation: either the full guide as follows or the install script below and instructions in [INSTALL_GUIDE.md](/INSTALL_GUIDE.md)
 
 ```bash
-curl -L https://raw.githubusercontent.com/taciturnaxolotl/dots/main/nixos/install.sh -o install.sh
+curl -L https://raw.githubusercontent.com/taciturnaxolotl/dots/main/install.sh -o install.sh
 chmod +x install.sh
 ./install.sh
 ```
