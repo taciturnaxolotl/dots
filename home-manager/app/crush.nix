@@ -119,7 +119,6 @@
           extra_headers = {
             "anthropic-version" = "2023-06-01";
             "anthropic-beta" = "oauth-2025-04-20";
-            "User-Agent" = "CRUSH/1.0";
           };
           models = [
             {
