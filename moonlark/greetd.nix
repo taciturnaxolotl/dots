@@ -27,10 +27,4 @@ in
     TTYVHangup = true;
     TTYVTDisallocate = true;
   };
-
-  #environment.etc."greetd/environments".text = ''
-  #  Hyprland
-  #  fish
-  #  bash
-  #'';
 }

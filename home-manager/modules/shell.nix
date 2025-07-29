@@ -1,11 +1,13 @@
 {
   lib,
-  config,
   pkgs,
+  config,
+  inputs,
   ...
 }:
 {
-  config = {
+  options.dots.shell.enable = lib.mkEnableOption "Custom shell config";
+  config = lib.mkIf config.dots.shell.enable {
     programs.oh-my-posh = {
       enable = true;
       enableZshIntegration = true;
@@ -441,7 +443,6 @@
       enable = true;
       enableZshIntegration = true;
     };
-
     programs.fzf = {
       enable = true;
       enableZshIntegration = true;
@@ -449,7 +450,6 @@
         bg = lib.mkForce "";
       };
     };
-
     programs.atuin = {
       enable = true;
       settings = {
@@ -457,20 +457,32 @@
         sync_frequency = "5m";
         sync_address = "https://api.atuin.sh";
         search_mode = "fuzzy";
-        #session_path = config.age.secrets."atuin-session".path;
-        #key_path = config.age.secrets."atuin-key".path;
         update_check = false;
         style = "auto";
         sync.records = true;
         dotfiles.enabled = false;
       };
     };
-
     programs.yazi = {
       enable = true;
       enableZshIntegration = true;
     };
 
-    programs.bat.enable = true;
+    home.packages = with pkgs; [
+      inputs.terminal-wakatime.packages.${pkgs.system}.default
+      unzip
+      dog
+      dust
+      wget
+      curl
+      jq
+      fd
+      eza
+      bat
+      ripgrep-all
+      neofetch
+    ];
+
+    dots.shell.git.enable = lib.mkDefault true;
   };
 }
