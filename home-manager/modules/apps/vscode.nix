@@ -21,7 +21,6 @@
           formulahendry.auto-rename-tag
           edwinkofler.vscode-assorted-languages
           golang.go
-          catppuccin.catppuccin-vsc-icons
           eamodio.gitlens
           yzhang.markdown-all-in-one
           github.vscode-github-actions
