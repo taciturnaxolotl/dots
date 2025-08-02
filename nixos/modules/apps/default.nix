@@ -1,0 +1,6 @@
+{ ... }:
+{
+  imports = [
+    ./tuigreet.nix
+  ];
+}

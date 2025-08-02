@@ -138,7 +138,7 @@
             inputs.disko.nixosModules.disko
             { disko.devices.disk.disk1.device = "/dev/vda"; }
             agenix.nixosModules.default
-            ./moonlark/configuration.nix
+            ./nixos/machines/moonlark/configuration.nix
             unstable-overlays
           ];
         };
