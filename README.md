@@ -12,21 +12,29 @@
 ## The layout
 
 ```bash
-/etc/nixos
-├── home-manager - all the config's that use home manager and stored centraly here
-│   ├── app - any apps that have home manager configs like neovim get a file here
-│   ├── dots - any config files that need to be symlinked go here eg my hyprland config
-│   ├── machines - the different machines by hostname
-│   │   └── moonlark - my framework laptop
-│   └── wm - window manager config; honestly it could probly be moved to app/hyprland
-│       └── hyprland - hyprland config
-├── moonlark - the files pertaining to my moonlark machine that aren't home manager related
-└── secrets - any secrets that are encrypted with agenix go here
+~/dots # symlinked to /etc/nixos
+├── home-manager # all the config's that use home manager and stored centraly here
+│   ├── dots # any config files that need to be symlinked go here eg. my hyprland config
+│   │   └── wallpapers
+│   ├── machines # the different machines by hostname
+│   │   ├── ember # dell poweredge r210 running ubuntu
+│   │   ├── moonlark # my framework laptop
+│   │   ├── nest # tilde server from hackclub
+│   │   └── tacyon # rpi 5 from cyber camp
+│   └── modules
+│       ├── apps # config for various apps goes here
+│       └── wm # currently i only have hyprland
+│           └── hyprland
+├── moonlark # prone to moving but my nixos config
+└── secrets # change these lol; all encrypted with agenix
 
-10 directories
+12 directories
 ```
 
 ## Installation
+
+> [!WARNING]
+> Also to note that this configuration will **not** work if you do not change any of the [secrets](./secrets) since they are encrypted.
 
 You could either install a NixOS machine (rn there is just `moonlark`) or you can use the home-manager instructions
 
@@ -191,9 +199,9 @@ atuin sync
   
 **Last updated: 2024-12-27**
 
-![the github page of this repo](https://github.com/kcoderhtml/dots/raw/master/.github/images/github.webp)
-![nautilus file manager](https://github.com/kcoderhtml/dots/raw/master/.github/images/nautilus.webp)
-![neofetch](https://github.com/kcoderhtml/dots/raw/master/.github/images/neofetch.webp)
+![the github page of this repo](.github/images/github.webp)
+![nautilus file manager](.github/images/nautilus.webp)
+![neofetch](.github/images/neofetch.webp)
 ![spotify with cava next to it](.github/images/spotify.webp)
 ![zed with the hyprland config open](.github/images/zed.webp)
 ![cool-retro-term with neofetch](.github/images/cool-retro-term.webp)
