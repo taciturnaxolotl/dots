@@ -30,13 +30,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    # catppuccin
-    catppuccin.url = "github:catppuccin/nix";
-    catppuccin-vsc.url = "https://flakehub.com/f/catppuccin/vscode/*.tar.gz";
+    catppuccin = {
+      url = "github:catppuccin/nix?rev=f518f96a60aceda4cd487437b25eaa48d0f1b97d";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    catppuccin-vsc = {
+      url = "https://flakehub.com/f/catppuccin/vscode/*.tar.gz";
+    };
 
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
-
-    nix-flatpak.url = "github:gmodena/nix-flatpak";
 
     ghostty = {
       url = "github:ghostty-org/ghostty";
@@ -78,6 +81,11 @@
       url = "git+ssh://git@github.com/charmbracelet/crush?ref=taciturnaxoltol/flake";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    flare = {
+      url = "github:ByteAtATime/flare/feat/nix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -86,7 +94,6 @@
       nixpkgs,
       nixpkgs-unstable,
       lix-module,
-      nix-flatpak,
       agenix,
       home-manager,
       ...
@@ -128,7 +135,6 @@
           # > Our main nixos configuration file <
           modules = [
             lix-module.nixosModules.default
-            nix-flatpak.nixosModules.nix-flatpak
             inputs.disko.nixosModules.disko
             { disko.devices.disk.disk1.device = "/dev/vda"; }
             agenix.nixosModules.default

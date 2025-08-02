@@ -214,6 +214,7 @@
     pkgs.calc
     pkgs.nix-output-monitor
     pkgs.nixpkgs-review
+    inputs.flare.packages.x86_64-linux.default
   ];
 
   programs.nh = {
