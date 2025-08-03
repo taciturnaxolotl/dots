@@ -48,7 +48,7 @@ let
           {
             wifi-security = {
               key-mgmt = "wpa-psk";
-              psk = "$${" + pskVar + "}";
+              psk = "$" + pskVar;
             };
           }
         else if psk != null then
