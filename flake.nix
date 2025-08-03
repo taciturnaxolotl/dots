@@ -99,13 +99,11 @@
       ...
     }@inputs:
     let
-      inherit (self) outputs;
-      system = "x86_64-linux";
+      outputs = inputs.self.outputs;
       unstable-overlays = {
         nixpkgs.overlays = [
           (final: prev: {
             unstable = import nixpkgs-unstable {
-              inherit system;
               config.allowUnfree = true;
             };
 
@@ -128,8 +126,6 @@
       # Available through 'nixos-rebuild --flake .#your-hostname'
       nixosConfigurations = {
         moonlark = nixpkgs.lib.nixosSystem {
-          system = "x86_64-linux";
-
           specialArgs = { inherit inputs outputs; };
 
           # > Our main nixos configuration file <
@@ -138,8 +134,9 @@
             inputs.disko.nixosModules.disko
             { disko.devices.disk.disk1.device = "/dev/vda"; }
             agenix.nixosModules.default
-            ./nixos/machines/moonlark/configuration.nix
             unstable-overlays
+            { nixpkgs.hostPlatform = "x86_64-linux"; }
+            ./nixos/machines/moonlark/configuration.nix
           ];
         };
       };
@@ -149,52 +146,50 @@
       homeConfigurations = {
         "tacyon" = home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs {
-            system = "aarch64-linux";
             config.allowUnfree = true;
           };
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
-            system = "aarch64-linux";
           };
           modules = [
             ./home-manager/machines/tacyon
             unstable-overlays
+            { nixpgs.hostPlatform = "aarch64-linux"; }
           ];
         };
 
         "nest" = home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs {
-            system = "x86_64-linux";
             config.allowUnfree = true;
           };
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
-            system = "x86_64-linux";
           };
           modules = [
             ./home-manager/machines/nest
             unstable-overlays
+            { nixpkgs.hostPlatform = "x86_64-linux"; }
           ];
         };
 
         "ember" = home-manager.lib.homeManagerConfiguration {
           pkgs = import nixpkgs {
-            system = "x86_64-linux";
             config.allowUnfree = true;
           };
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
-            system = "x86_64-linux";
           };
           modules = [
             ./home-manager/machines/ember
             unstable-overlays
+            { nixpkgs.hostPlatform = "x86_64-linux"; }
           ];
         };
       };
-      formatter.x86_64-linux = nixpkgs.legacyPackages.${system}.nixfmt-tree;
+
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
     };
 }
