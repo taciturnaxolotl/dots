@@ -15,7 +15,7 @@
     ./home-manager.nix
     ./disk-config.nix
 
-    ../../modules
+    (inputs.import-tree ../../modules)
   ];
 
   nixpkgs = {

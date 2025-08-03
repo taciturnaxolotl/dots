@@ -1,10 +1,11 @@
 {
+  inputs,
   pkgs,
   ...
 }:
 {
   imports = [
-    ../../modules
+    (inputs.import-tree ../../modules)
   ];
 
   nixpkgs.enable = true;

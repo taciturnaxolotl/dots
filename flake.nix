@@ -86,6 +86,8 @@
       url = "github:ByteAtATime/flare/feat/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    import-tree.url = "github:vic/import-tree";
   };
 
   outputs =
