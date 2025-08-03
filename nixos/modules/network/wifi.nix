@@ -1,3 +1,17 @@
+# simple network manager
+#
+# This module provides a simpler way to declare wifi profiles with network manager.
+# - you can pass the PSK via environment variable, direct value, or file.
+# - profiles are defined in `modules.network.wifi.profiles`.
+#
+# Example usage:
+#   modules.network.wifi = {
+#     enable = true;
+#     profiles = {
+#       "MySSID" = { psk = "supersecret"; };
+#     };
+#   };
+
 {
   lib,
   config,
@@ -7,7 +21,12 @@
 let
   cfg = config.modules.network.wifi;
   mkProfile =
-    name: p:
+    name:
+    {
+      pskVar ? null,
+      psk ? null,
+      pskFile ? null,
+    }:
     let
       base = {
         connection = {
@@ -25,25 +44,25 @@ let
         };
       };
       sec =
-        if (p ? pskVar && p.pskVar != null) then
+        if pskVar != null then
           {
             wifi-security = {
               key-mgmt = "wpa-psk";
-              psk = "$${" + p.pskVar + "}";
+              psk = "$${" + pskVar + "}";
             };
           }
-        else if (p ? psk && p.psk != null) then
+        else if psk != null then
           {
             wifi-security = {
               key-mgmt = "wpa-psk";
-              psk = p.psk;
+              psk = psk;
             };
           }
-        else if (p ? pskFile && p.pskFile != null) then
+        else if pskFile != null then
           {
             wifi-security = {
               key-mgmt = "wpa-psk";
-              psk = "$(" + pkgs.coreutils + "/bin/cat " + p.pskFile + ")";
+              psk = "$(" + pkgs.coreutils + "/bin/cat " + pskFile + ")";
             };
           }
         else
@@ -56,11 +75,11 @@ in
     enable = lib.mkEnableOption "Enable NetworkManager with simplified Wi-Fi profiles";
     hostName = lib.mkOption {
       type = lib.types.str;
-      default = config.networking.hostName or "";
+      default = lib.mkDefault (config.networking.hostName or "nixos");
     };
     nameservers = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [ ];
+      default = lib.mkDefault [ ];
     };
     envFile = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
