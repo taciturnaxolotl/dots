@@ -115,6 +115,83 @@
               }
             ];
           };
+          claude-pro = {
+            name = "Claude Pro";
+            type = "anthropic";
+            base_url = "https://api.anthropic.com/v1";
+            api_key = "Bearer $(bunx anthropic-api-key)";
+            extra_headers = {
+              "anthropic-version" = "2023-06-01";
+              "anthropic-beta" = "oauth-2025-04-20";
+            };
+            models = [
+              {
+                id = "claude-opus-4-20250514";
+                model = "Claude Opus 4";
+                cost_per_1m_in = 15000;
+                cost_per_1m_out = 75000;
+                cost_per_1m_in_cached = 1125;
+                cost_per_1m_out_cached = 75000;
+                context_window = 200000;
+                default_max_tokens = 50000;
+                can_reason = true;
+                has_reasoning_efforts = true;
+                supports_attachments = true;
+              }
+              {
+                id = "claude-sonnet-4-20250514";
+                model = "Claude Sonnet 4";
+                cost_per_1m_in = 3000;
+                cost_per_1m_out = 15000;
+                cost_per_1m_in_cached = 225;
+                cost_per_1m_out_cached = 15000;
+                context_window = 200000;
+                default_max_tokens = 50000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "claude-3-7-sonnet-20250219";
+                model = "Claude 3.7 Sonnet";
+                cost_per_1m_in = 2500;
+                cost_per_1m_out = 12000;
+                cost_per_1m_in_cached = 187;
+                cost_per_1m_out_cached = 12000;
+                context_window = 200000;
+                default_max_tokens = 128000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "claude-3-5-sonnet-20241022";
+                model = "Claude 3.5 Sonnet (Latest)";
+                cost_per_1m_in = 3000;
+                cost_per_1m_out = 15000;
+                cost_per_1m_in_cached = 225;
+                cost_per_1m_out_cached = 15000;
+                context_window = 200000;
+                default_max_tokens = 8192;
+                can_reason = false;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "claude-3-5-haiku-20241022";
+                model = "Claude 3.5 Haiku";
+                cost_per_1m_in = 800;
+                cost_per_1m_out = 4000;
+                cost_per_1m_in_cached = 60;
+                cost_per_1m_out_cached = 4000;
+                context_window = 200000;
+                default_max_tokens = 8192;
+                can_reason = false;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+            ];
+          };
         };
       };
     };
