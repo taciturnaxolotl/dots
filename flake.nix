@@ -118,7 +118,6 @@
                 hash = "sha256-7mkrPl2CQSfc1lRjl1ilwxdYcK5iRU//QGKmdCicK30=";
               };
             });
-
           })
         ];
       };
@@ -147,9 +146,6 @@
       # Available through 'home-manager --flake .#username@hostname'
       homeConfigurations = {
         "tacyon" = home-manager.lib.homeManagerConfiguration {
-          pkgs = import nixpkgs {
-            config.allowUnfree = true;
-          };
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
@@ -162,9 +158,6 @@
         };
 
         "nest" = home-manager.lib.homeManagerConfiguration {
-          pkgs = import nixpkgs {
-            config.allowUnfree = true;
-          };
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
@@ -177,9 +170,6 @@
         };
 
         "ember" = home-manager.lib.homeManagerConfiguration {
-          pkgs = import nixpkgs {
-            config.allowUnfree = true;
-          };
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
