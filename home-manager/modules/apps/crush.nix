@@ -120,6 +120,7 @@
             type = "anthropic";
             base_url = "https://api.anthropic.com/v1";
             api_key = "Bearer $(bunx anthropic-api-key)";
+            system_prompt_prefix = "You are Claude Code, Anthropic's official CLI for Claude.";
             extra_headers = {
               "anthropic-version" = "2023-06-01";
               "anthropic-beta" = "oauth-2025-04-20";
