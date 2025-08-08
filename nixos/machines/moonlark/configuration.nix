@@ -231,6 +231,7 @@
         pkgs.neofetch
         pkgs.unstable.kicad-testing
         pkgs.zenity
+        pkgs.atproto-goat
       ];
     in
     core
