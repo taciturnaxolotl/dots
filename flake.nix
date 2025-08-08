@@ -77,17 +77,17 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    crush = {
-      url = "git+ssh://git@github.com/charmbracelet/crush?ref=taciturnaxoltol/flake";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     flare = {
       url = "github:ByteAtATime/flare/feat/nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     import-tree.url = "github:vic/import-tree";
+
+    nur = {
+      url = "github:nix-community/NUR";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -98,6 +98,7 @@
       lix-module,
       agenix,
       home-manager,
+      nur,
       ...
     }@inputs:
     let
@@ -138,6 +139,7 @@
             unstable-overlays
             { nixpkgs.hostPlatform = "x86_64-linux"; }
             ./nixos/machines/moonlark/configuration.nix
+            nur.modules.nixos.default
           ];
         };
       };

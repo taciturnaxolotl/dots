@@ -104,27 +104,6 @@
         "type": "github"
       }
     },
-    "crush": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1753380422,
-        "narHash": "sha256-olzhQJVVBfH+ooeTcNF9jK/T1iHac3+lu/Stu9Sqhlg=",
-        "ref": "taciturnaxoltol/flake",
-        "rev": "0ccf3d9e6935f7ac9e213707583dcb3e18effc0b",
-        "revCount": 944,
-        "type": "git",
-        "url": "ssh://git@github.com/charmbracelet/crush"
-      },
-      "original": {
-        "ref": "taciturnaxoltol/flake",
-        "type": "git",
-        "url": "ssh://git@github.com/charmbracelet/crush"
-      }
-    },
     "ctfd-alerts": {
       "inputs": {
         "nixpkgs": [
@@ -251,6 +230,27 @@
         "owner": "hercules-ci",
         "repo": "flake-parts",
         "rev": "32ea77a06711b758da0ad9bd6a844c5740a87abd",
+        "type": "github"
+      },
+      "original": {
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "type": "github"
+      }
+    },
+    "flake-parts_3": {
+      "inputs": {
+        "nixpkgs-lib": [
+          "nur",
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1733312601,
+        "narHash": "sha256-4pDvzqnegAfRkPwO3wmwBhVi/Sye1mzps0zHWYnP88c=",
+        "owner": "hercules-ci",
+        "repo": "flake-parts",
+        "rev": "205b12d8b7cd4802fbcb8e8ef6a0f1408781a4f9",
         "type": "github"
       },
       "original": {
@@ -883,6 +883,27 @@
         "type": "github"
       }
     },
+    "nur": {
+      "inputs": {
+        "flake-parts": "flake-parts_3",
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1754684884,
+        "narHash": "sha256-GH+UMIOJj7u/bW55dOOpD8HpVpc9WfU61iweM2nM68A=",
+        "owner": "nix-community",
+        "repo": "NUR",
+        "rev": "a7f9761c9dd71359cd9a6529078302a83e6deaac",
+        "type": "github"
+      },
+      "original": {
+        "owner": "nix-community",
+        "repo": "NUR",
+        "type": "github"
+      }
+    },
     "nuschtosSearch": {
       "inputs": {
         "flake-utils": "flake-utils_7",
@@ -933,7 +954,6 @@
         "catppuccin": "catppuccin",
         "catppuccin-vsc": "catppuccin-vsc",
         "claude-desktop": "claude-desktop",
-        "crush": "crush",
         "ctfd-alerts": "ctfd-alerts",
         "disko": "disko",
         "flare": "flare",
@@ -948,6 +968,7 @@
         "nixpkgs": "nixpkgs_5",
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nixvim": "nixvim",
+        "nur": "nur",
         "spicetify-nix": "spicetify-nix",
         "terminal-wakatime": "terminal-wakatime",
         "zed": "zed"

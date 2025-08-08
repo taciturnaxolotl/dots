@@ -1,14 +1,9 @@
 {
   lib,
   config,
-  inputs,
   ...
 }:
 {
-  imports = [
-    inputs.crush.homeManagerModules.default
-  ];
-
   options.dots.apps.crush.enable = lib.mkEnableOption "Enable Crush config";
   config = lib.mkIf config.dots.apps.crush.enable {
     programs.crush = {
@@ -39,16 +34,6 @@
             ];
           };
         };
-        models = {
-          large = {
-            model = "claude-3.7-sonnet";
-            provider = "copilot";
-          };
-          small = {
-            model = "gemini-2.0-flash-001";
-            provider = "copilot";
-          };
-        };
         providers = {
           copilot = {
             name = "Copilot";
@@ -63,7 +48,7 @@
             models = [
               {
                 id = "gpt-4.1";
-                model = "Copilot: GPT 4.1";
+                name = "Copilot: GPT 4.1";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
@@ -76,7 +61,7 @@
               }
               {
                 id = "gpt-4o";
-                model = "Copilot: GPT 4o";
+                name = "Copilot: GPT 4o";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
@@ -89,7 +74,7 @@
               }
               {
                 id = "claude-sonnet-4";
-                model = "Copilot: Claude Sonnet 4";
+                name = "Copilot: Claude Sonnet 4";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
@@ -102,7 +87,7 @@
               }
               {
                 id = "gemini-2.5-pro";
-                model = "Gemini 2.5 Pro";
+                name = "Gemini 2.5 Pro";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
@@ -128,11 +113,11 @@
             models = [
               {
                 id = "claude-opus-4-20250514";
-                model = "Claude Opus 4";
-                cost_per_1m_in = 15000;
-                cost_per_1m_out = 75000;
-                cost_per_1m_in_cached = 1125;
-                cost_per_1m_out_cached = 75000;
+                name = "Claude Opus 4";
+                cost_per_1m_in = 15.0;
+                cost_per_1m_out = 75.0;
+                cost_per_1m_in_cached = 1.5;
+                cost_per_1m_out_cached = 75.0;
                 context_window = 200000;
                 default_max_tokens = 50000;
                 can_reason = true;
@@ -141,7 +126,7 @@
               }
               {
                 id = "claude-sonnet-4-20250514";
-                model = "Claude Sonnet 4";
+                name = "Claude Sonnet 4";
                 cost_per_1m_in = 3000;
                 cost_per_1m_out = 15000;
                 cost_per_1m_in_cached = 225;
@@ -154,11 +139,11 @@
               }
               {
                 id = "claude-3-7-sonnet-20250219";
-                model = "Claude 3.7 Sonnet";
-                cost_per_1m_in = 2500;
-                cost_per_1m_out = 12000;
-                cost_per_1m_in_cached = 187;
-                cost_per_1m_out_cached = 12000;
+                name = "Claude 3.7 Sonnet";
+                cost_per_1m_in = 2.5;
+                cost_per_1m_out = 12.0;
+                cost_per_1m_in_cached = 0.187;
+                cost_per_1m_out_cached = 12.0;
                 context_window = 200000;
                 default_max_tokens = 128000;
                 can_reason = true;
@@ -167,11 +152,11 @@
               }
               {
                 id = "claude-3-5-sonnet-20241022";
-                model = "Claude 3.5 Sonnet (Latest)";
-                cost_per_1m_in = 3000;
-                cost_per_1m_out = 15000;
-                cost_per_1m_in_cached = 225;
-                cost_per_1m_out_cached = 15000;
+                name = "Claude 3.5 Sonnet (Latest)";
+                cost_per_1m_in = 3.0;
+                cost_per_1m_out = 15.0;
+                cost_per_1m_in_cached = 0.225;
+                cost_per_1m_out_cached = 15.0;
                 context_window = 200000;
                 default_max_tokens = 8192;
                 can_reason = false;
@@ -180,11 +165,11 @@
               }
               {
                 id = "claude-3-5-haiku-20241022";
-                model = "Claude 3.5 Haiku";
-                cost_per_1m_in = 800;
-                cost_per_1m_out = 4000;
-                cost_per_1m_in_cached = 60;
-                cost_per_1m_out_cached = 4000;
+                name = "Claude 3.5 Haiku";
+                cost_per_1m_in = 0.8;
+                cost_per_1m_out = 4.0;
+                cost_per_1m_in_cached = 0.06;
+                cost_per_1m_out_cached = 4.0;
                 context_window = 200000;
                 default_max_tokens = 8192;
                 can_reason = false;
