@@ -13,29 +13,28 @@
 
 ```bash
 ~/dots # symlinked to /etc/nixos
-├── home-manager # all the configs that use home manager are stored centrally here
-│   ├── dots # any config files that need to be symlinked go here, e.g. my hyprland config
-│   │   └── wallpapers
-│   ├── machines # the different machines by hostname
-│   │   ├── ember
-│   │   ├── moonlark
-│   │   ├── nest
-│   │   └── tacyon
-│   └── modules
-│       ├── aesthetics # theming and wallpapers
-│       ├── apps # any app specific config
-│       ├── system # nxipkgs stuff mainly
-│       └── wm # window managers; just hyprland for now
-│           └── hyprland
-├── nixos
-│   ├── machines # again machines by hostname
-│   │   └── moonlark
-│   └── modules
+├── dots # any config files that need to be symlinked go here, e.g. my hyprland config
+│   └── wallpapers
+├── machines
+│   ├── ember # my dell r210 server (in my basement)
+│   ├── moonlark # my framework 13
+│   │   └── home
+│   ├── nest # shared tilde server through hc
+│   └── tacyon # rpi 5
+├── modules
+│   ├── home # home-manager modules
+│   │   ├── aesthetics # theming and wallpapers
+│   │   ├── apps # any app specific config
+│   │   │   └── crush # vendored for now
+│   │   ├── system # home-manager system configs
+│   │   └── wm # window managers; just hyprland for now
+│   │       └── hyprland
+│   └── nixos # nixos modules
 │       ├── apps # also app specific configs
 │       └── system # pam and my fancy wifi module for now
-└── secrets
+└── secrets # keep your grubby hands off my passwords
 
-16 directories
+19 directories
 ```
 
 ## Installation

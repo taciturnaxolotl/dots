@@ -6,12 +6,6 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
-    # Lix
-    lix-module = {
-      url = "https://git.lix.systems/lix-project/nixos-module/archive/2.93.3-1.tar.gz";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     # NixOS hardware configuration
     hardware.url = "github:NixOS/nixos-hardware/master";
 
@@ -40,10 +34,6 @@
     };
 
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
-
-    ghostty = {
-      url = "github:ghostty-org/ghostty";
-    };
 
     frc-nix = {
       url = "github:frc4451/frc-nix";
@@ -95,7 +85,6 @@
       self,
       nixpkgs,
       nixpkgs-unstable,
-      lix-module,
       agenix,
       home-manager,
       nur,
@@ -107,6 +96,7 @@
         nixpkgs.overlays = [
           (final: prev: {
             unstable = import nixpkgs-unstable {
+              system = final.system;
               config.allowUnfree = true;
             };
 
@@ -125,27 +115,24 @@
     in
     {
       # NixOS configuration entrypoint
-      # Available through 'nixos-rebuild --flake .#your-hostname'
+      # Available through 'nixos-rebuild --flake .#hostname'
       nixosConfigurations = {
         moonlark = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs outputs; };
-
-          # > Our main nixos configuration file <
           modules = [
-            lix-module.nixosModules.default
             inputs.disko.nixosModules.disko
             { disko.devices.disk.disk1.device = "/dev/vda"; }
             agenix.nixosModules.default
             unstable-overlays
             { nixpkgs.hostPlatform = "x86_64-linux"; }
-            ./nixos/machines/moonlark/configuration.nix
+            ./machines/moonlark
             nur.modules.nixos.default
           ];
         };
       };
 
       # Standalone home-manager configurations
-      # Available through 'home-manager --flake .#username@hostname'
+      # Available through 'home-manager --flake .#hostname'
       homeConfigurations = {
         "tacyon" = home-manager.lib.homeManagerConfiguration {
           extraSpecialArgs = {
@@ -153,7 +140,7 @@
             nixpkgs-unstable = nixpkgs-unstable;
           };
           modules = [
-            ./home-manager/machines/tacyon
+            ./machines/tacyon
             unstable-overlays
             { nixpgs.hostPlatform = "aarch64-linux"; }
           ];
@@ -165,7 +152,7 @@
             nixpkgs-unstable = nixpkgs-unstable;
           };
           modules = [
-            ./home-manager/machines/nest
+            ./machines/nest
             unstable-overlays
             { nixpkgs.hostPlatform = "x86_64-linux"; }
           ];
@@ -177,7 +164,7 @@
             nixpkgs-unstable = nixpkgs-unstable;
           };
           modules = [
-            ./home-manager/machines/ember
+            ./machines/ember
             unstable-overlays
             { nixpkgs.hostPlatform = "x86_64-linux"; }
           ];
