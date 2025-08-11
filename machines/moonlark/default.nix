@@ -167,6 +167,7 @@
     pkgs.unstable.apktool
     pkgs.nodePackages_latest.prisma
     pkgs.unstable.zola
+    pkgs.mill
     # media
     pkgs.ffmpeg
     pkgs.video-trimmer
