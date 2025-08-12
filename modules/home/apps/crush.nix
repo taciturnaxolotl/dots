@@ -9,22 +9,10 @@
     programs.crush = {
       enable = true;
       settings = {
-        lsp = {
-          go = {
-            command = "gopls";
-          };
-          typescript = {
-            command = "typescript-language-server";
-            args = [ "--stdio" ];
-          };
-          nix = {
-            command = "nil";
-          };
-        };
         mcp = {
           context7 = {
-            url = "https://mcp.context7.com/mcp";
-            type = "http";
+            type = "sse";
+            url = "https://mcp.context7.com/sse";
           };
           sequential-thinking = {
             command = "bunx";
