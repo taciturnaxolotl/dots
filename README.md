@@ -32,7 +32,7 @@
 │   └── nixos # nixos modules
 │       ├── apps # also app specific configs
 │       └── system # pam and my fancy wifi module for now
-└── secrets # keep your grubby hands off my passwords
+└── secrets # keep your grubby hands (or paws) off my data
 
 19 directories
 ```
