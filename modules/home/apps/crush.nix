@@ -36,29 +36,107 @@
             models = [
               {
                 id = "gpt-4.1";
-                name = "Copilot: GPT 4.1";
+                name = "Copilot: GPT-4.1";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
                 cost_per_1m_out_cached = 0;
                 context_window = 128000;
-                default_max_tokens = 30000;
+                default_max_tokens = 16384;
+                can_reason = false;
+                has_reasoning_efforts = false;
+                supports_attachments = false;
+              }
+              {
+                id = "gpt-5-mini";
+                name = "Copilot: GPT-5 mini (Preview)";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 128000;
+                default_max_tokens = 64000;
+                can_reason = false;
+                has_reasoning_efforts = false;
+                supports_attachments = false;
+              }
+              {
+                id = "gpt-5";
+                name = "Copilot: GPT-5 (Preview)";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 128000;
+                default_max_tokens = 64000;
                 can_reason = false;
                 has_reasoning_efforts = false;
                 supports_attachments = false;
               }
               {
                 id = "gpt-4o";
-                name = "Copilot: GPT 4o";
+                name = "Copilot: GPT-4o";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
                 cost_per_1m_out_cached = 0;
                 context_window = 128000;
-                default_max_tokens = 32000;
+                default_max_tokens = 4096;
                 can_reason = false;
                 has_reasoning_efforts = false;
                 supports_attachments = false;
+              }
+              {
+                id = "o3-mini";
+                name = "Copilot: o3-mini";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 200000;
+                default_max_tokens = 100000;
+                can_reason = false;
+                has_reasoning_efforts = false;
+                supports_attachments = false;
+              }
+              {
+                id = "claude-3.5-sonnet";
+                name = "Copilot: Claude Sonnet 3.5";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 90000;
+                default_max_tokens = 8192;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "claude-3.7-sonnet";
+                name = "Copilot: Claude Sonnet 3.7";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 200000;
+                default_max_tokens = 16384;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "claude-3.7-sonnet-thought";
+                name = "Copilot: Claude Sonnet 3.7 Thinking";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 200000;
+                default_max_tokens = 16384;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
               }
               {
                 id = "claude-sonnet-4";
@@ -67,24 +145,50 @@
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
                 cost_per_1m_out_cached = 0;
-                context_window = 200000;
-                default_max_tokens = 50000;
+                context_window = 128000;
+                default_max_tokens = 16000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "gemini-2.0-flash-001";
+                name = "Copilot: Gemini 2.0 Flash";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 1000000;
+                default_max_tokens = 8192;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;
               }
               {
                 id = "gemini-2.5-pro";
-                name = "Gemini 2.5 Pro";
+                name = "Copilot: Gemini 2.5 Pro (Preview)";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
                 cost_per_1m_out_cached = 0;
-                context_window = 100000;
-                default_max_tokens = 30000;
+                context_window = 128000;
+                default_max_tokens = 64000;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;
+              }
+              {
+                id = "o4-mini";
+                name = "Copilot: o4-mini (Preview)";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 128000;
+                default_max_tokens = 16384;
+                can_reason = false;
+                has_reasoning_efforts = false;
+                supports_attachments = false;
               }
             ];
           };
