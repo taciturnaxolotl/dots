@@ -75,20 +75,20 @@ let
     ]
     ++ lib.optionals (cfg.sessionWrapper != null && cfg.sessionWrapper != [ ]) [
       "--session-wrapper"
-      (lib.concatStringsSep " " cfg.sessionWrapper)
+      (lib.escapeShellArg (lib.concatStringsSep " " cfg.sessionWrapper))
     ]
     ++ lib.optionals (cfg.xsessionWrapper != null && cfg.xsessionWrapper != [ ]) [
       "--xsession-wrapper"
-      (lib.concatStringsSep " " cfg.xsessionWrapper)
+      (lib.escapeShellArg (lib.concatStringsSep " " cfg.xsessionWrapper))
     ]
     ++ lib.optionals cfg.noXsessionWrapper [ "--no-xsession-wrapper" ]
     ++ lib.optionals (cfg.powerShutdown != null && cfg.powerShutdown != [ ]) [
       "--power-shutdown"
-      (lib.concatStringsSep " " cfg.powerShutdown)
+      (lib.escapeShellArg (lib.concatStringsSep " " cfg.powerShutdown))
     ]
     ++ lib.optionals (cfg.powerReboot != null && cfg.powerReboot != [ ]) [
       "--power-reboot"
-      (lib.concatStringsSep " " cfg.powerReboot)
+      (lib.escapeShellArg (lib.concatStringsSep " " cfg.powerReboot))
     ]
     ++ lib.optionals cfg.powerNoSetsid [ "--power-no-setsid" ]
     ++ lib.optionals (cfg.kbCommand != null) [
