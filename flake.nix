@@ -78,6 +78,11 @@
       url = "github:nix-community/NUR";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    cedarlogic = {
+      url = "github:taciturnaxolotl/CedarLogic";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

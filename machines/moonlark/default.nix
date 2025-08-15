@@ -215,6 +215,7 @@
     pkgs.unstable.kicad-testing
     pkgs.zenity
     pkgs.atproto-goat
+    inputs.cedarlogic.packages.${pkgs.system}.cedarlogic
   ];
 
   programs.nh = {
