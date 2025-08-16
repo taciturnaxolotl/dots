@@ -216,6 +216,7 @@
     pkgs.zenity
     pkgs.atproto-goat
     inputs.cedarlogic.packages.${pkgs.system}.cedarlogic
+    pkgs.unstable.betaflight-configurator
   ];
 
   programs.nh = {
