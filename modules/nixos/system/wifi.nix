@@ -3,12 +3,18 @@
 # This module provides a simpler way to declare wifi profiles with network manager.
 # - you can pass the PSK via environment variable, direct value, or file.
 # - profiles are defined in `atelier.network.wifi.profiles`.
+# - eduroam networks are supported with the `eduroam = true` flag.
 #
 # Example usage:
 #   atelier.network.wifi = {
 #     enable = true;
 #     profiles = {
 #       "MySSID" = { psk = "supersecret"; };
+#       "eduroam" = {
+#         eduroam = true;
+#         identity = "user@university.edu";
+#         psk = "password";
+#       };
 #     };
 #   };
 
@@ -26,6 +32,8 @@ let
       pskVar ? null,
       psk ? null,
       pskFile ? null,
+      eduroam ? false,
+      identity ? null,
     }:
     let
       base = {
@@ -44,7 +52,37 @@ let
         };
       };
       sec =
-        if pskVar != null then
+        if eduroam then
+          if pskVar != null then
+            {
+              wifi-security = {
+                key-mgmt = "wpa-eap";
+                password = "$" + pskVar;
+                identity = identity;
+                phase2-auth = "mschapv2";
+              };
+            }
+          else if psk != null then
+            {
+              wifi-security = {
+                key-mgmt = "wpa-eap";
+                password = psk;
+                identity = identity;
+                phase2-auth = "mschapv2";
+              };
+            }
+          else if pskFile != null then
+            {
+              wifi-security = {
+                key-mgmt = "wpa-eap";
+                password = "$(" + pkgs.coreutils + "/bin/cat " + pskFile + ")";
+                identity = identity;
+                phase2-auth = "mschapv2";
+              };
+            }
+          else
+            { }
+        else if pskVar != null then
           {
             wifi-security = {
               key-mgmt = "wpa-psk";
@@ -106,12 +144,22 @@ in
                 type = lib.types.nullOr lib.types.path;
                 default = null;
               };
+              eduroam = lib.mkOption {
+                type = lib.types.bool;
+                default = false;
+                description = "Enable eduroam configuration";
+              };
+              identity = lib.mkOption {
+                type = lib.types.nullOr lib.types.str;
+                default = null;
+                description = "Identity for eduroam authentication";
+              };
             };
           }
         )
       );
       default = { };
-      description = "Map of SSID -> { pskVar | psk | pskFile }.";
+      description = "Map of SSID -> { pskVar | psk | pskFile | eduroam config }.";
     };
   };
 

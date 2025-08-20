@@ -312,6 +312,11 @@
         "QargoCoffee-Guest".psk = "Lavazza@7";
         "Fulton".psk = "9064405930";
         "TP-LINK_ECF0".psk = "ad1066AD!";
+        "eduroam" = {
+          eduroam = true;
+          identity = "kieranklukas@cedarville.edu";
+          pskVar = "psk_cedarville";
+        };
       };
     };
   };
