@@ -1,4 +1,9 @@
-{ lib, config, ... }:
+{
+  lib,
+  config,
+  pkgs,
+  ...
+}:
 {
   options.atelier.shell.git.enable = lib.mkEnableOption {
     description = "Enable global Git configuration";
@@ -14,6 +19,19 @@
         ch = "checkout";
         pushfwl = "push --force-with-lease --force-if-includes";
       };
+      includes = [
+        {
+          path = pkgs.writeText "git-user-config" ''
+            [user]
+              name = Kieran Klukas
+              email = kieranklukas@cedarville.edu
+              signingKey = ~/.ssh/id_ed25519_cedarville.pub
+            [core]
+              sshCommand "ssh -i ~/.ssh/id_ed25519_cedarville"
+          '';
+          condition = "gitdir:~/code/school";
+        }
+      ];
       extraConfig = {
         branch.sort = "-committerdate";
         pager.branch = false;
