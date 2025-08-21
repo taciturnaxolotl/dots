@@ -168,6 +168,9 @@
     pkgs.nodePackages_latest.prisma
     pkgs.unstable.zola
     pkgs.mill
+    pkgs.clang
+    pkgs.clang-tools
+    pkgs.ninja
     # media
     pkgs.ffmpeg
     pkgs.video-trimmer
