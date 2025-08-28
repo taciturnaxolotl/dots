@@ -195,7 +195,7 @@
           claude-pro = {
             name = "Claude Pro";
             type = "anthropic";
-            base_url = "https://api.anthropic.com/v1";
+            base_url = "https://api.anthropic.com";
             api_key = "Bearer $(bunx anthropic-api-key)";
             system_prompt_prefix = "You are Claude Code, Anthropic's official CLI for Claude.";
             extra_headers = {
@@ -237,7 +237,7 @@
                 cost_per_1m_in_cached = 0.187;
                 cost_per_1m_out_cached = 12.0;
                 context_window = 200000;
-                default_max_tokens = 128000;
+                default_max_tokens = 64000;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;
