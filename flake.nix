@@ -131,7 +131,6 @@
             { disko.devices.disk.disk1.device = "/dev/vda"; }
             agenix.nixosModules.default
             unstable-overlays
-            { system = "x86_64-linux"; }
             ./machines/moonlark
             nur.modules.nixos.default
           ];
@@ -150,7 +149,6 @@
           modules = [
             ./machines/tacyon
             unstable-overlays
-            { system = "aarch64-linux"; }
           ];
         };
 
@@ -163,7 +161,6 @@
           modules = [
             ./machines/nest
             unstable-overlays
-            { system = "x86_64-linux"; }
           ];
         };
 
@@ -176,7 +173,6 @@
           modules = [
             ./machines/ember
             unstable-overlays
-            { system = "x86_64-linux"; }
           ];
         };
       };
