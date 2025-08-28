@@ -34,7 +34,7 @@
     };
 
     catppuccin-vsc = {
-      url = "https://flakehub.com/f/catppuccin/vscode/*.tar.gz";
+      url = "github:catppuccin/vscode";
     };
 
     nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
@@ -56,10 +56,7 @@
 
     nixvim.url = "github:taciturnaxolotl/nixvim";
 
-    zed = {
-      url = "github:oscilococcinum/zen-browser-nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+
 
     terminal-wakatime = {
       url = "github:taciturnaxolotl/terminal-wakatime";

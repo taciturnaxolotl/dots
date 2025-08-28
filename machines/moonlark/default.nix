@@ -113,7 +113,6 @@
     pkgs.unstable.mitmproxy
     pkgs.caido
     # editors
-    inputs.zed.packages.x86_64-linux.default
     pkgs.unstable.zed-editor
     pkgs.arduino-ide
     # browsers

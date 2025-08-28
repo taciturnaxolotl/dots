@@ -1,4 +1,4 @@
-{ lib, config, pkgs, ... }:
+{ lib, config, ... }:
 {
   options.atelier.terminal.ghostty = {
     enable = lib.mkEnableOption "Enable Ghostty terminal config";
@@ -8,7 +8,7 @@
       description = "Enable window decorations for Ghostty";
     };
   };
-  
+
   config = lib.mkIf config.atelier.terminal.ghostty.enable {
     home.file.".config/ghostty/config".text = ''
       foreground = "#a7b1d3"
