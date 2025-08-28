@@ -142,6 +142,7 @@
       # Available through 'home-manager --flake .#hostname'
       homeConfigurations = {
         "tacyon" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.aarch64-linux;
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
@@ -154,6 +155,7 @@
         };
 
         "nest" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
@@ -166,6 +168,7 @@
         };
 
         "ember" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
