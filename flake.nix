@@ -13,6 +13,10 @@
     home-manager.url = "github:nix-community/home-manager/release-25.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
+    # Nix-Darwin
+    nix-darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-25.05";
+    nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
+
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
@@ -93,6 +97,7 @@
       agenix,
       home-manager,
       nur,
+      nix-darwin,
       ...
     }@inputs:
     let
@@ -177,5 +182,20 @@
       };
 
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
+
+      # Darwin configurations
+      # Available through 'darwin-rebuild switch --flake .#hostname'
+      darwinConfigurations = {
+        atalanta = nix-darwin.lib.darwinSystem {
+          system = "aarch64-darwin";
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            home-manager.darwinModules.home-manager
+            agenix.darwinModules.default
+            unstable-overlays
+            ./machines/atalanta
+          ];
+        };
+      };
     };
 }

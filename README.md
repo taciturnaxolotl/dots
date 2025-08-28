@@ -16,6 +16,7 @@
 ├── dots # any config files that need to be symlinked go here, e.g. my hyprland config
 │   └── wallpapers
 ├── machines
+│   ├── atalanta # my macOS M4 machine
 │   ├── ember # my dell r210 server (in my basement)
 │   ├── moonlark # my framework 13
 │   │   └── home
@@ -42,7 +43,27 @@
 > [!WARNING]
 > Also to note that this configuration will **not** work if you do not change any of the [secrets](./secrets) since they are encrypted.
 
-You could either install a NixOS machine (rn there is just `moonlark`) or you can use the home-manager instructions
+You could either install a NixOS machine (rn there is just `moonlark`), use the home-manager instructions, or use nix-darwin for macOS.
+
+### macOS with nix-darwin
+
+For macOS machines, you can use nix-darwin:
+
+1. Install Nix using the determinate systems installer:
+```bash
+curl -fsSL https://install.determinate.systems/nix | sh -s -- install
+```
+
+2. Clone the repository:
+```bash
+git clone git@github.com:taciturnaxolotl/dots.git
+cd dots
+```
+
+3. Apply the configuration:
+```bash
+darwin-rebuild switch --flake .#atalanta
+```
 
 ### Home Manager
 
@@ -202,7 +223,7 @@ atuin sync
 <details>
     <summary>I've stuck the rest of the screenshots in a spoiler to preserve space</summary>
 <br/>
-  
+
 **Last updated: 2024-12-27**
 
 ![the github page of this repo](.github/images/github.webp)
