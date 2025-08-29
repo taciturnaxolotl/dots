@@ -2,7 +2,8 @@
   inputs,
   outputs,
   ...
-}: {
+}:
+{
   imports = [
     # Import home-manager's Darwin module
     inputs.home-manager.darwinModules.home-manager

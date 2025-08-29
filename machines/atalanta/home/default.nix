@@ -14,7 +14,6 @@
     username = "kierank";
     homeDirectory = "/Users/kierank";
     packages = with pkgs; [
-      neofetch
       inputs.nixvim.packages.${system}.default
       vesktop
     ];

@@ -468,6 +468,7 @@
     };
 
     home.packages = with pkgs; [
+      pkgs.unstable.wakatime-cli
       inputs.terminal-wakatime.packages.${pkgs.system}.default
       unzip
       dog
@@ -478,8 +479,10 @@
       fd
       eza
       bat
+      ripgrep
       ripgrep-all
       neofetch
+      glow
     ];
 
     atelier.shell.git.enable = lib.mkDefault true;

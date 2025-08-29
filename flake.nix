@@ -56,8 +56,6 @@
 
     nixvim.url = "github:taciturnaxolotl/nixvim";
 
-
-
     terminal-wakatime = {
       url = "github:taciturnaxolotl/terminal-wakatime";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -177,8 +175,6 @@
         };
       };
 
-      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
-
       # Darwin configurations
       # Available through 'darwin-rebuild switch --flake .#hostname'
       darwinConfigurations = {
@@ -193,5 +189,8 @@
           ];
         };
       };
+
+      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
+      formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
     };
 }

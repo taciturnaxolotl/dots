@@ -68,16 +68,7 @@
     pkgs.alacritty
     pkgs.unstable.ghostty
     # cli_utils
-    pkgs.bat
-    pkgs.fd
-    pkgs.eza
-    pkgs.xh
-    pkgs.dust
-    pkgs.ripgrep
-    pkgs.ripgrep-all
     pkgs.glow
-    pkgs.gitui
-    pkgs.lazygit
     pkgs.clipse
     pkgs.direnv
     pkgs.nix-output-monitor
@@ -85,11 +76,9 @@
     pkgs.nix-prefetch
     pkgs.arduino-cli
     pkgs.zsh
-    pkgs.starship
     pkgs.gum
-    pkgs.unstable.wakatime-cli
-    inputs.terminal-wakatime.packages.x86_64-linux.default
     # networking
+    pkgs.xh
     pkgs.curl
     pkgs.wget
     pkgs.dogdns

@@ -2,7 +2,8 @@
   inputs,
   pkgs,
   ...
-}: {
+}:
+{
   imports = [
     ./home-manager.nix
   ];
@@ -16,7 +17,13 @@
   };
 
   # Enable nix-darwin
-  nix.settings.experimental-features = [ "nix-command" "flakes" ];
+  nix.settings.experimental-features = [
+    "nix-command"
+    "flakes"
+  ];
+
+  # switch to lix
+  nix.package = pkgs.lixPackageSets.stable.lix;
 
   # Set hostname
   networking.hostName = "atalanta";
@@ -38,7 +45,6 @@
     pkgs.nil
     pkgs.nixfmt-rfc-style
     inputs.agenix.packages.aarch64-darwin.default
-    pkgs.lix
     # dev_langs
     pkgs.nodejs_22
     pkgs.unstable.bun
@@ -61,6 +67,9 @@
     pkgs.clang
     pkgs.clang-tools
     pkgs.ninja
+    # tools
+    pkgs.calc
+    pkgs.nh
   ];
 
   # import the secret
