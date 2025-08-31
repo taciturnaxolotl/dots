@@ -70,6 +70,7 @@
     # tools
     pkgs.calc
     pkgs.nh
+    pkgs.rustscan
   ];
 
   # import the secret

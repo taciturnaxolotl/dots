@@ -372,6 +372,25 @@
           echo "done"
         }
 
+        ghostty_setup() {
+          local target="$1"
+
+          if [[ -z "$target" ]]; then
+            echo "Usage: ghostty_setup <user@host>"
+            return 1
+          fi
+
+          # Copy SSH key
+          echo "Copying SSH key to $target..."
+          ssh-copy-id "$target" || { echo "ssh-copy-id failed"; return 2; }
+
+          # Pipe infocmp output to tic on remote host
+          echo "Sending xterm-ghostty terminfo to $target..."
+          infocmp -x xterm-ghostty | ssh "$target" 'tic -x -' || { echo "Terminfo transfer failed"; return 3; }
+
+          echo "Done."
+        }
+
         zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
         zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
         zstyle ':completion:*' menu no
