@@ -73,6 +73,8 @@
     pkgs.rustscan
   ];
 
+  programs.direnv.enable = true;
+
   # import the secret
   age.identityPaths = [
     "/Users/kierank/.ssh/id_rsa"
