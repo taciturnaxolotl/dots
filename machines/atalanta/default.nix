@@ -91,6 +91,12 @@
     };
   };
 
+  environment.variables = {
+    EDITOR = "nvim";
+    SYSTEMD_EDITOR = "nvim";
+    VISUAL = "nvim";
+  };
+
   # Used for backwards compatibility, please read the changelog before changing
   system.stateVersion = 4;
 }
