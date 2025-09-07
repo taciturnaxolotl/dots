@@ -27,7 +27,7 @@
               email = kieranklukas@cedarville.edu
               signingKey = ~/.ssh/id_ed25519_cedarville.pub
             [core]
-              sshCommand "ssh -i ~/.ssh/id_ed25519_cedarville"
+              sshCommand = ssh -i ~/.ssh/id_ed25519_cedarville
           '';
           condition = "gitdir:~/code/school";
         }
