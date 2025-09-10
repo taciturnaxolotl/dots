@@ -89,6 +89,10 @@
       file = ../../secrets/bluesky.age;
       owner = "kierank";
     };
+    crush = {
+      file = ../../secrets/crush.age;
+      owner = "kierank";
+    };
   };
 
   environment.variables = {

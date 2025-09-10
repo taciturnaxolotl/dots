@@ -17,4 +17,7 @@ in
   "iodine.age".publicKeys = [
     kierank
   ];
+  "crush.age".publicKeys = [
+    kierank
+  ];
 }

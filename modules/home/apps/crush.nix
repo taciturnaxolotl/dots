@@ -192,6 +192,20 @@
               }
             ];
           };
+          hyper = {
+            name = "Charm Hyper";
+            base_url = "https://hyper.charm.sh/api/v1/openai/";
+            api_key = "$(cat /run/agenix/crush)";
+            type = "openai";
+            models = [
+              {
+                name = "Qwen 3 Coder";
+                id = "qwen3_coder";
+                context_window = 118000;
+                default_max_tokens = 20000;
+              }
+            ];
+          };
           claude-pro = {
             name = "Claude Pro";
             type = "anthropic";
