@@ -71,6 +71,7 @@
     pkgs.calc
     pkgs.nh
     pkgs.rustscan
+    pkgs.vhs
   ];
 
   programs.direnv.enable = true;
