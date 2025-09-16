@@ -82,6 +82,11 @@
       url = "github:taciturnaxolotl/CedarLogic";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    soapdump = {
+      url = "github:taciturnaxolotl/soapdump";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

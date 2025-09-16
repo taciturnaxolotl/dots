@@ -869,8 +869,29 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nixvim": "nixvim",
         "nur": "nur",
+        "soapdump": "soapdump",
         "spicetify-nix": "spicetify-nix",
         "terminal-wakatime": "terminal-wakatime"
+      }
+    },
+    "soapdump": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1757803066,
+        "narHash": "sha256-Bu+mICGedn+V0mo8ysdV9y1Qc+D5ENphfxUTjNz4Q4c=",
+        "owner": "taciturnaxolotl",
+        "repo": "soapdump",
+        "rev": "b2ff538becb73f41cf7dad636e9d79d7fa82f3a4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "taciturnaxolotl",
+        "repo": "soapdump",
+        "type": "github"
       }
     },
     "spicetify-nix": {

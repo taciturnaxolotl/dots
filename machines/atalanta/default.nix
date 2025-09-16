@@ -72,6 +72,7 @@
     pkgs.nh
     pkgs.rustscan
     pkgs.vhs
+    inputs.soapdump.packages.${pkgs.system}.default
   ];
 
   programs.direnv.enable = true;
