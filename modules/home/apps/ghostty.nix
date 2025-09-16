@@ -14,7 +14,7 @@
       foreground = "#a7b1d3"
       mouse-hide-while-typing = true
       resize-overlay = "never"
-      theme = "catppuccin-mocha"
+      theme = "Catppuccin Macchiato"
       window-decoration = ${if config.atelier.terminal.ghostty.windowDecoration then "true" else "false"}
       window-padding-x = 12
       window-padding-y = 12
