@@ -29,7 +29,7 @@
             [core]
               sshCommand = ssh -i ~/.ssh/id_ed25519_cedarville
           '';
-          condition = "gitdir:~/code/school";
+          condition = "gitdir:~/code/school/";
         }
       ];
       extraConfig = {
