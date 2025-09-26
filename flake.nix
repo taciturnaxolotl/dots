@@ -177,6 +177,19 @@
             ./machines/ember
             unstable-overlays
           ];
+
+        };
+        "john" = home-manager.lib.homeManagerConfiguration {
+          pkgs = nixpkgs.legacyPackages.x86_64-linux;
+          extraSpecialArgs = {
+            inherit inputs outputs;
+            nixpkgs-unstable = nixpkgs-unstable;
+            system = "x86_64-linux";
+          };
+          modules = [
+            ./machines/john
+            unstable-overlays
+          ];
         };
       };
 
