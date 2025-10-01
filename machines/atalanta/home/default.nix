@@ -36,6 +36,10 @@
     };
   };
 
+  programs.zsh.initExtra = ''
+    eval "$(/usr/libexec/path_helper)"
+  '';
+
   # Let Home Manager install and manage itself
   programs.home-manager.enable = true;
 
