@@ -23,7 +23,6 @@
       irssi.enable = true;
       qutebrowser.enable = true;
       spotify.enable = true;
-      vscode.enable = true;
       crush.enable = true;
     };
     theming.enable = true;
