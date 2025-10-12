@@ -277,7 +277,7 @@
                 cost_per_1m_in_cached = 1.5;
                 cost_per_1m_out_cached = 75.0;
                 context_window = 200000;
-                default_max_tokens = 50000;
+                default_max_tokens = 32000;
                 can_reason = true;
                 has_reasoning_efforts = true;
                 supports_attachments = true;
@@ -290,7 +290,7 @@
                 cost_per_1m_in_cached = 1.5;
                 cost_per_1m_out_cached = 75.0;
                 context_window = 200000;
-                default_max_tokens = 50000;
+                default_max_tokens = 32000;
                 can_reason = true;
                 has_reasoning_efforts = true;
                 supports_attachments = true;
