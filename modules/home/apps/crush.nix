@@ -264,7 +264,7 @@
                 cost_per_1m_in_cached = 0.225;
                 cost_per_1m_out_cached = 15.0;
                 context_window = 200000;
-                default_max_tokens = 50000;
+                default_max_tokens = 64000;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;
@@ -303,7 +303,7 @@
                 cost_per_1m_in_cached = 0.225;
                 cost_per_1m_out_cached = 15.0;
                 context_window = 200000;
-                default_max_tokens = 50000;
+                default_max_tokens = 64000;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;
@@ -316,7 +316,7 @@
                 cost_per_1m_in_cached = 0.187;
                 cost_per_1m_out_cached = 12.0;
                 context_window = 200000;
-                default_max_tokens = 50000;
+                default_max_tokens = 64000;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;
@@ -381,7 +381,7 @@
                 cost_per_1m_in_cached = 1.5;
                 cost_per_1m_out_cached = 75.0;
                 context_window = 200000;
-                default_max_tokens = 4096;
+                default_max_tokens = 8192;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;

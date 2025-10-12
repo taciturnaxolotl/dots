@@ -40,7 +40,7 @@ echo "$ANTHROPIC_MODELS" | jq -r '.data[] | "  ✓ \(.id) - \(.display_name)"'
 
 # Generate Copilot models Nix config
 generate_copilot_models() {
-  echo "$COPILOT_MODELS" | jq -r '.data[] | select(.model_picker_enabled == true) | 
+  echo "$COPILOT_MODELS" | jq -r '.data[] | select(.model_picker_enabled == true) |
     (if .capabilities.supports.tool_calls then true else false end) as $can_reason |
     (if .capabilities.supports.vision then true else false end) as $supports_attachments |
     "              {\n" +
@@ -79,21 +79,29 @@ generate_anthropic_models() {
     else
       {in: 3.0, out: 15.0, in_cached: 0.225, out_cached: 15.0}
     end) as $pricing |
-    
+
     # Determine context window and max tokens
-    (if (.id | contains("opus-4")) or (.id | contains("sonnet-4")) or (.id | contains("3-7-sonnet")) then
-      {context: 200000, max_tokens: (if (.id | contains("sonnet-4-5")) then 50000 else 50000 end)}
-    elif (.id | contains("3-5")) then
-      {context: 200000, max_tokens: 8192}
-    elif (.id | contains("3-haiku")) or (.id | contains("3-opus")) then
-      {context: 200000, max_tokens: 4096}
+    (if (.id | test("claude-sonnet-4-5"))
+      then {context: 200000, max_tokens: 64000}
+    elif (.id | test("claude-sonnet-4-"))
+      then {context: 200000, max_tokens: 64000}
+    elif (.id | test("claude-3-7-sonnet"))
+      then {context: 200000, max_tokens: 64000}
+    elif (.id | test("claude-opus-4-1"))
+      then {context: 200000, max_tokens: 32000}
+    elif (.id | test("claude-opus-4-"))
+      then {context: 200000, max_tokens: 32000}
+    elif (.id | test("claude-3-5-haiku"))
+      then {context: 200000, max_tokens: 8192}
+    elif (.id | test("claude-3-haiku"))
+      then {context: 200000, max_tokens: 4096}
     else
       {context: 200000, max_tokens: 8192}
     end) as $limits |
-    
+
     # Determine has_reasoning_efforts
     (if (.id | contains("opus-4")) then true else false end) as $has_reasoning |
-    
+
     "              {\n" +
     "                id = \"\(.id)\";\n" +
     "                name = \"\(.display_name)\";\n" +
