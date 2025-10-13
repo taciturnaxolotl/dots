@@ -50,17 +50,20 @@ You could either install a NixOS machine (rn there is just `moonlark`), use the 
 For macOS machines, you can use nix-darwin:
 
 1. Install Nix using the determinate systems installer:
+
 ```bash
 curl -fsSL https://install.determinate.systems/nix | sh -s -- install
 ```
 
 2. Clone the repository:
+
 ```bash
 git clone git@github.com:taciturnaxolotl/dots.git
 cd dots
 ```
 
 3. Apply the configuration:
+
 ```bash
 darwin-rebuild switch --flake .#atalanta
 ```
@@ -216,6 +219,15 @@ Finally enable [atuin](https://atuin.sh/)
 ```bash
 atuin login
 atuin sync
+```
+
+## some odd things
+
+for helix if you want the grammar to work you must run the following as per [this helix discussion](https://github.com/helix-editor/helix/discussions/10035#discussioncomment-13852637)
+
+```bash
+hx -g fetch
+hx -g build
 ```
 
 ## Screenshots
