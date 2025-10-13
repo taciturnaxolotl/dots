@@ -37,7 +37,7 @@
     };
   };
 
-  programs.zsh.initExtra = ''
+  programs.zsh.initContent = ''
     eval "$(/usr/libexec/path_helper)"
   '';
 
