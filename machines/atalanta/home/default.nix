@@ -30,7 +30,7 @@
       };
     };
     apps = {
-      irssi.enable = true;
+      halloy.enable = true;
       spotify.enable = true;
       crush.enable = true;
       helix.enable = true;
