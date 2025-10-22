@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  inputs,
   ...
 }:
 {
@@ -31,6 +32,7 @@
         vscode-langservers-extracted
         kotlin-language-server
         harper
+        inputs.wakatime-ls.packages.${pkgs.system}.default
       ];
       settings = {
         theme = "catppuccin_macchiato";
@@ -42,13 +44,13 @@
           completion-replace = true;
           end-of-line-diagnostics = "hint";
           color-modes = true;
-          # rainbow-brackets = true; enable next release
           inline-diagnostics.cursor-line = "warning";
           file-picker.hidden = false;
           indent-guides = {
             render = true;
             character = "╎";
             skip-levels = 0;
+            rainbow-option = "normal";
           };
           soft-wrap.enable = false;
           auto-save = {
@@ -97,6 +99,9 @@
             command = "${pkgs.biome}/bin/biome";
             args = [ "lsp-proxy" ];
           };
+          wakatime = {
+            command = "wakatime-ls";
+          };
         };
         language = [
           {
@@ -104,6 +109,7 @@
             language-servers = [
               "clangd"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -111,6 +117,7 @@
             language-servers = [
               "neocmakelsp"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -118,6 +125,7 @@
             language-servers = [
               "clangd"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -125,6 +133,7 @@
             language-servers = [
               "OmniSharp"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -132,6 +141,7 @@
             language-servers = [
               "gopls"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -139,6 +149,7 @@
             language-servers = [
               "jdtls"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -150,6 +161,7 @@
               }
               "biome"
               "harper-ls"
+              "wakatime"
             ];
             auto-format = true;
           }
@@ -162,6 +174,7 @@
               }
               "biome"
               "harper-ls"
+              "wakatime"
             ];
             auto-format = true;
           }
@@ -170,6 +183,7 @@
             language-servers = [
               "lua-language-server"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -177,6 +191,7 @@
             language-servers = [
               "nil"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -184,6 +199,7 @@
             language-servers = [
               "intelephense"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -191,6 +207,7 @@
             language-servers = [
               "pylsp"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -198,6 +215,7 @@
             language-servers = [
               "ruby-lsp"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -205,6 +223,7 @@
             language-servers = [
               "rust-analyzer"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -212,6 +231,7 @@
             language-servers = [
               "bash-language-server"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -219,6 +239,7 @@
             language-servers = [
               "sourcekit-lsp"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -226,6 +247,7 @@
             language-servers = [
               "taplo"
               "harper-ls"
+              "wakatime"
             ];
           }
           {
@@ -237,6 +259,7 @@
               }
               "biome"
               "harper-ls"
+              "wakatime"
             ];
             auto-format = true;
           }
@@ -249,6 +272,7 @@
               }
               "biome"
               "harper-ls"
+              "wakatime"
             ];
             auto-format = true;
           }
@@ -260,6 +284,7 @@
                 except-features = [ "format" ];
               }
               "biome"
+              "wakatime"
             ];
           }
           {
@@ -267,6 +292,7 @@
             language-servers = [
               "kotlin-language-server"
               "harper-ls"
+              "wakatime"
             ];
           }
         ];
