@@ -19,7 +19,7 @@
         gopls
         jdt-language-server # jdtls
         typescript-language-server
-        biome
+        unstable.biome
         lua-language-server
         nil # nix
         nodePackages.intelephense
@@ -95,7 +95,7 @@
             args = [ "--stdio" ];
           };
           biome = {
-            command = "${pkgs.biome}/bin/biome";
+            command = "${pkgs.unstable.biome}/bin/biome";
             args = [ "lsp-proxy" ];
           };
           wakatime = {
