@@ -50,7 +50,6 @@
             render = true;
             character = "╎";
             skip-levels = 0;
-            rainbow-option = "normal";
           };
           soft-wrap.enable = false;
           auto-save = {

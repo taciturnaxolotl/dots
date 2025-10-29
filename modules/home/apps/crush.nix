@@ -11,8 +11,11 @@
       settings = {
         mcp = {
           context7 = {
-            type = "sse";
-            url = "https://mcp.context7.com/sse";
+            type = "http";
+            url = "https://mcp.context7.com/mcp";
+            headers = {
+              CONTEXT7_API_KEY = "$(cat /run/agenix/context7)";
+            };
           };
           sequential-thinking = {
             command = "bunx";

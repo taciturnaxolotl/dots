@@ -20,4 +20,7 @@ in
   "crush.age".publicKeys = [
     kierank
   ];
+  "context7.age".publicKeys = [
+    kierank
+  ];
 }

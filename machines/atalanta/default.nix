@@ -95,6 +95,10 @@
       file = ../../secrets/crush.age;
       owner = "kierank";
     };
+    context7 = {
+      file = ../../secrets/context7.age;
+      owner = "kierank";
+    };
   };
 
   environment.variables = {
