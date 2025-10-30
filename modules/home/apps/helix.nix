@@ -33,6 +33,7 @@
         kotlin-language-server
         harper
         inputs.wakatime-ls.packages.${pkgs.system}.default
+        unstable.sourcekit-lsp
       ];
       settings = {
         theme = "catppuccin_macchiato";
