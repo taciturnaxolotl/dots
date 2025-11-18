@@ -39,6 +39,7 @@
 
   programs.zsh.initContent = ''
     eval "$(/usr/libexec/path_helper)"
+    export PATH="$HOME/.cargo/bin:$PATH"
 
     # MITM proxy management functions
     MITM_SERVICE="Wi-Fi"  # Change to "Ethernet" if needed
