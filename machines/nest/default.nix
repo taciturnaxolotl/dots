@@ -23,6 +23,9 @@
 
   atelier = {
     shell.enable = true;
+    apps = {
+      helix.enable = true;
+    };
   };
 
   # Enable home-manager

@@ -165,6 +165,7 @@
           extraSpecialArgs = {
             inherit inputs outputs;
             nixpkgs-unstable = nixpkgs-unstable;
+            system = "x86_64-linux";
           };
           modules = [
             ./machines/nest
