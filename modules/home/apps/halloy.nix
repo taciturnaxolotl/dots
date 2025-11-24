@@ -9,12 +9,23 @@
         buffer.channel.topic = {
           enabled = true;
         };
-        servers.liberachat = {
-          nickname = "taciturnaxolotl";
-          realname = "kieran klukas";
-          username = "kierank";
-          server = "irc.libera.chat";
-          channels = ["#tangled" "#halloy"];
+        servers = {
+          liberachat = {
+            nickname = "taciturnaxolotl";
+            realname = "kieran klukas";
+            username = "kierank";
+            server = "irc.libera.chat";
+            channels = ["#tangled" "#halloy"];
+          };
+          hackclub = {
+            nickname = "krn";
+            realname = "kieran klukas";
+            username = "taciturnaxolotl";
+            server = "irc.hackclub.com";
+            port = 6667;
+            use_tls = false;
+            channels = ["#lounge"];
+          };
         };
       };
     };
