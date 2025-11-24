@@ -24,6 +24,7 @@
             server = "irc.hackclub.com";
             port = 6667;
             use_tls = false;
+            chathistory = true;
             channels = [
               "#lounge"
               "#hq"
