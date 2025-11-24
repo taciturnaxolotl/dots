@@ -24,7 +24,18 @@
             server = "irc.hackclub.com";
             port = 6667;
             use_tls = false;
-            channels = ["#lounge"];
+            channels = [
+              "#lounge"
+              "#hq"
+              "#krn-rambles"
+              "#neon"
+              "#neighborhood"
+              "#meta"
+              "#fraud-land"
+            ];
+            channel-keys = {
+              fraud-land = "fraudpheus";
+            };
           };
         };
       };
