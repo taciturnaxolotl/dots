@@ -20,6 +20,8 @@
     disko.url = "github:nix-community/disko";
     disko.inputs.nixpkgs.follows = "nixpkgs";
 
+    nixos-facter-modules.url = "github:numtide/nixos-facter-modules";
+
     # agenix
     agenix.url = "github:ryantm/agenix";
 
@@ -149,6 +151,8 @@
           modules = [
             inputs.disko.nixosModules.disko
             agenix.nixosModules.default
+            inputs.nixos-facter-modules.nixosModules.facter
+            { config.facter.reportPath = ./machines/prattle/facter.json; }
             unstable-overlays
             ./machines/prattle
             nur.modules.nixos.default
@@ -160,6 +164,8 @@
           modules = [
             inputs.disko.nixosModules.disko
             agenix.nixosModules.default
+            inputs.nixos-facter-modules.nixosModules.facter
+            { config.facter.reportPath = ./machines/terebithia/facter.json; }
             unstable-overlays
             ./machines/terebithia
             nur.modules.nixos.default

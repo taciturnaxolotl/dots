@@ -118,12 +118,16 @@ atuin import
 For remote installations (like Oracle Cloud), use [nixos-anywhere](https://github.com/nix-community/nixos-anywhere):
 
 ```bash
-nix run github:nix-community/nixos-anywhere -- --flake .#prattle root@<ip-address>
+nix run github:nix-community/nixos-anywhere -- \
+  --flake .#prattle \
+  --generate-hardware-config nixos-facter ./machines/prattle/facter.json \
+  --build-on-remote \
+  root@<ip-address>
 ```
 
 Replace `prattle` with your machine configuration and `<ip-address>` with your target machine's IP.
 
-> **Note**: Make sure your SSH key is in the target machine's `authorized_keys` and the machine configuration has the correct network settings.
+> **Note**: Make sure your SSH key is in the target machine's `authorized_keys` and the machine configuration has the correct network settings. The `--generate-hardware-config nixos-facter` flag will generate a comprehensive hardware report using [nixos-facter](https://github.com/numtide/nixos-facter) instead of the traditional `nixos-generate-config`.
 
 #### Using the install script
 

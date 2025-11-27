@@ -110,23 +110,7 @@
 
   networking = {
     hostName = "terebithia";
-    useDHCP = false;
-    defaultGateway = "10.0.0.1";
-    nameservers = [
-      "1.1.1.1"
-      "1.0.0.1"
-      "2606:4700:4700::1111"
-      "2606:4700:4700::1001"
-    ];
-    interfaces.eth0 = {
-      ipv4.addresses = [
-        {
-          address = "10.0.0.147";
-          prefixLength = 24;
-        }
-      ];
-      useDHCP = false;
-    };
+    networkmanager.enable = true;
   };
 
   programs.zsh.enable = true;
@@ -173,7 +157,7 @@
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.kernelParams = [ "net.ifnames=0" ];
+  boot.kernelParams = [ "net.ifnames=0" "console=ttyS0" ];
 
   system.stateVersion = "23.05";
 }

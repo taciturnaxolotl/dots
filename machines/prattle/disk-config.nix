@@ -1,17 +1,15 @@
-# Disko configuration for Oracle Cloud
-# Oracle Cloud typically uses /dev/sda for the boot volume
 {
   disko.devices = {
     disk = {
       main = {
-        device = "/dev/sda";
         type = "disk";
+        device = "/dev/sda";
         content = {
           type = "gpt";
           partitions = {
-            ESP = {
+            boot = {
+              size = "512M";
               type = "EF00";
-              size = "500M";
               content = {
                 type = "filesystem";
                 format = "vfat";
