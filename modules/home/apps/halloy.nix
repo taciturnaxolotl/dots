@@ -19,6 +19,7 @@
           };
           hackclub = {
             nickname = "krn";
+            nick_password = "Extrude1-Herbal-Map";
             realname = "kieran klukas";
             username = "taciturnaxolotl";
             server = "irc.hackclub.com";
