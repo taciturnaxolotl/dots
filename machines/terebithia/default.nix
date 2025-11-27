@@ -93,6 +93,13 @@
     "/home/kierank/.ssh/id_rsa"
     "/etc/ssh/id_rsa"
   ];
+  age.secrets = {
+    wakatime = {
+      file = ../../secrets/wakatime.age;
+      path = "/home/kierank/.wakatime.cfg";
+      owner = "kierank";
+    };
+  };
 
   environment.sessionVariables = {
     XDG_CACHE_HOME = "$HOME/.cache";
