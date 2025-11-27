@@ -33,7 +33,10 @@
       halloy.enable = true;
       spotify.enable = true;
       crush.enable = true;
-      helix.enable = true;
+      helix = {
+        enable = true;
+        swift = true;
+      };
     };
   };
 

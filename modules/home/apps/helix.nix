@@ -6,35 +6,42 @@
   ...
 }:
 {
-  options.atelier.apps.helix.enable = lib.mkEnableOption "Enable helix config";
+  options.atelier.apps.helix = {
+    enable = lib.mkEnableOption "Enable helix config";
+    swift = lib.mkEnableOption "Enable Swift support";
+  };
 
   config = lib.mkIf config.atelier.apps.helix.enable {
     programs.helix = {
       enable = true;
       package = pkgs.evil-helix;
-      extraPackages = with pkgs; [
-        clang-tools # clangd
-        cmake-language-server # neocmakelsp
-        omnisharp-roslyn # OmniSharp
-        gopls
-        jdt-language-server # jdtls
-        typescript-language-server
-        unstable.biome
-        lua-language-server
-        nil # nix
-        nodePackages.intelephense
-        python313Packages.python-lsp-server # pylsp
-        ruby-lsp
-        rust-analyzer
-        nodePackages.bash-language-server
-        sourcekit-lsp
-        taplo
-        vscode-langservers-extracted
-        kotlin-language-server
-        harper
-        inputs.wakatime-ls.packages.${pkgs.system}.default
-        unstable.sourcekit-lsp
-      ];
+      extraPackages =
+        with pkgs;
+        [
+          clang-tools # clangd
+          cmake-language-server # neocmakelsp
+          omnisharp-roslyn # OmniSharp
+          gopls
+          jdt-language-server # jdtls
+          typescript-language-server
+          unstable.biome
+          lua-language-server
+          nil # nix
+          nodePackages.intelephense
+          python313Packages.python-lsp-server # pylsp
+          ruby-lsp
+          rust-analyzer
+          nodePackages.bash-language-server
+          taplo
+          vscode-langservers-extracted
+          kotlin-language-server
+          harper
+          inputs.wakatime-ls.packages.${pkgs.system}.default
+        ]
+        ++ lib.optionals config.atelier.apps.helix.swift [
+          sourcekit-lsp
+          unstable.sourcekit-lsp
+        ];
       settings = {
         theme = "catppuccin_macchiato";
         editor = {
@@ -235,14 +242,6 @@
             ];
           }
           {
-            name = "swift";
-            language-servers = [
-              "sourcekit-lsp"
-              "harper-ls"
-              "wakatime"
-            ];
-          }
-          {
             name = "toml";
             language-servers = [
               "taplo"
@@ -291,6 +290,15 @@
             name = "kotlin";
             language-servers = [
               "kotlin-language-server"
+              "harper-ls"
+              "wakatime"
+            ];
+          }
+        ] ++ lib.optionals config.atelier.apps.helix.swift [
+          {
+            name = "swift";
+            language-servers = [
+              "sourcekit-lsp"
               "harper-ls"
               "wakatime"
             ];
