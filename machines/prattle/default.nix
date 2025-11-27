@@ -99,6 +99,10 @@
       path = "/home/kierank/.wakatime.cfg";
       owner = "kierank";
     };
+    cloudflare = {
+      file = ../../secrets/cloudflare.age;
+      owner = "caddy";
+    };
   };
 
   environment.sessionVariables = {
@@ -152,7 +156,7 @@
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 22 ];
+    allowedTCPPorts = [ 22 80 443 ];
     logRefusedConnections = false;
     rejectPackets = true;
   };
@@ -160,6 +164,37 @@
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "client";
+  };
+
+  services.caddy = {
+    enable = true;
+    package = pkgs.caddy.withPlugins {
+      plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
+      hash = "sha256-Z8nPh4OI3/R1nn667ZC5VgE+Q9vDenaQ3QPKxmqPNkc=";
+    };
+    email = "me@dunkirk.sh";
+    globalConfig = ''
+      acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    '';
+    virtualHosts."status.dunkirk.sh" = {
+      extraConfig = ''
+        tls {
+          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        }
+        reverse_proxy localhost:3001
+      '';
+    };
+  };
+
+  systemd.services.caddy.serviceConfig = {
+    EnvironmentFile = config.age.secrets.cloudflare.path;
+  };
+
+  services.uptime-kuma = {
+    enable = true;
+    settings = {
+      PORT = "3001";
+    };
   };
 
   boot.loader.systemd-boot.enable = true;

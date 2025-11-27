@@ -23,4 +23,7 @@ in
   "context7.age".publicKeys = [
     kierank
   ];
+  "cloudflare.age".publicKeys = [
+    kierank
+  ];
 }
