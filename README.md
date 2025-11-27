@@ -18,10 +18,12 @@
 ├── machines
 │   ├── atalanta # my macOS M4 machine
 │   ├── ember # my dell r210 server (in my basement)
-│   ├── moonlark # my framework 13
-│   │   └── home
+│   ├── john # shared server for cedarville
+│   ├── moonlark # my framework 13 <dead>
 │   ├── nest # shared tilde server through hc
-│   └── tacyon # rpi 5
+│   ├── prattle # oracle cloud x86_64 server
+│   ├── tacyon # rpi 5
+│   └── terebithia # oracle cloud aarch64 server
 ├── modules
 │   ├── home # home-manager modules
 │   │   ├── aesthetics # theming and wallpapers
@@ -35,7 +37,7 @@
 │       └── system # pam and my fancy wifi module for now
 └── secrets # keep your grubby hands (or paws) off my data
 
-19 directories
+16 directories
 ```
 
 ## Installation
@@ -108,7 +110,22 @@ atuin import
 
 > These instructions have been validated by installing on my friend's machine ([`Nat2-Dev/dots`](https://github.com/Nat2-Dev/dots))
 
-You have two options for installation: either the full guide as follows or the install script below and instructions in [INSTALL_GUIDE.md](/INSTALL_GUIDE.md)
+#### Using nixos-anywhere (Recommended for remote installations)
+
+> [!INFO]
+> This only currently works with `prattle` and `terebithia` as they have the proper disko configs setup.
+
+For remote installations (like Oracle Cloud), use [nixos-anywhere](https://github.com/nix-community/nixos-anywhere):
+
+```bash
+nix run github:nix-community/nixos-anywhere -- --flake .#prattle root@<ip-address>
+```
+
+Replace `prattle` with your machine configuration and `<ip-address>` with your target machine's IP.
+
+> **Note**: Make sure your SSH key is in the target machine's `authorized_keys` and the machine configuration has the correct network settings.
+
+#### Using the install script
 
 ```bash
 curl -L https://raw.githubusercontent.com/taciturnaxolotl/dots/main/install.sh -o install.sh
