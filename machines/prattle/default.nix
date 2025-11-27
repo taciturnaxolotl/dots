@@ -111,9 +111,6 @@
   networking = {
     hostName = "prattle";
     useDHCP = false;
-    interfaces.eth0 = {
-      useDHCP = true;
-    };
     defaultGateway = "10.0.0.1";
     nameservers = [
       "1.1.1.1"
@@ -121,6 +118,15 @@
       "2606:4700:4700::1111"
       "2606:4700:4700::1001"
     ];
+    interfaces.eth0 = {
+      ipv4.addresses = [
+        {
+          address = "10.0.0.70";
+          prefixLength = 24;
+        }
+      ];
+      useDHCP = false;
+    };
   };
 
   programs.zsh.enable = true;
@@ -146,6 +152,7 @@
 
   services.openssh = {
     enable = true;
+    openFirewall = true;
     settings = {
       PermitRootLogin = "no";
       PasswordAuthentication = false;
@@ -154,6 +161,7 @@
 
   networking.firewall = {
     enable = true;
+    allowedTCPPorts = [ 22 ];
     logRefusedConnections = false;
     rejectPackets = true;
   };
