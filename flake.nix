@@ -143,6 +143,17 @@
             nur.modules.nixos.default
           ];
         };
+
+        prattle = nixpkgs.lib.nixosSystem {
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            inputs.disko.nixosModules.disko
+            agenix.nixosModules.default
+            unstable-overlays
+            ./machines/prattle
+            nur.modules.nixos.default
+          ];
+        };
       };
 
       # Standalone home-manager configurations
