@@ -26,4 +26,7 @@ in
   "cloudflare.age".publicKeys = [
     kierank
   ];
+  "cachet.age".publicKeys = [
+    kierank
+  ];
 }

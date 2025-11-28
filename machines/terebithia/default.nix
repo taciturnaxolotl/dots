@@ -72,6 +72,7 @@
     gnupg
     # dev_langs
     nodejs_22
+    unstable.bun
     python3
     go
     gopls
@@ -80,6 +81,7 @@
     gcc
     # misc
     neofetch
+    git
   ];
 
   programs.nh = {
@@ -98,6 +100,14 @@
       file = ../../secrets/wakatime.age;
       path = "/home/kierank/.wakatime.cfg";
       owner = "kierank";
+    };
+    cachet = {
+      file = ../../secrets/cachet.age;
+      owner = "cachet";
+    };
+    cloudflare = {
+      file = ../../secrets/cloudflare.age;
+      owner = "caddy";
     };
   };
 
@@ -134,6 +144,7 @@
       extraGroups = [
         "wheel"
         "networkmanager"
+        "services"
       ];
     };
     root.openssh.authorizedKeys.keys = [
@@ -152,7 +163,7 @@
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 22 ];
+    allowedTCPPorts = [ 22 80 443 ];
     logRefusedConnections = false;
     rejectPackets = true;
   };
@@ -160,6 +171,28 @@
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "client";
+  };
+
+  services.caddy = {
+    enable = true;
+    package = pkgs.caddy.withPlugins {
+      plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
+      hash = "sha256-Z8nPh4OI3/R1nn667ZC5VgE+Q9vDenaQ3QPKxmqPNkc=";
+    };
+    email = "me@dunkirk.sh";
+    globalConfig = ''
+      acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    '';
+  };
+
+  systemd.services.caddy.serviceConfig = {
+    EnvironmentFile = config.age.secrets.cloudflare.path;
+  };
+
+  atelier.services.cachet = {
+    enable = true;
+    domain = "cachet.dunkirk.sh";
+    secretsFile = config.age.secrets.cachet.path;
   };
 
   boot.loader.systemd-boot.enable = true;
