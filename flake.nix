@@ -271,15 +271,6 @@
             path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.terebithia;
           };
         };
-
-        # Home-manager machines
-        ember = {
-          hostname = "ember";
-          profiles.home = {
-            user = "kierank";
-            path = deploy-rs.lib.x86_64-linux.activate.home-manager self.homeConfigurations.ember;
-          };
-        };
       };
 
       # Validation checks
