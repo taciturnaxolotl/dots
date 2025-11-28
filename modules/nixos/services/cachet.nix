@@ -116,35 +116,50 @@ in
       description = "Cachet Slack emoji/profile cache";
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
+      path = [ pkgs.git ];
 
       preStart = ''
-        mkdir -p ${cfg.dataDir}/data
-        mkdir -p ${cfg.dataDir}/app
-        chown -R cachet:services ${cfg.dataDir}
-        chmod -R g+rwX ${cfg.dataDir}
-      '' + lib.optionalString cfg.autoUpdate ''
-        if [ ! -d ${cfg.dataDir}/app/.git ]; then
-          ${pkgs.git}/bin/git clone ${cfg.repository} ${cfg.dataDir}/app
-        else
-          cd ${cfg.dataDir}/app && ${pkgs.git}/bin/git pull
+        cd ${cfg.dataDir}/app
+        
+        if [ ! -d .git ]; then
+          ${pkgs.git}/bin/git clone ${cfg.repository} .
         fi
+      '' + lib.optionalString cfg.autoUpdate ''
+        ${pkgs.git}/bin/git pull
+      '' + ''
+        
+        if [ ! -f src/index.ts ]; then
+          echo "No code found at ${cfg.dataDir}/app/src/index.ts"
+          exit 1
+        fi
+        
+        echo "Installing dependencies..."
+        ${pkgs.unstable.bun}/bin/bun install
       '';
 
       serviceConfig = {
         Type = "simple";
         User = "cachet";
         Group = "cachet";
-        WorkingDirectory = "${cfg.dataDir}/app";
         EnvironmentFile = cfg.secretsFile;
         Environment = [
           "NODE_ENV=production"
           "PORT=${toString cfg.port}"
           "DATABASE_PATH=${cfg.dataDir}/data/cachet.db"
         ];
-        ExecStart = "${pkgs.unstable.bun}/bin/bun run src/index.ts";
+        ExecStart = "${pkgs.bash}/bin/bash -c 'cd ${cfg.dataDir}/app && ${pkgs.unstable.bun}/bin/bun run src/index.ts'";
         Restart = "always";
         RestartSec = "10s";
       };
+
+      serviceConfig.ExecStartPre = [
+        "+${pkgs.writeShellScript "cachet-setup" ''
+          mkdir -p ${cfg.dataDir}/data
+          mkdir -p ${cfg.dataDir}/app
+          chown -R cachet:services ${cfg.dataDir}
+          chmod -R g+rwX ${cfg.dataDir}
+        ''}"
+      ];
     };
 
     services.caddy.virtualHosts.${cfg.domain} = {
