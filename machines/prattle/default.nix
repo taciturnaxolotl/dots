@@ -190,6 +190,15 @@
         }
       '';
     };
+    extraConfig = ''
+      # Default response for unhandled domains
+      :80 {
+        respond "404 - Looks like this pin is unobtainable" 404
+      }
+      :443 {
+        respond "404 - Looks like this pin is unobtainable" 404
+      }
+    '';
   };
 
   systemd.services.caddy.serviceConfig = {

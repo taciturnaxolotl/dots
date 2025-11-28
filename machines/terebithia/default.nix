@@ -187,6 +187,15 @@
     globalConfig = ''
       acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
     '';
+    extraConfig = ''
+      # Default response for unhandled domains
+      :80 {
+        respond "404 - Looks like this bridge doesn't have an end" 404
+      }
+      :443 {
+        respond "404 - Looks like this bridge doesn't have an end" 404
+      }
+    '';
   };
 
   systemd.services.caddy.serviceConfig = {
