@@ -145,6 +145,9 @@
     ];
   };
 
+  # Allow passwordless sudo for wheel group (needed for deploy-rs)
+  security.sudo.wheelNeedsPassword = false;
+
   services.openssh = {
     enable = true;
     openFirewall = true;
