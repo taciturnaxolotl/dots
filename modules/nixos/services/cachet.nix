@@ -67,9 +67,22 @@ in
       extraGroups = [ "services" ];
       home = cfg.dataDir;
       createHome = true;
+      shell = pkgs.bash;
     };
 
     users.groups.cachet = { };
+
+    security.sudo.extraRules = [
+      {
+        users = [ "cachet" ];
+        commands = [
+          {
+            command = "/run/current-system/sw/bin/systemctl restart cachet.service";
+            options = [ "NOPASSWD" ];
+          }
+        ];
+      }
+    ];
 
     systemd.services.cachet-webhook = lib.mkIf cfg.webhook.enable {
       description = "Cachet webhook listener";
