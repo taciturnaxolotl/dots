@@ -115,6 +115,10 @@
       file = ../../secrets/cloudflare.age;
       owner = "caddy";
     };
+    github-knot-sync = {
+      file = ../../secrets/github-knot-sync.age;
+      owner = "git";
+    };
   };
 
   environment.sessionVariables = {
@@ -266,6 +270,11 @@
       hostname = "spindle.dunkirk.sh";
       listenAddr = "127.0.0.1:6555";
     };
+  };
+
+  atelier.services.knot-sync = {
+    enable = true;
+    secretsFile = config.age.secrets.github-knot-sync.path;
   };
 
   boot.loader.systemd-boot.enable = true;

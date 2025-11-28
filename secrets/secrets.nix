@@ -32,4 +32,7 @@ in
   "hn-alerts.age".publicKeys = [
     kierank
   ];
+  "github-knot-sync.age".publicKeys = [
+    kierank
+  ];
 }

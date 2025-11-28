@@ -169,6 +169,7 @@
           # Configuration variables - set these to your defaults
           local default_plc_id="did:plc:krxbvxvis5skq7jj6eot23ul"
           local default_github_username="taciturnaxolotl"
+          local default_knot_host="knot.dunkirk.sh"
           local extracted_github_username=""
 
           # Check if current directory is a git repository
@@ -180,9 +181,9 @@
           # Get the repository name from the current directory
           local repo_name=$(basename "$(git rev-parse --show-toplevel)")
 
-          # Check if origin remote exists and points to ember
+          # Check if origin remote exists and points to knot
           local origin_url=$(git remote get-url origin 2>/dev/null)
-          local origin_ember=false
+          local origin_knot=false
 
           if [[ -n "$origin_url" ]]; then
             # Try to extract GitHub username if origin is a GitHub URL
@@ -192,11 +193,11 @@
               default_github_username=$extracted_github_username
             fi
 
-            if [[ "$origin_url" == *"ember"* ]]; then
-              origin_ember=true
-              echo "✅ Origin remote exists and points to ember"
+            if [[ "$origin_url" == *"$default_knot_host"* || "$origin_url" == *"knot.dunkirk.sh"* ]]; then
+              origin_knot=true
+              echo "✅ Origin remote exists and points to knot"
             else
-              echo "⚠️ Origin remote exists but doesn't point to ember"
+              echo "⚠️ Origin remote exists but doesn't point to knot"
             fi
           else
             echo "⚠️ Origin remote doesn't exist"
@@ -212,15 +213,27 @@
           fi
 
           # Fix remotes if needed
-          if [[ "$origin_ember" = false || "$github_exists" = false ]]; then
-            echo "Setting up remotes..."
-
+          if [[ "$origin_knot" = false || "$github_exists" = false ]]; then
             # Prompt for PLC identifier if needed
             local plc_id=""
-            if [[ "$origin_ember" = false ]]; then
-              echo -n "Enter your PLC identifier [default: $default_plc_id]: "
-              read plc_input
-              plc_id=''${plc_input:-$default_plc_id}
+            local should_fix_origin=false
+            
+            if [[ "$origin_knot" = false ]]; then
+              if [[ -n "$origin_url" ]]; then
+                echo -n "Migrate origin from $origin_url to knot.dunkirk.sh? [Y/n]: "
+                read fix_input
+                if [[ -z "$fix_input" || "$fix_input" =~ ^[Yy]$ ]]; then
+                  should_fix_origin=true
+                fi
+              else
+                should_fix_origin=true
+              fi
+              
+              if [[ "$should_fix_origin" = true ]]; then
+                echo -n "Enter your PLC identifier [default: $default_plc_id]: "
+                read plc_input
+                plc_id=''${plc_input:-$default_plc_id}
+              fi
             fi
 
             # Prompt for GitHub username with default from origin if available
@@ -232,12 +245,12 @@
             fi
 
             # Set up origin remote if needed
-            if [[ "$origin_ember" = false && -n "$plc_id" ]]; then
+            if [[ "$should_fix_origin" = true && -n "$plc_id" ]]; then
               if git remote get-url origin &>/dev/null; then
                 git remote remove origin
               fi
-              git remote add origin "git@ember:''${plc_id}/''${repo_name}"
-              echo "✅ Set up origin remote: git@ember:''${plc_id}/''${repo_name}"
+              git remote add origin "git@$default_knot_host:''${plc_id}/''${repo_name}"
+              echo "✅ Set up origin remote: git@$default_knot_host:''${plc_id}/''${repo_name}"
             fi
 
             # Set up GitHub remote if needed
