@@ -75,11 +75,11 @@ in
       path = [ pkgs.git ];
 
       preStart = ''
-        cd ${cfg.dataDir}/app
-        
-        if [ ! -d .git ]; then
-          ${pkgs.git}/bin/git clone ${cfg.repository} .
+        if [ ! -d ${cfg.dataDir}/app/.git ]; then
+          ${pkgs.git}/bin/git clone ${cfg.repository} ${cfg.dataDir}/app
         fi
+        
+        cd ${cfg.dataDir}/app
       '' + lib.optionalString cfg.autoUpdate ''
         ${pkgs.git}/bin/git pull
       '' + ''

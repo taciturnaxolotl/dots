@@ -75,11 +75,11 @@ in
       path = [ pkgs.git ];
 
       preStart = ''
-        cd ${cfg.dataDir}/app
-        
-        if [ ! -d .git ]; then
-          ${pkgs.git}/bin/git clone ${cfg.repository} .
+        if [ ! -d ${cfg.dataDir}/app/.git ]; then
+          ${pkgs.git}/bin/git clone ${cfg.repository} ${cfg.dataDir}/app
         fi
+        
+        cd ${cfg.dataDir}/app
       '' + lib.optionalString cfg.autoUpdate ''
         ${pkgs.git}/bin/git pull
       '' + ''
@@ -109,15 +109,6 @@ in
         Restart = "always";
         RestartSec = "10s";
       };
-
-      serviceConfig.ExecStartPre = [
-        "+${pkgs.writeShellScript "hn-alerts-setup" ''
-          mkdir -p ${cfg.dataDir}/data
-          mkdir -p ${cfg.dataDir}/app
-          chown -R hn-alerts:services ${cfg.dataDir}
-          chmod -R g+rwX ${cfg.dataDir}
-        ''}"
-      ];
     };
 
     services.caddy.virtualHosts.${cfg.domain} = {
