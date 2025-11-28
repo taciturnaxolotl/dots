@@ -1,0 +1,37 @@
+name: Deploy NixOS Configurations
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@main
+      
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:deploy
+          use-cache: "true"
+      
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
+      
+      - name: Deploy all configurations
+        run: |
+          nix run github:serokell/deploy-rs -- \
+            --skip-checks \
+            --remote-build \
+            --ssh-opts="-o StrictHostKeyChecking=accept-new" \
+            .
