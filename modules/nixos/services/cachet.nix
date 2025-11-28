@@ -40,22 +40,6 @@ in
     };
 
     autoUpdate = lib.mkEnableOption "Automatically git pull on service restart";
-
-    webhook = {
-      enable = lib.mkEnableOption "Enable webhook endpoint for triggering service restart";
-
-      path = lib.mkOption {
-        type = lib.types.str;
-        default = "/webhook/restart";
-        description = "URL path for the webhook endpoint";
-      };
-
-      secretFile = lib.mkOption {
-        type = lib.types.nullOr lib.types.path;
-        default = null;
-        description = "Path to file containing webhook secret token";
-      };
-    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -83,47 +67,6 @@ in
         ];
       }
     ];
-
-    systemd.services.cachet-webhook = lib.mkIf cfg.webhook.enable {
-      description = "Cachet webhook listener";
-      wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" ];
-
-      script = let
-        webhookScript = pkgs.writeShellScript "cachet-webhook" ''
-          SECRET=""
-          ${lib.optionalString (cfg.webhook.secretFile != null) ''
-            SECRET=$(cat "${cfg.webhook.secretFile}")
-          ''}
-
-          while IFS= read -r line; do
-            # Parse the request line
-            if [[ "$line" =~ ^GET.*token=([^\ \&]+) ]]; then
-              TOKEN="''${BASH_REMATCH[1]}"
-              if [ "$TOKEN" = "$SECRET" ]; then
-                echo -e "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nRestarting cachet service..."
-                ${pkgs.systemd}/bin/systemctl restart cachet &
-              else
-                echo -e "HTTP/1.1 403 Forbidden\r\nContent-Type: text/plain\r\n\r\nInvalid token"
-              fi
-            else
-              echo -e "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nBad request"
-            fi
-            break
-          done
-        '';
-      in ''
-        while true; do
-          ${pkgs.netcat}/bin/nc -l -p 9000 -c "${webhookScript}"
-        done
-      '';
-
-      serviceConfig = {
-        Type = "simple";
-        Restart = "always";
-        RestartSec = "5s";
-      };
-    };
 
     systemd.services.cachet = {
       description = "Cachet Slack emoji/profile cache";
@@ -180,12 +123,6 @@ in
         tls {
           dns cloudflare {env.CLOUDFLARE_API_TOKEN}
         }
-
-        ${lib.optionalString cfg.webhook.enable ''
-        handle ${cfg.webhook.path} {
-          reverse_proxy localhost:9000
-        }
-        ''}
 
         reverse_proxy localhost:${toString cfg.port}
       '';
