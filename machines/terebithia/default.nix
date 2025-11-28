@@ -11,6 +11,8 @@
     ./home-manager.nix
 
     (inputs.import-tree ../../modules/nixos)
+    inputs.tangled.nixosModules.knot
+    inputs.tangled.nixosModules.spindle
   ];
 
   nixpkgs = {
@@ -190,6 +192,34 @@
     globalConfig = ''
       acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
     '';
+    virtualHosts."knot.dunkirk.sh" = {
+      extraConfig = ''
+        tls {
+          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        }
+        header {
+          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        }
+        reverse_proxy localhost:5555 {
+          header_up X-Forwarded-Proto {scheme}
+          header_up X-Forwarded-For {remote}
+        }
+      '';
+    };
+    virtualHosts."spindle.dunkirk.sh" = {
+      extraConfig = ''
+        tls {
+          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        }
+        header {
+          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        }
+        reverse_proxy localhost:6555 {
+          header_up X-Forwarded-Proto {scheme}
+          header_up X-Forwarded-For {remote}
+        }
+      '';
+    };
     extraConfig = ''
       # Default response for unhandled domains
       :80 {
@@ -215,6 +245,27 @@
     enable = true;
     domain = "hn.dunkirk.sh";
     secretsFile = config.age.secrets.hn-alerts.path;
+  };
+
+  services.tangled.knot = {
+    enable = true;
+    package = inputs.tangled.packages.aarch64-linux.knot;
+    appviewEndpoint = "https://tangled.org";
+    server = {
+      owner = "did:plc:krxbvxvis5skq7jj6eot23ul";
+      hostname = "knot.dunkirk.sh";
+      listenAddr = "127.0.0.1:5555";
+    };
+  };
+
+  services.tangled.spindle = {
+    enable = true;
+    package = inputs.tangled.packages.aarch64-linux.spindle;
+    server = {
+      owner = "did:plc:krxbvxvis5skq7jj6eot23ul";
+      hostname = "spindle.dunkirk.sh";
+      listenAddr = "127.0.0.1:6555";
+    };
   };
 
   boot.loader.systemd-boot.enable = true;

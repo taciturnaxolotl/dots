@@ -99,6 +99,11 @@
       url = "github:serokell/deploy-rs";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    tangled = {
+      url = "git+https://tangled.org/tangled.org/core";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -111,6 +116,7 @@
       nur,
       nix-darwin,
       deploy-rs,
+      tangled,
       ...
     }@inputs:
     let
