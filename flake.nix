@@ -273,14 +273,6 @@
         };
 
         # Home-manager machines
-        nest = {
-          hostname = "nest";
-          profiles.home = {
-            user = "kierank";
-            path = deploy-rs.lib.x86_64-linux.activate.home-manager self.homeConfigurations.nest;
-          };
-        };
-
         ember = {
           hostname = "ember";
           profiles.home = {
