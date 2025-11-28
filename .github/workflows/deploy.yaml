@@ -33,5 +33,6 @@ jobs:
           nix run github:serokell/deploy-rs -- \
             --skip-checks \
             --remote-build \
+            --ssh-user kierank \
             --ssh-opts="-o StrictHostKeyChecking=accept-new" \
             .
