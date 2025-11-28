@@ -205,7 +205,7 @@
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.kernelParams = [ "net.ifnames=0" "console=ttyS0" ];
+  boot.kernelParams = [ "console=ttyS0" ];
 
   system.stateVersion = "23.05";
 }
