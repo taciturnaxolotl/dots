@@ -29,4 +29,7 @@ in
   "cachet.age".publicKeys = [
     kierank
   ];
+  "hn-alerts.age".publicKeys = [
+    kierank
+  ];
 }

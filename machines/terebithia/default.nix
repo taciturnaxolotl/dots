@@ -105,6 +105,10 @@
       file = ../../secrets/cachet.age;
       owner = "cachet";
     };
+    hn-alerts = {
+      file = ../../secrets/hn-alerts.age;
+      owner = "hn-alerts";
+    };
     cloudflare = {
       file = ../../secrets/cloudflare.age;
       owner = "caddy";
@@ -193,6 +197,12 @@
     enable = true;
     domain = "cachet.dunkirk.sh";
     secretsFile = config.age.secrets.cachet.path;
+  };
+
+  atelier.services.hn-alerts = {
+    enable = true;
+    domain = "hn.dunkirk.sh";
+    secretsFile = config.age.secrets.hn-alerts.path;
   };
 
   boot.loader.systemd-boot.enable = true;
