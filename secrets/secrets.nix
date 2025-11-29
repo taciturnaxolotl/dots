@@ -35,4 +35,7 @@ in
   "github-knot-sync.age".publicKeys = [
     kierank
   ];
+  "emojibot.age".publicKeys = [
+    kierank
+  ];
 }

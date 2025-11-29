@@ -111,6 +111,10 @@
       file = ../../secrets/hn-alerts.age;
       owner = "hn-alerts";
     };
+    emojibot = {
+      file = ../../secrets/emojibot.age;
+      owner = "emojibot";
+    };
     cloudflare = {
       file = ../../secrets/cloudflare.age;
       owner = "caddy";
@@ -224,6 +228,20 @@
         }
       '';
     };
+    virtualHosts."emojibot.dunkirk.sh" = {
+      extraConfig = ''
+        tls {
+          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        }
+        header {
+          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        }
+        reverse_proxy localhost:3002 {
+          header_up X-Forwarded-Proto {scheme}
+          header_up X-Forwarded-For {remote}
+        }
+      '';
+    };
     extraConfig = ''
       # Default response for unhandled domains
       :80 {
@@ -249,6 +267,12 @@
     enable = true;
     domain = "hn.dunkirk.sh";
     secretsFile = config.age.secrets.hn-alerts.path;
+  };
+
+  atelier.services.emojibot = {
+    enable = true;
+    domain = "emojibot.dunkirk.sh";
+    secretsFile = config.age.secrets.emojibot.path;
   };
 
   services.tangled.knot = {
