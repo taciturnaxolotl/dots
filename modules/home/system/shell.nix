@@ -261,6 +261,28 @@
           else
             echo "Remotes are correctly configured"
           fi
+
+          # Check default push remote
+          local current_remote=$(git config --get branch.main.remote 2>/dev/null)
+          if [[ -z "$current_remote" ]]; then
+            echo "⚠️ No default push remote set for main branch"
+            echo -n "Set origin (knot) as default push remote? [Y/n]: "
+            read remote_input
+            if [[ -z "$remote_input" || "$remote_input" =~ ^[Yy]$ ]]; then
+              git config branch.main.remote origin
+              echo "✅ Set origin as default push remote for main branch"
+            fi
+          elif [[ "$current_remote" != "origin" ]]; then
+            echo "ℹ️ Current default push remote: $current_remote"
+            echo -n "Change to origin (knot)? [y/N]: "
+            read remote_input
+            if [[ "$remote_input" =~ ^[Yy]$ ]]; then
+              git config branch.main.remote origin
+              echo "✅ Changed default push remote to origin"
+            fi
+          else
+            echo "✅ Default push remote is origin"
+          fi
         }
 
         # Post AtProto status updates
