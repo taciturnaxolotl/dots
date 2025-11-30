@@ -5,6 +5,101 @@
   inputs,
   ...
 }:
+let
+  tangled-setup = pkgs.writeShellScriptBin "tangled-setup" ''
+    # Configuration
+    default_plc_id="did:plc:krxbvxvis5skq7jj6eot23ul"
+    default_github_username="taciturnaxolotl"
+    default_knot_host="knot.dunkirk.sh"
+
+    # Verify git repository
+    if ! ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+      ${pkgs.gum}/bin/gum style --foreground 196 "Not a git repository"
+      exit 1
+    fi
+
+    repo_name=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
+    ${pkgs.gum}/bin/gum style --bold --foreground 212 "Configuring tangled remotes for: $repo_name"
+    echo
+
+    # Check current remotes
+    origin_url=$(${pkgs.git}/bin/git remote get-url origin 2>/dev/null)
+    github_url=$(${pkgs.git}/bin/git remote get-url github 2>/dev/null)
+    origin_is_knot=false
+    github_username="$default_github_username"
+
+    # Extract GitHub username from existing origin if it's GitHub
+    if [[ "$origin_url" == *"github.com"* ]]; then
+      github_username=$(echo "$origin_url" | ${pkgs.gnused}/bin/sed -E 's/.*github\.com[:/]([^/]+)\/.*$/\1/')
+    fi
+
+    # Check if origin points to knot
+    if [[ "$origin_url" == *"$default_knot_host"* ]]; then
+      origin_is_knot=true
+      ${pkgs.gum}/bin/gum style --foreground 35 "✓ Origin → knot ($origin_url)"
+    elif [[ -n "$origin_url" ]]; then
+      ${pkgs.gum}/bin/gum style --foreground 214 "! Origin → $origin_url (not knot)"
+    else
+      ${pkgs.gum}/bin/gum style --foreground 214 "! Origin not configured"
+    fi
+
+    # Check github remote
+    if [[ -n "$github_url" ]]; then
+      ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub → $github_url"
+    else
+      ${pkgs.gum}/bin/gum style --foreground 214 "! GitHub remote not configured"
+    fi
+
+    echo
+
+    # Configure origin remote if needed
+    if [[ "$origin_is_knot" = false ]]; then
+      should_migrate=true
+      if [[ -n "$origin_url" ]]; then
+        ${pkgs.gum}/bin/gum confirm "Migrate origin from $origin_url to knot?" || should_migrate=false
+      fi
+
+      if [[ "$should_migrate" = true ]]; then
+        plc_id=$(${pkgs.gum}/bin/gum input --placeholder "$default_plc_id" --prompt "PLC ID: " --value "$default_plc_id")
+        plc_id=''${plc_id:-$default_plc_id}
+
+        if ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
+          ${pkgs.git}/bin/git remote remove origin
+        fi
+        ${pkgs.git}/bin/git remote add origin "git@$default_knot_host:''${plc_id}/''${repo_name}"
+        ${pkgs.gum}/bin/gum style --foreground 35 "✓ Configured origin → git@$default_knot_host:''${plc_id}/''${repo_name}"
+      fi
+    fi
+
+    # Configure github remote if needed
+    if [[ -z "$github_url" ]]; then
+      username=$(${pkgs.gum}/bin/gum input --placeholder "$github_username" --prompt "GitHub username: " --value "$github_username")
+      username=''${username:-$github_username}
+
+      ${pkgs.git}/bin/git remote add github "git@github.com:''${username}/''${repo_name}.git"
+      ${pkgs.gum}/bin/gum style --foreground 35 "✓ Configured github → git@github.com:''${username}/''${repo_name}.git"
+    fi
+
+    echo
+
+    # Configure default push remote
+    current_remote=$(${pkgs.git}/bin/git config --get branch.main.remote 2>/dev/null)
+    if [[ -z "$current_remote" ]]; then
+      if ${pkgs.gum}/bin/gum confirm "Set origin (knot) as default push remote?"; then
+        ${pkgs.git}/bin/git config branch.main.remote origin
+        ${pkgs.gum}/bin/gum style --foreground 35 "✓ Default push remote → origin"
+      fi
+    elif [[ "$current_remote" != "origin" ]]; then
+      ${pkgs.gum}/bin/gum style --foreground 117 "Current default: $current_remote"
+      if ${pkgs.gum}/bin/gum confirm "Change default push remote to origin (knot)?"; then
+        ${pkgs.git}/bin/git config branch.main.remote origin
+        ${pkgs.gum}/bin/gum style --foreground 35 "✓ Default push remote → origin"
+      fi
+    else
+      ${pkgs.gum}/bin/gum style --foreground 35 "✓ Default push remote is origin"
+    fi
+  '';
+in
 {
   options.atelier.shell.enable = lib.mkEnableOption "Custom shell config";
   config = lib.mkIf config.atelier.shell.enable {
@@ -163,126 +258,6 @@
                     .projects | sort_by(-.total) | map(.key)
                   )
           }'
-        }
-
-        tangled() {
-          # Configuration variables - set these to your defaults
-          local default_plc_id="did:plc:krxbvxvis5skq7jj6eot23ul"
-          local default_github_username="taciturnaxolotl"
-          local default_knot_host="knot.dunkirk.sh"
-          local extracted_github_username=""
-
-          # Check if current directory is a git repository
-          if ! git rev-parse --is-inside-work-tree &>/dev/null; then
-            echo "Not a git repository"
-            return 1
-          fi
-
-          # Get the repository name from the current directory
-          local repo_name=$(basename "$(git rev-parse --show-toplevel)")
-
-          # Check if origin remote exists and points to knot
-          local origin_url=$(git remote get-url origin 2>/dev/null)
-          local origin_knot=false
-
-          if [[ -n "$origin_url" ]]; then
-            # Try to extract GitHub username if origin is a GitHub URL
-            if [[ "$origin_url" == *"github.com"* ]]; then
-              extracted_github_username=$(echo "$origin_url" | sed -E 's/.*github\.com[:/]([^/]+)\/.*$/\1/')
-              # Override the default username with the extracted one
-              default_github_username=$extracted_github_username
-            fi
-
-            if [[ "$origin_url" == *"$default_knot_host"* || "$origin_url" == *"knot.dunkirk.sh"* ]]; then
-              origin_knot=true
-              echo "✅ Origin remote exists and points to knot"
-            else
-              echo "⚠️ Origin remote exists but doesn't point to knot"
-            fi
-          else
-            echo "⚠️ Origin remote doesn't exist"
-          fi
-
-          # Check if github remote exists
-          local github_exists=false
-          if git remote get-url github &>/dev/null; then
-            github_exists=true
-            echo "✅ GitHub remote exists"
-          else
-            echo "⚠️ GitHub remote doesn't exist"
-          fi
-
-          # Fix remotes if needed
-          if [[ "$origin_knot" = false || "$github_exists" = false ]]; then
-            # Prompt for PLC identifier if needed
-            local plc_id=""
-            local should_fix_origin=false
-            
-            if [[ "$origin_knot" = false ]]; then
-              if [[ -n "$origin_url" ]]; then
-                echo -n "Migrate origin from $origin_url to knot.dunkirk.sh? [Y/n]: "
-                read fix_input
-                if [[ -z "$fix_input" || "$fix_input" =~ ^[Yy]$ ]]; then
-                  should_fix_origin=true
-                fi
-              else
-                should_fix_origin=true
-              fi
-              
-              if [[ "$should_fix_origin" = true ]]; then
-                echo -n "Enter your PLC identifier [default: $default_plc_id]: "
-                read plc_input
-                plc_id=''${plc_input:-$default_plc_id}
-              fi
-            fi
-
-            # Prompt for GitHub username with default from origin if available
-            local github_username=""
-            if [[ "$github_exists" = false ]]; then
-              echo -n "Enter your GitHub username [default: $default_github_username]: "
-              read github_input
-              github_username=''${github_input:-$default_github_username}
-            fi
-
-            # Set up origin remote if needed
-            if [[ "$should_fix_origin" = true && -n "$plc_id" ]]; then
-              if git remote get-url origin &>/dev/null; then
-                git remote remove origin
-              fi
-              git remote add origin "git@$default_knot_host:''${plc_id}/''${repo_name}"
-              echo "✅ Set up origin remote: git@$default_knot_host:''${plc_id}/''${repo_name}"
-            fi
-
-            # Set up GitHub remote if needed
-            if [[ "$github_exists" = false && -n "$github_username" ]]; then
-              git remote add github "git@github.com:''${github_username}/''${repo_name}.git"
-              echo "✅ Set up GitHub remote: git@github.com:''${github_username}/''${repo_name}.git"
-            fi
-          else
-            echo "Remotes are correctly configured"
-          fi
-
-          # Check default push remote
-          local current_remote=$(git config --get branch.main.remote 2>/dev/null)
-          if [[ -z "$current_remote" ]]; then
-            echo "⚠️ No default push remote set for main branch"
-            echo -n "Set origin (knot) as default push remote? [Y/n]: "
-            read remote_input
-            if [[ -z "$remote_input" || "$remote_input" =~ ^[Yy]$ ]]; then
-              git config branch.main.remote origin
-              echo "✅ Set origin as default push remote for main branch"
-            fi
-          elif [[ "$current_remote" != "origin" ]]; then
-            echo "ℹ️ Current default push remote: $current_remote"
-            echo -n "Change to origin (knot)? [y/N]: "
-            read remote_input
-            if [[ "$remote_input" =~ ^[Yy]$ ]]; then
-              git config branch.main.remote origin
-              echo "✅ Changed default push remote to origin"
-            fi
-          else
-            echo "✅ Default push remote is origin"
-          fi
         }
 
         # Post AtProto status updates
@@ -522,6 +497,7 @@
     };
 
     home.packages = with pkgs; [
+      tangled-setup
       pkgs.unstable.wakatime-cli
       inputs.terminal-wakatime.packages.${pkgs.system}.default
       unzip
