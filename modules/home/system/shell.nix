@@ -99,6 +99,220 @@ let
       ${pkgs.gum}/bin/gum style --foreground 35 "✓ Default push remote is origin"
     fi
   '';
+
+  assh = pkgs.writeShellScriptBin "assh" ''
+    # SSH auto-reconnect
+    host=$1
+    port=$2
+
+    if [[ -z "$host" || -z "$port" ]]; then
+      ${pkgs.gum}/bin/gum style --foreground 196 "Usage: assh <host> <port>"
+      exit 1
+    fi
+
+    ${pkgs.gum}/bin/gum style --foreground 212 "Connecting to $host:$port (auto-reconnect enabled)..."
+    
+    while true; do
+      ${pkgs.openssh}/bin/ssh -p "$port" -o "BatchMode yes" "$host" || {
+        ${pkgs.gum}/bin/gum style --foreground 214 "Connection lost. Reconnecting in 1s..."
+        sleep 1
+      }
+    done
+  '';
+
+  hackatime-summary = pkgs.writeShellScriptBin "hackatime-summary" ''
+    # Hackatime summary
+    user_id=$1
+
+    if [[ -z "$user_id" ]]; then
+      user_id=$(${pkgs.gum}/bin/gum input --placeholder "Enter user ID" --prompt "User ID: ")
+      if [[ -z "$user_id" ]]; then
+        ${pkgs.gum}/bin/gum style --foreground 196 "No user ID provided"
+        exit 1
+      fi
+    fi
+
+    ${pkgs.gum}/bin/gum spin --spinner dot --title "Fetching Hackatime summary for $user_id..." -- \
+      ${pkgs.curl}/bin/curl -s -X 'GET' \
+        "https://waka.hackclub.com/api/summary?user=''${user_id}&interval=month" \
+        -H 'accept: application/json' \
+        -H 'Authorization: Bearer 2ce9e698-8a16-46f0-b49a-ac121bcfd608' \
+      > /tmp/hackatime-$$.json
+
+    ${pkgs.jq}/bin/jq '. + {
+      "total_categories_sum": (.categories | map(.total) | add),
+      "total_categories_human_readable": (
+        (.categories | map(.total) | add) as $total_seconds |
+        "\($total_seconds / 3600 | floor)h \(($total_seconds % 3600) / 60 | floor)m \($total_seconds % 60)s"
+      ),
+      "projectsKeys": (
+        .projects | sort_by(-.total) | map(.key)
+      )
+    }' /tmp/hackatime-$$.json
+
+    rm -f /tmp/hackatime-$$.json
+  '';
+
+  now = pkgs.writeShellScriptBin "now" ''
+    # Post AtProto status updates
+    message=""
+    prompt_message=true
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+      case "$1" in
+        -m|--message)
+          message="$2"
+          prompt_message=false
+          shift 2
+          ;;
+        *)
+          ${pkgs.gum}/bin/gum style --foreground 196 "Usage: now [-m|--message \"your message\"]"
+          exit 1
+          ;;
+      esac
+    done
+
+    # Load account information from agenix secrets
+    if [[ -f "/run/agenix/bluesky" ]]; then
+      source "/run/agenix/bluesky"
+    else
+      ${pkgs.gum}/bin/gum style --foreground 196 "Error: Bluesky credentials file not found at /run/agenix/bluesky"
+      exit 1
+    fi
+
+    # Prompt for message if none provided
+    if [[ "$prompt_message" = true ]]; then
+      message=$(${pkgs.gum}/bin/gum input --placeholder "What's happening?" --prompt "$ACCOUNT1 is: ")
+      if [[ -z "$message" ]]; then
+        ${pkgs.gum}/bin/gum style --foreground 214 "No message provided. Aborting."
+        exit 1
+      fi
+    fi
+
+    ${pkgs.gum}/bin/gum spin --spinner dot --title "Posting to Bluesky..." -- /bin/bash <<EOF
+    # Generate JWT for ACCOUNT1
+    account1_response=\$(${pkgs.curl}/bin/curl -s -X POST \
+      -H "Content-Type: application/json" \
+      -d '{
+        "identifier": "'$ACCOUNT1'",
+        "password": "'$ACCOUNT1_PASSWORD'"
+      }' \
+      "https://bsky.social/xrpc/com.atproto.server.createSession")
+
+    account1_jwt=\$(echo "\$account1_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
+
+    if [[ -z "\$account1_jwt" || "\$account1_jwt" == "null" ]]; then
+      echo "Failed to authenticate account $ACCOUNT1" >&2
+      echo "Response: \$account1_response" >&2
+      exit 1
+    fi
+
+    # Generate JWT for ACCOUNT2
+    account2_response=\$(${pkgs.curl}/bin/curl -s -X POST \
+      -H "Content-Type: application/json" \
+      -d '{
+        "identifier": "'$ACCOUNT2'",
+        "password": "'$ACCOUNT2_PASSWORD'"
+      }' \
+      "https://bsky.social/xrpc/com.atproto.server.createSession")
+
+    account2_jwt=\$(echo "\$account2_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
+
+    if [[ -z "\$account2_jwt" || "\$account2_jwt" == "null" ]]; then
+      echo "Failed to authenticate account $ACCOUNT2" >&2
+      echo "Response: \$account2_response" >&2
+      exit 1
+    fi
+
+    # Post to ACCOUNT1 as a.status.updates
+    account1_post_response=\$(${pkgs.curl}/bin/curl -s -X POST \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer \$account1_jwt" \
+      -d '{
+        "collection": "a.status.update",
+        "repo": "'$ACCOUNT1'",
+        "record": {
+          "\$type": "a.status.update",
+          "text": "'"$message"'",
+          "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
+        }
+      }' \
+      "https://bsky.social/xrpc/com.atproto.repo.createRecord")
+
+    if [[ \$(echo "\$account1_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
+      echo "Error posting to $ACCOUNT1:" >&2
+      echo "\$account1_post_response" | ${pkgs.jq}/bin/jq >&2
+      exit 1
+    fi
+
+    # Post to ACCOUNT2 as normal post
+    account2_post_response=\$(${pkgs.curl}/bin/curl -s -X POST \
+      -H "Content-Type: application/json" \
+      -H "Authorization: Bearer \$account2_jwt" \
+      -d '{
+        "collection": "app.bsky.feed.post",
+        "repo": "'$ACCOUNT2'",
+        "record": {
+          "\$type": "app.bsky.feed.post",
+          "text": "'"$message"'",
+          "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
+        }
+      }' \
+      "https://bsky.social/xrpc/com.atproto.repo.createRecord")
+
+    if [[ \$(echo "\$account2_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
+      echo "Error posting to $ACCOUNT2:" >&2
+      echo "\$account2_post_response" | ${pkgs.jq}/bin/jq >&2
+      exit 1
+    fi
+EOF
+
+    if [[ $? -eq 0 ]]; then
+      ${pkgs.gum}/bin/gum style --foreground 35 "✓ Posted successfully!"
+    else
+      ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to post"
+      exit 1
+    fi
+  '';
+
+  ghostty-setup = pkgs.writeShellScriptBin "ghostty-setup" ''
+    # Copy Ghostty terminfo to remote host
+    target="$1"
+
+    if [[ -z "$target" ]]; then
+      target=$(${pkgs.gum}/bin/gum input --placeholder "user@host" --prompt "Remote host: ")
+      if [[ -z "$target" ]]; then
+        ${pkgs.gum}/bin/gum style --foreground 196 "No target provided"
+        exit 1
+      fi
+    fi
+
+    ${pkgs.gum}/bin/gum style --bold --foreground 212 "Setting up Ghostty on $target"
+    echo
+
+    ${pkgs.gum}/bin/gum spin --spinner dot --title "Copying SSH key to $target..." -- \
+      ${pkgs.openssh}/bin/ssh-copy-id "$target" 2>&1
+
+    if [[ $? -ne 0 ]]; then
+      ${pkgs.gum}/bin/gum style --foreground 196 "✗ SSH key copy failed"
+      exit 2
+    fi
+
+    ${pkgs.gum}/bin/gum style --foreground 35 "✓ SSH key copied"
+
+    ${pkgs.gum}/bin/gum spin --spinner dot --title "Installing xterm-ghostty terminfo on $target..." -- \
+      bash -c "${pkgs.ncurses}/bin/infocmp -x xterm-ghostty | ${pkgs.openssh}/bin/ssh '$target' 'tic -x -'" 2>&1
+
+    if [[ $? -ne 0 ]]; then
+      ${pkgs.gum}/bin/gum style --foreground 196 "✗ Terminfo transfer failed"
+      exit 3
+    fi
+
+    ${pkgs.gum}/bin/gum style --foreground 35 "✓ Terminfo installed"
+    echo
+    ${pkgs.gum}/bin/gum style --foreground 35 --bold "Done! Ghostty is ready on $target"
+  '';
 in
 {
   options.atelier.shell.enable = lib.mkEnableOption "Custom shell config";
@@ -234,173 +448,6 @@ in
         vim = "nvim";
       };
       initContent = ''
-        #ssh auto reconnect
-        assh() {
-            local host=$1
-            local port=$2
-          while true; do
-                ssh -p $port -o "BatchMode yes" $host || sleep 1
-            done
-        }
-        # hackatime summary
-        summary() {
-          local user_id=$1
-          curl -X 'GET' \
-            "https://waka.hackclub.com/api/summary?user=''${user_id}&interval=month" \
-              -H 'accept: application/json' \
-              -H 'Authorization: Bearer 2ce9e698-8a16-46f0-b49a-ac121bcfd608' | jq '. + {
-                "total_categories_sum": (.categories | map(.total) | add),
-                "total_categories_human_readable": (
-                  (.categories | map(.total) | add) as $total_seconds |
-                  "\($total_seconds / 3600 | floor)h \(($total_seconds % 3600) / 60 | floor)m \($total_seconds % 60)s"
-                ),
-                "projectsKeys": (
-                    .projects | sort_by(-.total) | map(.key)
-                  )
-          }'
-        }
-
-        # Post AtProto status updates
-        now() {
-          local message=""
-          local prompt_message=true
-          local account1_name=""
-          local account2_name=""
-          local account1_jwt=""
-          local account2_jwt=""
-
-          # Load account information from agenix secrets
-          if [[ -f "/run/agenix/bluesky" ]]; then
-            source "/run/agenix/bluesky"
-          else
-            echo "Error: Bluesky credentials file not found at /run/agenix/bluesky"
-            return 1
-          fi
-
-          # Parse arguments
-          while [[ $# -gt 0 ]]; do
-            case "$1" in
-              -m|--message)
-                message="$2"
-                prompt_message=false
-                shift 2
-                ;;
-              *)
-                echo "Usage: now [-m|--message \"your message\"]"
-                return 1
-                ;;
-            esac
-          done
-
-          # Prompt for message if none provided
-          if [[ "$prompt_message" = true ]]; then
-            echo -n "$ACCOUNT1 is: "
-            read message
-
-            if [[ -z "$message" ]]; then
-              echo "No message provided. Aborting."
-              return 1
-            fi
-          fi
-
-          # Generate JWT for ACCOUNT1
-          local account1_response=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
-            -d '{
-              "identifier": "'$ACCOUNT1'",
-              "password": "'$ACCOUNT1_PASSWORD'"
-            }' \
-            "https://bsky.social/xrpc/com.atproto.server.createSession")
-
-          account1_jwt=$(echo "$account1_response" | jq -r '.accessJwt')
-
-          if [[ -z "$account1_jwt" || "$account1_jwt" == "null" ]]; then
-            echo "Failed to authenticate account $ACCOUNT1"
-            echo "Response: $account1_response"
-            return 1
-          fi
-
-          # Generate JWT for ACCOUNT2
-          local account2_response=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
-            -d '{
-              "identifier": "'$ACCOUNT2'",
-              "password": "'$ACCOUNT2_PASSWORD'"
-            }' \
-            "https://bsky.social/xrpc/com.atproto.server.createSession")
-
-          account2_jwt=$(echo "$account2_response" | jq -r '.accessJwt')
-
-          if [[ -z "$account2_jwt" || "$account2_jwt" == "null" ]]; then
-            echo "Failed to authenticate account $ACCOUNT2"
-            echo "Response: $account2_response"
-            return 1
-          fi
-
-          # Post to ACCOUNT1 as a.status.updates
-          local account1_post_response=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $account1_jwt" \
-            -d '{
-              "collection": "a.status.update",
-              "repo": "'$ACCOUNT1'",
-              "record": {
-                "$type": "a.status.update",
-                "text": "'"$message"'",
-                "createdAt": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
-              }
-            }' \
-            "https://bsky.social/xrpc/com.atproto.repo.createRecord")
-
-          if [[ $(echo "$account1_post_response" | jq -r 'has("error")') == "true" ]]; then
-            echo "Error posting to $ACCOUNT1:"
-            echo "$account1_post_response" | jq
-            return 1
-          fi
-
-          # Post to ACCOUNT2 as normal post
-          local account2_post_response=$(curl -s -X POST \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $account2_jwt" \
-            -d '{
-              "collection": "app.bsky.feed.post",
-              "repo": "'$ACCOUNT2'",
-              "record": {
-                "$type": "app.bsky.feed.post",
-                "text": "'"$message"'",
-                "createdAt": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
-              }
-            }' \
-            "https://bsky.social/xrpc/com.atproto.repo.createRecord")
-
-          if [[ $(echo "$account2_post_response" | jq -r 'has("error")') == "true" ]]; then
-            echo "Error posting to $ACCOUNT2:"
-            echo "$account2_post_response" | jq
-            return 1
-          fi
-
-          echo "done"
-        }
-
-        ghostty_setup() {
-          local target="$1"
-
-          if [[ -z "$target" ]]; then
-            echo "Usage: ghostty_setup <user@host>"
-            return 1
-          fi
-
-          # Copy SSH key
-          echo "Copying SSH key to $target..."
-          ssh-copy-id "$target" || { echo "ssh-copy-id failed"; return 2; }
-
-          # Pipe infocmp output to tic on remote host
-          echo "Sending xterm-ghostty terminfo to $target..."
-          infocmp -x xterm-ghostty | ssh "$target" 'tic -x -' || { echo "Terminfo transfer failed"; return 3; }
-
-          echo "Done."
-        }
-
         zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
         zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
         zstyle ':completion:*' menu no
@@ -498,6 +545,10 @@ in
 
     home.packages = with pkgs; [
       tangled-setup
+      assh
+      hackatime-summary
+      now
+      ghostty-setup
       pkgs.unstable.wakatime-cli
       inputs.terminal-wakatime.packages.${pkgs.system}.default
       unzip
