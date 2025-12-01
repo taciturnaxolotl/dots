@@ -12,7 +12,7 @@
       overlays = [
         (final: prev: {
           unstable = import inputs.nixpkgs-unstable {
-            system = pkgs.stdenv.hostPlatform.system;
+            inherit (pkgs.stdenv.hostPlatform) system;
             config.allowUnfree = true;
           };
         })
