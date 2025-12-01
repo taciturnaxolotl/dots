@@ -180,7 +180,11 @@
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 22 80 443 ];
+    allowedTCPPorts = [
+      22
+      80
+      443
+    ];
     logRefusedConnections = false;
     rejectPackets = true;
   };
@@ -299,6 +303,30 @@
   atelier.services.knot-sync = {
     enable = true;
     secretsFile = config.age.secrets.github-knot-sync.path;
+  };
+
+  services.n8n = {
+    enable = true;
+    environment = {
+      N8N_HOST = "n8n.dunkirk.sh";
+      N8N_PROTOCOL = "https";
+      WEBHOOK_URL = "https://n8n.dunkirk.sh";
+    };
+  };
+
+  services.caddy.virtualHosts."n8n.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
+      reverse_proxy localhost:5678 {
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote}
+      }
+    '';
   };
 
   boot.loader.systemd-boot.enable = true;
