@@ -14,7 +14,7 @@
     username = "kierank";
     homeDirectory = "/Users/kierank";
     packages = with pkgs; [
-      inputs.nixvim.packages.${system}.default
+      inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
       vesktop
     ];
   };

@@ -56,7 +56,7 @@
     pkgs.gcc
     pkgs.rustc
     pkgs.cargo
-    pkgs.jdk23
+    pkgs.jdk
     pkgs.ruby
     pkgs.cmake
     pkgs.unstable.biome
@@ -72,7 +72,7 @@
     pkgs.nh
     pkgs.rustscan
     pkgs.vhs
-    inputs.soapdump.packages.${pkgs.system}.default
+    inputs.soapdump.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
 
   programs.direnv.enable = true;

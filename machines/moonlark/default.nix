@@ -120,7 +120,7 @@
     pkgs.mako
     pkgs.unstable.hyprpicker
     pkgs.wl-screenrec
-    inputs.hyprland-contrib.packages.${pkgs.system}.grimblast
+    inputs.hyprland-contrib.packages.${pkgs.stdenv.hostPlatform.system}.grimblast
     pkgs.playerctl
     pkgs.libnotify
     pkgs.notify-desktop
@@ -148,7 +148,7 @@
     pkgs.gcc
     pkgs.rustc
     pkgs.cargo
-    pkgs.jdk23
+    pkgs.jdk
     pkgs.ruby
     pkgs.cmake
     pkgs.unstable.biome
@@ -187,12 +187,12 @@
     pkgs.gobang
     pkgs.love
     #frc
-    inputs.frc-nix.packages.${pkgs.system}.elastic-dashboard
-    inputs.frc-nix.packages.${pkgs.system}.pathplanner
-    inputs.frc-nix.packages.${pkgs.system}.roborioteamnumbersetter
-    inputs.frc-nix.packages.${pkgs.system}.sysid
-    inputs.frc-nix.packages.${pkgs.system}.wpilib-utility
-    inputs.frc-nix.packages.${pkgs.system}.advantagescope
+    inputs.frc-nix.packages.${pkgs.stdenv.hostPlatform.system}.elastic-dashboard
+    inputs.frc-nix.packages.${pkgs.stdenv.hostPlatform.system}.pathplanner
+    inputs.frc-nix.packages.${pkgs.stdenv.hostPlatform.system}.roborioteamnumbersetter
+    inputs.frc-nix.packages.${pkgs.stdenv.hostPlatform.system}.sysid
+    inputs.frc-nix.packages.${pkgs.stdenv.hostPlatform.system}.wpilib-utility
+    inputs.frc-nix.packages.${pkgs.stdenv.hostPlatform.system}.advantagescope
     # misc
     pkgs.invoice
     pkgs.pop
@@ -206,7 +206,7 @@
     pkgs.unstable.kicad-testing
     pkgs.zenity
     pkgs.atproto-goat
-    inputs.cedarlogic.packages.${pkgs.system}.cedarlogic
+    inputs.cedarlogic.packages.${pkgs.stdenv.hostPlatform.system}.cedarlogic
     pkgs.unstable.betaflight-configurator
   ];
 

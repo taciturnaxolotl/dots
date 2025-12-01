@@ -11,14 +11,6 @@
   config = lib.mkIf config.atelier.shell.git.enable {
     programs.git = {
       enable = true;
-      userName = "Kieran Klukas";
-      userEmail = "me@dunkirk.sh";
-      aliases = {
-        c = "commit";
-        p = "push";
-        ch = "checkout";
-        pushfwl = "push --force-with-lease --force-if-includes";
-      };
       includes = [
         {
           path = pkgs.writeText "git-user-config" ''
@@ -32,19 +24,32 @@
           condition = "gitdir:~/code/school/";
         }
       ];
-      extraConfig = {
+      settings = {
+        user = {
+          name = "Kieran Klukas";
+          email = "me@dunkirk.sh";
+          signingKey = "~/.ssh/id_rsa.pub";
+        };
+        alias = {
+          c = "commit";
+          p = "push";
+          ch = "checkout";
+          pushfwl = "push --force-with-lease --force-if-includes";
+        };
         branch.sort = "-committerdate";
         pager.branch = false;
         column.ui = "auto";
         commit.gpgsign = true;
         gpg.format = "ssh";
         gpg.ssh.allowedSignersFile = "~/.ssh/allowedSigners";
-        user.signingKey = "~/.ssh/id_rsa.pub";
         pull.rebase = true;
         push.autoSetupRemote = true;
         init.defaultBranch = "main";
       };
-      delta.enable = true;
+    };
+    programs.delta = {
+      enable = true;
+      enableGitIntegration = true;
     };
     programs.gh.enable = true;
     programs.lazygit = {

@@ -48,7 +48,7 @@
           rust-lang.rust-analyzer
           dustypomerleau.rust-syntax
           catppuccin.catppuccin-vsc
-          inputs.frc-nix.packages.${pkgs.system}.vscode-wpilib
+          inputs.frc-nix.packages.${pkgs.stdenv.hostPlatform.system}.vscode-wpilib
         ];
         userSettings = {
           "editor.semanticHighlighting.enabled" = true;

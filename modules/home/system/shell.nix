@@ -609,7 +609,7 @@ in
       now
       ghostty-setup
       pkgs.unstable.wakatime-cli
-      inputs.terminal-wakatime.packages.${pkgs.system}.default
+      inputs.terminal-wakatime.packages.${pkgs.stdenv.hostPlatform.system}.default
       unzip
       dog
       dust

@@ -1,7 +1,6 @@
 {
   pkgs,
   inputs,
-  system,
   ...
 }:
 {
@@ -16,7 +15,7 @@
     homeDirectory = "/home/pi";
 
     packages = with pkgs; [
-      inputs.nixvim.packages.${system}.default
+      inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
 
       # languages
       go
@@ -25,7 +24,7 @@
       go-tools
 
       # my apps
-      inputs.ctfd-alerts.packages.${system}.default
+      inputs.ctfd-alerts.packages.${pkgs.stdenv.hostPlatform.system}.default
 
       # Fonts
       fira
