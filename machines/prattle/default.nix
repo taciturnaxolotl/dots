@@ -32,62 +32,31 @@
         trusted-users = [
           "kierank"
         ];
+        # Limit resource usage
+        max-jobs = 1;
+        cores = 1;
       };
       channel.enable = false;
-      optimise.automatic = true;
+      # Disable automatic optimization to save CPU/memory
+      optimise.automatic = false;
       registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+      # Enable automatic GC to free up disk space
+      gc = {
+        automatic = true;
+        dates = "weekly";
+        options = "--delete-older-than 7d";
+      };
     };
 
   time.timeZone = "America/New_York";
 
   environment.systemPackages = with pkgs; [
-    # core
-    coreutils
-    screen
-    bc
-    jq
-    psmisc
-    # cli_utils
-    direnv
-    zsh
-    gum
+    # core essentials only
     vim
-    # networking
-    xh
     curl
-    wget
-    dogdns
-    inetutils
-    mosh
-    # nix_tools
-    inputs.nixvim.packages.x86_64-linux.default
-    nixd
-    nil
-    nixfmt-rfc-style
     inputs.agenix.packages.x86_64-linux.default
-    # security
-    openssl
-    gpgme
-    gnupg
-    # dev_langs
-    nodejs_22
-    python3
-    go
-    gopls
-    gotools
-    go-tools
-    gcc
-    # misc
-    neofetch
   ];
-
-  programs.nh = {
-    enable = true;
-    clean.enable = true;
-    clean.extraArgs = "--keep-since 4d --keep 3";
-    flake = "/home/kierank/dots";
-  };
 
   age.identityPaths = [
     "/home/kierank/.ssh/id_rsa"
@@ -110,9 +79,9 @@
     XDG_CONFIG_HOME = "$HOME/.config";
     XDG_DATA_HOME = "$HOME/.local/share";
     XDG_STATE_HOME = "$HOME/.local/state";
-    EDITOR = "nvim";
-    SYSTEMD_EDITOR = "nvim";
-    VISUAL = "nvim";
+    EDITOR = "vim";
+    SYSTEMD_EDITOR = "vim";
+    VISUAL = "vim";
   };
 
   atelier = {
@@ -121,23 +90,24 @@
 
   networking = {
     hostName = "prattle";
-    networkmanager.enable = true;
+    # Use systemd-networkd instead of NetworkManager (lighter)
+    useDHCP = true;
+    networkmanager.enable = false;
   };
 
-  programs.zsh.enable = true;
-  programs.direnv.enable = true;
+  # Use bash instead of zsh to save memory
+  programs.bash.enableCompletion = true;
 
   users.users = {
     kierank = {
       initialPassword = "changeme";
       isNormalUser = true;
-      shell = pkgs.zsh;
+      shell = pkgs.bashInteractive;
       openssh.authorizedKeys.keys = [
         "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzEEjvbL/ttqmYoDjxYQmDIq36BabROJoXgQKeh9liBxApwp+2PmgxROzTg42UrRc9pyrkq5kVfxG5hvkqCinhL1fMiowCSEs2L2/Cwi40g5ZU+QwdcwI8a4969kkI46PyB19RHkxg54OUORiIiso/WHGmqQsP+5wbV0+4riSnxwn/JXN4pmnE//stnyAyoiEZkPvBtwJjKb3Ni9n3eNLNs6gnaXrCtaygEZdebikr9kS2g9mM696HvIFgM6cdR/wZ7DcLbG3IdTXuHN7PC3xxL+Y4ek5iMreQIPmuvs4qslbthPGYoYbYLUQiRa9XO5s/ksIj5Z14f7anHE6cuTQVpvNWdGDOigyIVS5qU+4ZF7j+rifzOXVL48gmcAvw/uV68m5Wl/p0qsC/d8vI3GYwEsWG/EzpAlc07l8BU2LxWgN+d7uwBFaJV9VtmUDs5dcslsh8IbzmtC9gq3OLGjklxTfIl6qPiL8U33oc/UwqzvZUrI2BlbagvIZYy6rP+q0= kierank@mockingjay"
       ];
       extraGroups = [
         "wheel"
-        "networkmanager"
       ];
     };
     root.openssh.authorizedKeys.keys = [
@@ -162,6 +132,8 @@
     allowedTCPPorts = [ 22 80 443 ];
     logRefusedConnections = false;
     rejectPackets = true;
+    # Disable firewall logging to reduce overhead
+    logReversePathDrops = false;
   };
 
   services.tailscale = {
@@ -218,6 +190,18 @@
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelParams = [ "console=ttyS0" ];
+
+  # Memory and resource optimizations
+  zramSwap = {
+    enable = true;
+    memoryPercent = 50; # Use 50% of RAM for compressed swap
+  };
+
+  # Reduce system logging overhead
+  services.journald.extraConfig = ''
+    SystemMaxUse=100M
+    MaxRetentionSec=7day
+  '';
 
   system.stateVersion = "23.05";
 }
