@@ -106,7 +106,7 @@
     };
 
     battleship-arena = {
-      url = "github:taciturnaxolotl/battleship-arena/ea9ed8d601369a4fb29b92ea6f408f1610ac4280";
+      url = "github:taciturnaxolotl/battleship-arena";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

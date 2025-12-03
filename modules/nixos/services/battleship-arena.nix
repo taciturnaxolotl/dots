@@ -105,6 +105,8 @@ in
       preStart = ''
         mkdir -p ${cfg.uploadDir}
         mkdir -p $(dirname ${cfg.resultsDb})
+        chown -R battleship-arena:battleship-arena ${cfg.uploadDir}
+        chmod -R u+rwX ${cfg.uploadDir}
         
         # Generate SSH host key if it doesn't exist
         if [ ! -f /var/lib/battleship-arena/.ssh/battleship_arena ]; then
