@@ -260,15 +260,6 @@
       # Deploy-rs configurations
       deploy.nodes = {
         # NixOS servers
-        prattle = {
-          hostname = "prattle";
-          profiles.system = {
-            sshUser = "kierank";
-            user = "root";
-            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.prattle;
-          };
-        };
-
         terebithia = {
           hostname = "terebithia";
           profiles.system = {
