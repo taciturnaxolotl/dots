@@ -104,6 +104,11 @@
       url = "git+https://tangled.org/tangled.org/core";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    battleship-arena = {
+      url = "github:taciturnaxolotl/battleship-arena/ea9ed8d601369a4fb29b92ea6f408f1610ac4280";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

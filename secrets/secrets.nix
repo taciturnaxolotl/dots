@@ -38,4 +38,7 @@ in
   "emojibot.age".publicKeys = [
     kierank
   ];
+  "battleship-arena.age".publicKeys = [
+    kierank
+  ];
 }

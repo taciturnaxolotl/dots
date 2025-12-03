@@ -37,6 +37,27 @@
         "type": "github"
       }
     },
+    "battleship-arena": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1764790763,
+        "narHash": "sha256-zeitWozGRMpBXpv0w2JchhvijPceJ1ZBE18Y3j19je8=",
+        "owner": "taciturnaxolotl",
+        "repo": "battleship-arena",
+        "rev": "ea9ed8d601369a4fb29b92ea6f408f1610ac4280",
+        "type": "github"
+      },
+      "original": {
+        "owner": "taciturnaxolotl",
+        "repo": "battleship-arena",
+        "rev": "ea9ed8d601369a4fb29b92ea6f408f1610ac4280",
+        "type": "github"
+      }
+    },
     "catppuccin": {
       "inputs": {
         "nixpkgs": [
@@ -1055,6 +1076,7 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
+        "battleship-arena": "battleship-arena",
         "catppuccin": "catppuccin",
         "catppuccin-vsc": "catppuccin-vsc",
         "cedarlogic": "cedarlogic",
