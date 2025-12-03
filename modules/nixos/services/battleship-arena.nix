@@ -80,7 +80,11 @@ in
         BATTLESHIP_RESULTS_DB = cfg.resultsDb;
         BATTLESHIP_ADMIN_PASSCODE = cfg.adminPasscode;
         BATTLESHIP_EXTERNAL_URL = "https://${cfg.domain}";
+        BATTLESHIP_ENGINE_PATH = "/var/lib/battleship-arena/battleship-engine";
+        CPLUS_INCLUDE_PATH = "/var/lib/battleship-arena/battleship-engine/include";
       };
+
+      path = [ pkgs.gcc pkgs.coreutils ];
 
       serviceConfig = {
         Type = "simple";
@@ -114,6 +118,13 @@ in
           ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -f /var/lib/battleship-arena/.ssh/battleship_arena -N ""
           chown -R battleship-arena:battleship-arena /var/lib/battleship-arena/.ssh
         fi
+        
+        # Copy battleship-engine to writable directory
+        chmod -R u+w /var/lib/battleship-arena/battleship-engine 2>/dev/null || true
+        rm -rf /var/lib/battleship-arena/battleship-engine
+        cp -r ${cfg.package}/share/battleship-arena/battleship-engine /var/lib/battleship-arena/
+        chown -R battleship-arena:battleship-arena /var/lib/battleship-arena/battleship-engine
+        chmod -R u+rwX /var/lib/battleship-arena/battleship-engine
       '';
     };
 
