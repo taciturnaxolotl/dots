@@ -128,6 +128,16 @@ in
       '';
     };
 
+    # Allow battleship-arena user to create transient systemd units for sandboxing
+    security.polkit.extraConfig = ''
+      polkit.addRule(function(action, subject) {
+        if (action.id == "org.freedesktop.systemd1.manage-units" &&
+            subject.user == "battleship-arena") {
+          return polkit.Result.YES;
+        }
+      });
+    '';
+
     networking.firewall.allowedTCPPorts = [ cfg.sshPort ];
   };
 }
