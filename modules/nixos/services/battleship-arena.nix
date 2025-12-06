@@ -128,6 +128,25 @@ in
       '';
     };
 
+    # Service to recalculate Glicko-2 ratings (manual trigger only)
+    # Ratings automatically recalculate after each round-robin
+    # Use: sudo systemctl start battleship-arena-recalculate
+    systemd.services.battleship-arena-recalculate = {
+      description = "Recalculate Battleship Arena Glicko-2 Ratings";
+      
+      environment = {
+        BATTLESHIP_RESULTS_DB = cfg.resultsDb;
+      };
+
+      serviceConfig = {
+        Type = "oneshot";
+        User = "battleship-arena";
+        Group = "battleship-arena";
+        WorkingDirectory = "/var/lib/battleship-arena";
+        ExecStart = "${cfg.package}/bin/battleship-arena recalculate-ratings";
+      };
+    };
+
     # Allow battleship-arena user to create transient systemd units for sandboxing
     security.polkit.extraConfig = ''
       polkit.addRule(function(action, subject) {
