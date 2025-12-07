@@ -44,11 +44,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1765039365,
-        "narHash": "sha256-7hCcOhV664PdM/ZhAxUyQVvH1AfHCyj9N6ZZNuvJM9A=",
+        "lastModified": 1765081313,
+        "narHash": "sha256-BcZVJCGIQZ5188cxe50EnUjXs36EXpaWRjDASIZDcYs=",
         "owner": "taciturnaxolotl",
         "repo": "battleship-arena",
-        "rev": "82dd4ac732bd114e1e470b6a8e9342842591fa1e",
+        "rev": "96e63d83c0497db062a9e14f9b259de090bbd1ee",
         "type": "github"
       },
       "original": {
