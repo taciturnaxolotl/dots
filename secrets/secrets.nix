@@ -41,4 +41,7 @@ in
   "battleship-arena.age".publicKeys = [
     kierank
   ];
+  "frp-auth-token.age".publicKeys = [
+    kierank
+  ];
 }

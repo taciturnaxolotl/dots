@@ -127,6 +127,9 @@
       file = ../../secrets/battleship-arena.age;
       owner = "battleship-arena";
     };
+    frp-auth-token = {
+      file = ../../secrets/frp-auth-token.age;
+    };
   };
 
   environment.sessionVariables = {
@@ -329,6 +332,12 @@
   atelier.services.knot-sync = {
     enable = true;
     secretsFile = config.age.secrets.github-knot-sync.path;
+  };
+
+  atelier.services.frps = {
+    enable = true;
+    domain = "bore.dunkirk.sh";
+    authTokenFile = config.age.secrets.frp-auth-token.path;
   };
 
   services.n8n = {

@@ -1,6 +1,7 @@
 {
   inputs,
   pkgs,
+  osConfig,
   ...
 }:
 {
@@ -36,6 +37,10 @@
         enable = true;
         swift = true;
       };
+    };
+    frpc = {
+      enable = true;
+      authTokenFile = osConfig.age.secrets.frp-auth-token.path;
     };
   };
 

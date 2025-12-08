@@ -99,6 +99,10 @@
       file = ../../secrets/context7.age;
       owner = "kierank";
     };
+    frp-auth-token = {
+      file = ../../secrets/frp-auth-token.age;
+      owner = "kierank";
+    };
   };
 
   environment.variables = {
