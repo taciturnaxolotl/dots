@@ -8,28 +8,22 @@ let
   cfg = config.atelier.frpc;
 
   frpc-tunnel = pkgs.writeShellScriptBin "frpc-tunnel" ''
-    # Check if gum is available
-    if ! command -v ${pkgs.gum}/bin/gum >/dev/null 2>&1; then
-      echo "Error: gum is required but not installed"
-      exit 1
-    fi
-
     # Get subdomain
     if [ -n "$1" ]; then
       subdomain="$1"
     else
-      ${pkgs.gum}/bin/gum style --foreground 212 --bold "🚇 FRP Tunnel"
+      ${pkgs.gum}/bin/gum style --bold --foreground 212 "Creating FRP tunnel"
       echo
-      subdomain=$(${pkgs.gum}/bin/gum input --placeholder "Enter subdomain (e.g., myapp)")
+      subdomain=$(${pkgs.gum}/bin/gum input --placeholder "myapp" --prompt "Subdomain: ")
       if [ -z "$subdomain" ]; then
-        ${pkgs.gum}/bin/gum style --foreground 196 "❌ Subdomain cannot be empty"
+        ${pkgs.gum}/bin/gum style --foreground 196 "No subdomain provided"
         exit 1
       fi
     fi
 
     # Validate subdomain
     if ! echo "$subdomain" | ${pkgs.gnugrep}/bin/grep -qE '^[a-z0-9-]+$'; then
-      ${pkgs.gum}/bin/gum style --foreground 196 "❌ Subdomain must contain only lowercase letters, numbers, and hyphens"
+      ${pkgs.gum}/bin/gum style --foreground 196 "Invalid subdomain (use only lowercase letters, numbers, and hyphens)"
       exit 1
     fi
 
@@ -37,19 +31,25 @@ let
     if [ -n "$2" ]; then
       port="$2"
     else
-      port=$(${pkgs.gum}/bin/gum input --placeholder "Enter local port (e.g., 8000)")
+      port=$(${pkgs.gum}/bin/gum input --placeholder "8000" --prompt "Local port: ")
       if [ -z "$port" ]; then
-        ${pkgs.gum}/bin/gum style --foreground 196 "❌ Port cannot be empty"
+        ${pkgs.gum}/bin/gum style --foreground 196 "No port provided"
         exit 1
       fi
     fi
 
     # Validate port
     if ! echo "$port" | ${pkgs.gnugrep}/bin/grep -qE '^[0-9]+$'; then
-      ${pkgs.gum}/bin/gum style --foreground 196 "❌ Port must be a number"
+      ${pkgs.gum}/bin/gum style --foreground 196 "Invalid port (must be a number)"
       exit 1
     fi
 
+    # Check if local port is accessible
+    if ! ${pkgs.netcat}/bin/nc -z 127.0.0.1 "$port" 2>/dev/null; then
+      ${pkgs.gum}/bin/gum style --foreground 214 "! Warning: Nothing listening on localhost:$port"
+    fi
+
+    # Create config file
     config_file=$(${pkgs.coreutils}/bin/mktemp)
     trap "${pkgs.coreutils}/bin/rm -f $config_file" EXIT
 
@@ -69,15 +69,14 @@ let
     subdomain = "$subdomain"
     EOF
 
+    # Start tunnel
+    public_url="https://$subdomain.${cfg.domain}"
     echo
-    ${pkgs.gum}/bin/gum style --border double --padding "1 2" --border-foreground 212 \
-      "🌐 Tunnel Active" \
-      "" \
-      "Local:  $(${pkgs.gum}/bin/gum style --foreground 212 --bold "localhost:$port")" \
-      "Public: $(${pkgs.gum}/bin/gum style --foreground 212 --bold "https://$subdomain.bore.dunkirk.sh")" \
-      "" \
-      "Press $(${pkgs.gum}/bin/gum style --foreground 196 --bold "Ctrl+C") to stop"
+    ${pkgs.gum}/bin/gum style --foreground 35 "✓ Tunnel configured"
+    ${pkgs.gum}/bin/gum style --foreground 117 "  Local:  localhost:$port"
+    ${pkgs.gum}/bin/gum style --foreground 117 "  Public: $public_url"
     echo
+    ${pkgs.gum}/bin/gum style --foreground 214 "Connecting to ${cfg.serverAddr}:${toString cfg.serverPort}..."
 
     exec ${pkgs.frp}/bin/frpc -c $config_file
   '';
@@ -88,7 +87,7 @@ in
 
     serverAddr = lib.mkOption {
       type = lib.types.str;
-      default = "terebithia.dunkirk.sh";
+      default = "bore.dunkirk.sh";
       description = "frp server address";
     };
 
@@ -96,6 +95,12 @@ in
       type = lib.types.port;
       default = 7000;
       description = "frp server port";
+    };
+
+    domain = lib.mkOption {
+      type = lib.types.str;
+      default = "bore.dunkirk.sh";
+      description = "Domain for public tunnel URLs";
     };
 
     authTokenFile = lib.mkOption {
