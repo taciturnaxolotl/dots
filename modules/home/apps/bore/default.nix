@@ -7,7 +7,7 @@
 let
   cfg = config.atelier.bore;
 
-  bore = pkgs.writeShellScriptBin "bore" ''
+  boreScript = pkgs.writeShellScript "bore" ''
     CONFIG_FILE="bore.toml"
     
     # Check for flags
@@ -252,6 +252,48 @@ let
 
     exec ${pkgs.frp}/bin/frpc -c $config_file
   '';
+
+  bore = pkgs.stdenv.mkDerivation {
+    pname = "bore";
+    version = "1.0";
+
+    dontUnpack = true;
+
+    nativeBuildInputs = with pkgs; [ pandoc installShellFiles ];
+
+    manPageSrc = ./bore.1.md;
+    bashCompletionSrc = ./completions/bore.bash;
+    zshCompletionSrc = ./completions/bore.zsh;
+    fishCompletionSrc = ./completions/bore.fish;
+
+    buildPhase = ''
+      # Convert markdown man page to man format
+      ${pkgs.pandoc}/bin/pandoc -s -t man $manPageSrc -o bore.1
+    '';
+
+    installPhase = ''
+      mkdir -p $out/bin
+
+      # Install binary
+      cp ${boreScript} $out/bin/bore
+      chmod +x $out/bin/bore
+
+      # Install man page
+      installManPage bore.1
+
+      # Install completions
+      installShellCompletion --bash --name bore $bashCompletionSrc
+      installShellCompletion --zsh --name _bore $zshCompletionSrc
+      installShellCompletion --fish --name bore.fish $fishCompletionSrc
+    '';
+
+    meta = with lib; {
+      description = "Secure tunneling service CLI";
+      homepage = "https://bore.dunkirk.sh";
+      license = licenses.mit;
+      maintainers = [ ];
+    };
+  };
 in
 {
   options.atelier.bore = {
