@@ -26,6 +26,10 @@
     apps = {
       helix.enable = true;
     };
+    ssh = {
+      enable = true;
+      zmx.enable = true;
+    };
   };
 
   # Enable home-manager

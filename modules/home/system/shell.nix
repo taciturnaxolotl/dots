@@ -401,6 +401,13 @@ in
                 template = "{{ if .SSHSession }}{{.HostName}} {{ end }}";
               }
               {
+                type = "text";
+                style = "plain";
+                background = "transparent";
+                foreground = "green";
+                template = "{{ if .Env.ZMX_SESSION }}[{{ .Env.ZMX_SESSION }}] {{ end }}";
+              }
+              {
                 type = "path";
                 style = "plain";
                 background = "transparent";
@@ -461,7 +468,7 @@ in
                 style = "plain";
                 foreground_templates = [
                   "{{if gt .Code 0}}red{{end}}"
-                  "{{if eq .Code 0}}magenta{{end}}"
+                  "{{if eq .Code 0}}{{if .Env.SSH_CONNECTION}}cyan{{else}}magenta{{end}}{{end}}"
                 ];
                 background = "transparent";
                 template = "❯";
@@ -472,7 +479,7 @@ in
         transient_prompt = {
           foreground_templates = [
             "{{if gt .Code 0}}red{{end}}"
-            "{{if eq .Code 0}}magenta{{end}}"
+            "{{if eq .Code 0}}{{if .Env.SSH_CONNECTION}}cyan{{else}}magenta{{end}}{{end}}"
           ];
           background = "transparent";
           template = "❯ ";

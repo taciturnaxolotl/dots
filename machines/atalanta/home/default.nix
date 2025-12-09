@@ -42,6 +42,62 @@
       enable = true;
       authTokenFile = osConfig.age.secrets.frp-auth-token.path;
     };
+    ssh = {
+      enable = true;
+      
+      zmx = {
+        enable = true;
+        hosts = [ "t.*" "p.*" "e.*" ];
+      };
+
+      hosts = {
+        # Dynamic zmx sessions per server
+        "t.*" = {
+          hostname = "150.136.15.177";  # terebithia
+        };
+
+        "p.*" = {
+          hostname = "150.136.63.103";  # prattle
+        };
+
+        "e.*" = {
+          hostname = "192.168.0.94";  # ember
+        };
+
+        # Regular hosts
+        john = {
+          user = "klukas";
+        };
+
+        bandit = {
+          hostname = "bandit.labs.overthewire.org";
+          port = 2220;
+        };
+
+        kali = {
+          user = "kali";
+        };
+
+        terebithia = {
+          hostname = "150.136.15.177";
+          zmx = true;
+        };
+
+        prattle = {
+          hostname = "150.136.63.103";
+          zmx = true;
+        };
+
+        ember = {
+          hostname = "192.168.0.94";
+          zmx = true;
+        };
+      };
+
+      extraConfig = ''
+        IdentityFile ~/.ssh/id_rsa
+      '';
+    };
   };
 
   programs.zsh.initContent = ''

@@ -19,6 +19,10 @@
       helix.enable = true;
       irssi.enable = true;
     };
+    ssh = {
+      enable = true;
+      zmx.enable = true;
+    };
   };
 
   programs.home-manager.enable = true;

@@ -109,6 +109,10 @@
       url = "github:taciturnaxolotl/battleship-arena";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    zmx = {
+      url = "github:neurosnap/zmx";
+    };
   };
 
   outputs =
