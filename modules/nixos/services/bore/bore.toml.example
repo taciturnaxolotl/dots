@@ -1,0 +1,13 @@
+# bore tunnel configuration
+# Save this file as "bore.toml" in your project directory
+
+[myapp]
+port = 8000
+
+[api]
+port = 3000
+label = "dev"
+
+[frontend]
+port = 5173
+label = "local"

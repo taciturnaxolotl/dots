@@ -5,6 +5,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>bore</title>
+  <meta name="description" content="bore - secure tunneling service for exposing local services to the internet">
+  <meta property="og:title" content="bore - tunnel dashboard">
+  <meta property="og:description" content="secure tunneling service powered by frp on bore.dunkirk.sh">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://bore.dunkirk.sh">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="bore - tunnel dashboard">
+  <meta name="twitter:description" content="secure tunneling service powered by frp on bore.dunkirk.sh">
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚇</text></svg>">
   <style>
@@ -131,6 +139,20 @@
       color: #e6edf3;
       font-weight: 600;
       margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tunnel-label {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      background: rgba(251, 146, 60, 0.2);
+      color: #fb923c;
+      border: 1px solid #fb923c;
+      font-size: 0.7rem;
+      font-weight: 500;
+      border-radius: 0;
     }
 
     .tunnel-url {
@@ -249,12 +271,20 @@
         <div class="stat-value" id="activeTunnels">—</div>
       </div>
       <div class="stat-card">
+        <div class="stat-label">active connections</div>
+        <div class="stat-value" id="totalConnections">—</div>
+      </div>
+      <div class="stat-card">
         <div class="stat-label">server status</div>
         <div class="stat-value orange" id="serverStatus">—</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">active connections</div>
-        <div class="stat-value" id="totalConnections">—</div>
+        <div class="stat-label">total upload</div>
+        <div class="stat-value" id="totalUpload">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">total download</div>
+        <div class="stat-value" id="totalDownload">—</div>
       </div>
     </div>
 
@@ -297,6 +327,8 @@
         document.getElementById('activeTunnels').textContent = serverData.clientCounts || 0;
         document.getElementById('serverStatus').textContent = 'online';
         document.getElementById('totalConnections').textContent = serverData.curConns || 0;
+        document.getElementById('totalUpload').textContent = formatBytes(serverData.totalTrafficOut || 0);
+        document.getElementById('totalDownload').textContent = formatBytes(serverData.totalTrafficIn || 0);
 
         // Update page title
         const tunnelCount = serverData.clientCounts || 0;
@@ -352,11 +384,19 @@
           html += onlineTunnels.map(proxy => {
             const subdomain = proxy.conf?.subdomain || 'unknown';
             const url = `https://${subdomain}.bore.dunkirk.sh`;
+            
+            // Parse label from proxy name (format: subdomain[label])
+            const labelMatch = proxy.name.match(/\[([^\]]+)\]$/);
+            const label = labelMatch ? labelMatch[1] : null;
+            const displayName = label ? proxy.name.replace(/\[[^\]]+\]$/, '') : proxy.name;
 
             return `
               <div class="tunnel" data-tunnel="${proxy.name}">
                 <div class="tunnel-info">
-                  <div class="tunnel-name">${proxy.name || 'unnamed'}</div>
+                  <div class="tunnel-name">
+                    ${displayName || 'unnamed'}
+                    ${label ? `<span class="tunnel-label">${label}</span>` : ''}
+                  </div>
                   <div class="tunnel-url">
                     <a href="${url}" target="_blank">${url}</a>
                   </div>
@@ -375,10 +415,15 @@
           html += '<div class="offline-tunnels">';
           html += '<div style="color: #8b949e; font-size: 0.85rem; margin-bottom: 0.75rem;">recently disconnected</div>';
           html += offlineTunnels.map(proxy => {
+            // Parse label from proxy name (format: subdomain[label])
+            const labelMatch = proxy.name.match(/\[([^\]]+)\]$/);
+            const label = labelMatch ? labelMatch[1] : null;
+            const displayName = label ? proxy.name.replace(/\[[^\]]+\]$/, '') : proxy.name;
+            
             if (!proxy.conf) {
               return `
                 <div class="offline-tunnel" data-tunnel="${proxy.name}">
-                  <span class="offline-tunnel-name">${proxy.name || 'unnamed'}</span>
+                  <span class="offline-tunnel-name">${displayName || 'unnamed'}${label ? ` [${label}]` : ''}</span>
                   <span class="offline-tunnel-stats">in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span></span>
                 </div>
               `;
@@ -388,7 +433,7 @@
             const url = `https://${subdomain}.bore.dunkirk.sh`;
             return `
               <div class="offline-tunnel" data-tunnel="${proxy.name}">
-                <span class="offline-tunnel-name">${proxy.name || 'unnamed'} → ${url}</span>
+                <span class="offline-tunnel-name">${displayName || 'unnamed'}${label ? ` [${label}]` : ''} → ${url}</span>
                 <span class="offline-tunnel-stats">in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span></span>
               </div>
             `;
