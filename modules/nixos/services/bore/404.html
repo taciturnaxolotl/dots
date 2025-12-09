@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 - bore</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚇</text></svg>">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'SF Mono', 'Monaco', monospace;
+      background: #0d1117;
+      color: #e6edf3;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 600px;
+    }
+
+    .error-code {
+      font-size: 8rem;
+      font-weight: 700;
+      color: #8b949e;
+      line-height: 1;
+      margin-bottom: 1rem;
+    }
+
+    .emoji {
+      font-size: 4rem;
+      margin-bottom: 2rem;
+      opacity: 0.5;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      color: #e6edf3;
+    }
+
+    p {
+      color: #8b949e;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    .countdown {
+      color: #14b8a6;
+      font-size: 1.2rem;
+      font-weight: 600;
+      font-variant-numeric: tabular-nums;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="emoji">🚇</div>
+    <div class="error-code">404</div>
+    <h1>wrong stop!</h1>
+    <p>this tunnel doesn't go anywhere. maybe it was never built, or perhaps it collapsed?</p>
+    <p>redirecting in <span class="countdown" id="countdown">5.000</span>s</p>
+  </div>
+
+  <script>
+    let timeLeft = 5000; // 5 seconds in milliseconds
+    const countdownEl = document.getElementById('countdown');
+    const startTime = Date.now();
+
+    const interval = setInterval(() => {
+      const elapsed = Date.now() - startTime;
+      timeLeft = Math.max(0, 5000 - elapsed);
+
+      countdownEl.textContent = (timeLeft / 1000).toFixed(3);
+
+      if (timeLeft <= 0) {
+        clearInterval(interval);
+        window.location.href = 'https://bore.dunkirk.sh';
+      }
+    }, 10); // Update every 10ms for smooth countdown
+  </script>
+</body>
+
+</html>

@@ -94,6 +94,9 @@ in
           # Subdomain support for *.${cfg.domain}
           subDomainHost = "${cfg.domain}"
 
+          # Custom 404 page
+          custom404Page = "${./404.html}"
+
           # Logging
           log.to = "console"
           log.level = "info"
@@ -155,6 +158,14 @@ in
             header_up X-Forwarded-Proto {scheme}
             header_up X-Forwarded-For {remote}
             header_up Host {host}
+          }
+          handle_errors {
+            @404 expression {http.error.status_code} == 404
+            handle @404 {
+              root * ${./.}
+              rewrite * /404.html
+              file_server
+            }
           }
         '';
       };

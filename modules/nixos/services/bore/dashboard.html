@@ -25,11 +25,17 @@
       flex-direction: column;
     }
 
+    body.loading .container {
+      opacity: 0;
+    }
+
     .container {
       max-width: 1200px;
       margin: 0 auto;
       flex: 1;
       width: 100%;
+      opacity: 1;
+      transition: opacity 0.3s ease-in-out;
     }
 
     header {
@@ -135,16 +141,10 @@
     .tunnel-url a {
       color: #14b8a6;
       text-decoration: none;
-      cursor: pointer;
-      user-select: all;
     }
 
     .tunnel-url a:hover {
       text-decoration: underline;
-    }
-
-    .tunnel-url a:active {
-      color: #fb923c;
     }
 
     .tunnel-status {
@@ -236,7 +236,7 @@
   </style>
 </head>
 
-<body>
+<body class="loading">
   <main class="container">
     <header>
       <h1>🚇 bore</h1>
@@ -358,7 +358,7 @@
                 <div class="tunnel-info">
                   <div class="tunnel-name">${proxy.name || 'unnamed'}</div>
                   <div class="tunnel-url">
-                    <a href="${url}" target="_blank" ondblclick="copyToClipboard(event, '${url}')">${url}</a>
+                    <a href="${url}" target="_blank">${url}</a>
                   </div>
                   <div style="color: #8b949e; font-size: 0.75rem; margin-top: 0.25rem;">
                     started: <span data-start-time="${proxy.lastStartTime || ''}"></span> • traffic in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span>
@@ -472,29 +472,15 @@
       });
     }
 
-    function copyToClipboard(event, url) {
-      event.preventDefault();
-      event.stopPropagation();
-      
-      navigator.clipboard.writeText(url).then(() => {
-        // Visual feedback
-        const link = event.target;
-        const originalColor = link.style.color;
-        link.style.color = '#fb923c';
-        setTimeout(() => {
-          link.style.color = originalColor;
-        }, 200);
-      }).catch(err => {
-        console.error('Failed to copy:', err);
-      });
-    }
-
     // Fetch immediately and then every 5 seconds
     fetchStats();
     setInterval(fetchStats, 5000);
 
     // Update relative times every 10 seconds
     setInterval(updateRelativeTimes, 10000);
+
+    // Remove loading class after initial fetch
+    document.body.classList.remove('loading');
   </script>
 </body>
 
