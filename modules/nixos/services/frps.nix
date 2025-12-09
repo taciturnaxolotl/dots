@@ -82,6 +82,11 @@ in
           bindPort = ${toString cfg.bindPort}
           vhostHTTPPort = ${toString cfg.vhostHTTPPort}
 
+          # Dashboard and Prometheus metrics
+          webServer.addr = "127.0.0.1"
+          webServer.port = 7400
+          enablePrometheus = true
+
           # Authentication token - clients need this to connect
           auth.method = "token"
           ${tokenConfig}
@@ -108,6 +113,36 @@ in
 
     # Automatically configure Caddy for wildcard domain
     services.caddy = lib.mkIf cfg.enableCaddy {
+      # Dashboard for base domain
+      virtualHosts."${cfg.domain}" = {
+        extraConfig = ''
+          tls {
+            dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+          }
+          header {
+            Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+          }
+          
+          # Proxy /metrics to frps dashboard
+          handle /metrics {
+            reverse_proxy localhost:7400
+          }
+          
+          # Proxy /api/* to frps dashboard
+          handle /api/* {
+            reverse_proxy localhost:7400
+          }
+          
+          # Serve dashboard HTML
+          handle {
+            root * ${./.}
+            try_files bore-dashboard.html
+            file_server
+          }
+        '';
+      };
+
+      # Wildcard subdomain proxy to frps
       virtualHosts."*.${cfg.domain}" = {
         extraConfig = ''
           tls {

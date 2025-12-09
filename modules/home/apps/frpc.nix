@@ -62,7 +62,7 @@ let
     auth.tokenSource.file.path = "${cfg.authTokenFile}"
 
     [[proxies]]
-    name = "$subdomain-tunnel"
+    name = "$subdomain"
     type = "http"
     localIP = "127.0.0.1"
     localPort = $port
