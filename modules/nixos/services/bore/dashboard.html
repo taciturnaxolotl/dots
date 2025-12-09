@@ -135,10 +135,16 @@
     .tunnel-url a {
       color: #14b8a6;
       text-decoration: none;
+      cursor: pointer;
+      user-select: all;
     }
 
     .tunnel-url a:hover {
       text-decoration: underline;
+    }
+
+    .tunnel-url a:active {
+      color: #fb923c;
     }
 
     .tunnel-status {
@@ -203,6 +209,30 @@
     .last-updated a:hover {
       text-decoration: underline;
     }
+
+    .offline-tunnels {
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid #30363d;
+    }
+
+    .offline-tunnel {
+      padding: 0.5rem 0;
+      color: #8b949e;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .offline-tunnel-name {
+      opacity: 0.6;
+    }
+
+    .offline-tunnel-stats {
+      font-size: 0.75rem;
+      opacity: 0.5;
+    }
   </style>
 </head>
 
@@ -247,6 +277,7 @@
   <script>
     let fetchFailCount = 0;
     const MAX_FAIL_COUNT = 3;
+    let lastProxiesState = null;
 
     async function fetchStats() {
       try {
@@ -267,42 +298,24 @@
         document.getElementById('serverStatus').textContent = 'online';
         document.getElementById('totalConnections').textContent = serverData.curConns || 0;
 
-        // Update tunnels list
-        const tunnelList = document.getElementById('tunnelList');
+        // Update page title
+        const tunnelCount = serverData.clientCounts || 0;
+        const totalTraffic = formatBytes((serverData.totalTrafficIn || 0) + (serverData.totalTrafficOut || 0));
+        document.title = tunnelCount > 0 
+          ? `bore - ${tunnelCount} active • ${totalTraffic}`
+          : 'bore';
+
+        // Check if tunnel list structure changed
         const proxies = proxiesData.proxies || [];
-
-        if (proxies.length === 0) {
-          tunnelList.innerHTML = `
-            <div class="empty-state">
-              <div class="empty-icon">🚇</div>
-              <p>no active tunnels</p>
-            </div>
-          `;
+        const currentState = JSON.stringify(proxies.map(p => ({ name: p.name, status: p.status })));
+        
+        if (currentState !== lastProxiesState) {
+          // Structure changed, rebuild DOM
+          lastProxiesState = currentState;
+          renderTunnelList(proxies);
         } else {
-          tunnelList.innerHTML = proxies.map(proxy => {
-            const subdomain = proxy.conf.subdomain;
-            const url = `https://${subdomain}.bore.dunkirk.sh`;
-            const statusClass = proxy.status === 'online' ? 'status-online' : '';
-
-            return `
-              <div class="tunnel">
-                <div class="tunnel-icon">→</div>
-                <div class="tunnel-info">
-                  <div class="tunnel-name">${proxy.name}</div>
-                  <div class="tunnel-url">
-                    <a href="${url}" target="_blank">${url}</a>
-                  </div>
-                  <div style="color: #8b949e; font-size: 0.75rem; margin-top: 0.25rem;">
-                    started: <span data-start-time="${proxy.lastStartTime}"></span> • traffic in: ${formatBytes(proxy.todayTrafficIn)} • out: ${formatBytes(proxy.todayTrafficOut)}
-                  </div>
-                </div>
-                <div class="tunnel-status ${statusClass}">${proxy.status}</div>
-              </div>
-            `;
-          }).join('');
-
-          // Update all relative times
-          updateRelativeTimes();
+          // Structure unchanged, just update data
+          updateTunnelData(proxies);
         }
 
         document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
@@ -317,6 +330,97 @@
           window.location.reload();
         }
       }
+    }
+
+    function renderTunnelList(proxies) {
+      const tunnelList = document.getElementById('tunnelList');
+      const onlineTunnels = proxies.filter(p => p.status === 'online');
+      const offlineTunnels = proxies.filter(p => p.status !== 'online');
+
+      if (onlineTunnels.length === 0 && offlineTunnels.length === 0) {
+        tunnelList.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🚇</div>
+            <p>no active tunnels</p>
+          </div>
+        `;
+      } else {
+        let html = '';
+        
+        // Render online tunnels
+        if (onlineTunnels.length > 0) {
+          html += onlineTunnels.map(proxy => {
+            const subdomain = proxy.conf?.subdomain || 'unknown';
+            const url = `https://${subdomain}.bore.dunkirk.sh`;
+
+            return `
+              <div class="tunnel" data-tunnel="${proxy.name}">
+                <div class="tunnel-info">
+                  <div class="tunnel-name">${proxy.name || 'unnamed'}</div>
+                  <div class="tunnel-url">
+                    <a href="${url}" target="_blank" ondblclick="copyToClipboard(event, '${url}')">${url}</a>
+                  </div>
+                  <div style="color: #8b949e; font-size: 0.75rem; margin-top: 0.25rem;">
+                    started: <span data-start-time="${proxy.lastStartTime || ''}"></span> • traffic in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span>
+                  </div>
+                </div>
+                <div class="tunnel-status status-online">online</div>
+              </div>
+            `;
+          }).join('');
+        }
+        
+        // Render offline tunnels
+        if (offlineTunnels.length > 0) {
+          html += '<div class="offline-tunnels">';
+          html += '<div style="color: #8b949e; font-size: 0.85rem; margin-bottom: 0.75rem;">recently disconnected</div>';
+          html += offlineTunnels.map(proxy => {
+            if (!proxy.conf) {
+              return `
+                <div class="offline-tunnel" data-tunnel="${proxy.name}">
+                  <span class="offline-tunnel-name">${proxy.name || 'unnamed'}</span>
+                  <span class="offline-tunnel-stats">in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span></span>
+                </div>
+              `;
+            }
+            
+            const subdomain = proxy.conf.subdomain || 'unknown';
+            const url = `https://${subdomain}.bore.dunkirk.sh`;
+            return `
+              <div class="offline-tunnel" data-tunnel="${proxy.name}">
+                <span class="offline-tunnel-name">${proxy.name || 'unnamed'} → ${url}</span>
+                <span class="offline-tunnel-stats">in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span></span>
+              </div>
+            `;
+          }).join('');
+          html += '</div>';
+        }
+        
+        tunnelList.innerHTML = html;
+
+        // Update all relative times
+        updateRelativeTimes();
+        
+
+      }
+      
+      // Update data
+      updateTunnelData(proxies);
+    }
+
+    function updateTunnelData(proxies) {
+      proxies.forEach(proxy => {
+        const trafficInEl = document.querySelector(`[data-traffic-in="${proxy.name}"]`);
+        const trafficOutEl = document.querySelector(`[data-traffic-out="${proxy.name}"]`);
+        
+        if (trafficInEl) trafficInEl.textContent = formatBytes(proxy.todayTrafficIn || 0);
+        if (trafficOutEl) trafficOutEl.textContent = formatBytes(proxy.todayTrafficOut || 0);
+        
+
+      });
+      
+      // Update relative times
+      updateRelativeTimes();
     }
 
     function formatBytes(bytes) {
@@ -365,6 +469,23 @@
       document.querySelectorAll('[data-start-time]').forEach(element => {
         const timeStr = element.getAttribute('data-start-time');
         element.textContent = formatTime(timeStr);
+      });
+    }
+
+    function copyToClipboard(event, url) {
+      event.preventDefault();
+      event.stopPropagation();
+      
+      navigator.clipboard.writeText(url).then(() => {
+        // Visual feedback
+        const link = event.target;
+        const originalColor = link.style.color;
+        link.style.color = '#fb923c';
+        setTimeout(() => {
+          link.style.color = originalColor;
+        }, 200);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
       });
     }
 

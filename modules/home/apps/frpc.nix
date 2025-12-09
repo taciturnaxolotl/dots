@@ -8,11 +8,30 @@ let
   cfg = config.atelier.bore;
 
   bore = pkgs.writeShellScriptBin "bore" ''
+    # Check for flags
+    if [ "$1" = "--list" ] || [ "$1" = "-l" ]; then
+      ${pkgs.gum}/bin/gum style --bold --foreground 212 "Active tunnels"
+      echo
+      
+      tunnels=$(${pkgs.curl}/bin/curl -s https://${cfg.domain}/api/proxy/http)
+      
+      if ! echo "$tunnels" | ${pkgs.jq}/bin/jq -e '.proxies | length > 0' >/dev/null 2>&1; then
+        ${pkgs.gum}/bin/gum style --foreground 117 "No active tunnels"
+        exit 0
+      fi
+      
+      # Filter only online tunnels with valid conf
+      echo "$tunnels" | ${pkgs.jq}/bin/jq -r '.proxies[] | select(.status == "online" and .conf != null) | "\(.name) → https://\(.conf.subdomain).${cfg.domain}"' | while read -r line; do
+        ${pkgs.gum}/bin/gum style --foreground 35 "✓ $line"
+      done
+      exit 0
+    fi
+
     # Get subdomain
     if [ -n "$1" ]; then
       subdomain="$1"
     else
-      ${pkgs.gum}/bin/gum style --bold --foreground 212 "Creating FRP tunnel"
+      ${pkgs.gum}/bin/gum style --bold --foreground 212 "Creating bore tunnel"
       echo
       subdomain=$(${pkgs.gum}/bin/gum input --placeholder "myapp" --prompt "Subdomain: ")
       if [ -z "$subdomain" ]; then
