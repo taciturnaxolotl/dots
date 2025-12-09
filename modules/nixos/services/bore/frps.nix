@@ -136,7 +136,7 @@ in
           # Serve dashboard HTML
           handle {
             root * ${./.}
-            try_files bore-dashboard.html
+            try_files dashboard.html
             file_server
           }
         '';

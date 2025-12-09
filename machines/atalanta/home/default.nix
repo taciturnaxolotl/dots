@@ -38,7 +38,7 @@
         swift = true;
       };
     };
-    frpc = {
+    bore = {
       enable = true;
       authTokenFile = osConfig.age.secrets.frp-auth-token.path;
     };

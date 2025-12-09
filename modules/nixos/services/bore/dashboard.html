@@ -4,7 +4,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🚇 bore</title>
+  <title>bore</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚇</text></svg>">
   <style>
     * {
       margin: 0;
@@ -18,11 +20,16 @@
       color: #e6edf3;
       padding: 2rem;
       line-height: 1.5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
     }
 
     .container {
       max-width: 1200px;
       margin: 0 auto;
+      flex: 1;
+      width: 100%;
     }
 
     header {
@@ -185,15 +192,25 @@
       color: #8b949e;
       font-size: 0.8rem;
       margin-top: 2rem;
+      padding: 2rem 0;
+    }
+
+    .last-updated a {
+      color: #14b8a6;
+      text-decoration: none;
+    }
+
+    .last-updated a:hover {
+      text-decoration: underline;
     }
   </style>
 </head>
 
 <body>
-  <div class="container">
+  <main class="container">
     <header>
       <h1>🚇 bore</h1>
-      <p class="subtitle">tunnel dashboard • bore.dunkirk.sh</p>
+      <p class="subtitle">fancy tunnels @ terebithia</p>
     </header>
 
     <div class="stats">
@@ -211,20 +228,21 @@
       </div>
     </div>
 
-    <div class="section">
-      <h2>~ active tunnels</h2>
+    <section class="section">
+      <h2>~boreholes</h2>
       <div class="tunnel-list" id="tunnelList">
         <div class="empty-state">
           <div class="empty-icon">🚇</div>
           <p>no active tunnels</p>
         </div>
       </div>
-    </div>
+    </section>
+  </main>
 
-    <div class="last-updated">
-      last updated: <span id="lastUpdated">never</span>
-    </div>
-  </div>
+  <footer class="last-updated">
+    last updated: <span id="lastUpdated">never</span><br>
+    made with ♥︎ by <a href="https://dunkirk.sh" target="_blank">kieran klukas</a>
+  </footer>
 
   <script>
     let fetchFailCount = 0;
@@ -265,7 +283,7 @@
             const subdomain = proxy.conf.subdomain;
             const url = `https://${subdomain}.bore.dunkirk.sh`;
             const statusClass = proxy.status === 'online' ? 'status-online' : '';
-            
+
             return `
               <div class="tunnel">
                 <div class="tunnel-icon">→</div>
@@ -275,13 +293,16 @@
                     <a href="${url}" target="_blank">${url}</a>
                   </div>
                   <div style="color: #8b949e; font-size: 0.75rem; margin-top: 0.25rem;">
-                    started: ${proxy.lastStartTime} • traffic in: ${formatBytes(proxy.todayTrafficIn)} • out: ${formatBytes(proxy.todayTrafficOut)}
+                    started: <span data-start-time="${proxy.lastStartTime}"></span> • traffic in: ${formatBytes(proxy.todayTrafficIn)} • out: ${formatBytes(proxy.todayTrafficOut)}
                   </div>
                 </div>
                 <div class="tunnel-status ${statusClass}">${proxy.status}</div>
               </div>
             `;
           }).join('');
+
+          // Update all relative times
+          updateRelativeTimes();
         }
 
         document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
@@ -289,7 +310,7 @@
         fetchFailCount++;
         document.getElementById('serverStatus').textContent = 'offline';
         console.error('Failed to fetch stats:', error);
-        
+
         // Reload page if failed multiple times (server might have updated)
         if (fetchFailCount >= MAX_FAIL_COUNT) {
           console.log('Multiple fetch failures detected, reloading page...');
@@ -306,9 +327,53 @@
       return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     }
 
+    function formatTime(timeStr) {
+      // Input format: "12-08 20:15:20" (MM-DD HH:MM:SS)
+      const [datePart, timePart] = timeStr.split(' ');
+      const [month, day] = datePart.split('-');
+      const [hour, minute, second] = timePart.split(':');
+
+      const now = new Date();
+      const inputDate = new Date(now.getFullYear(), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute), parseInt(second));
+
+      const diffInSeconds = (now.getTime() - inputDate.getTime()) / 1000;
+      const diffInMinutes = Math.round(diffInSeconds / 60);
+      const diffInHours = Math.round(diffInMinutes / 60);
+
+      if (diffInSeconds < 60) {
+        return 'just now';
+      } else if (diffInHours < 1) {
+        return diffInMinutes === 1 ? '1 minute ago' : `${diffInMinutes} minutes ago`;
+      } else if (now.toDateString() === inputDate.toDateString()) {
+        return 'today';
+      } else if (
+        new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).toDateString() ===
+        inputDate.toDateString()
+      ) {
+        return 'yesterday';
+      } else {
+        return inputDate.toLocaleTimeString([], {
+          month: 'numeric',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: 'numeric',
+        });
+      }
+    }
+
+    function updateRelativeTimes() {
+      document.querySelectorAll('[data-start-time]').forEach(element => {
+        const timeStr = element.getAttribute('data-start-time');
+        element.textContent = formatTime(timeStr);
+      });
+    }
+
     // Fetch immediately and then every 5 seconds
     fetchStats();
     setInterval(fetchStats, 5000);
+
+    // Update relative times every 10 seconds
+    setInterval(updateRelativeTimes, 10000);
   </script>
 </body>
 

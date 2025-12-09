@@ -5,9 +5,9 @@
   ...
 }:
 let
-  cfg = config.atelier.frpc;
+  cfg = config.atelier.bore;
 
-  frpc-tunnel = pkgs.writeShellScriptBin "frpc-tunnel" ''
+  bore = pkgs.writeShellScriptBin "bore" ''
     # Get subdomain
     if [ -n "$1" ]; then
       subdomain="$1"
@@ -82,19 +82,19 @@ let
   '';
 in
 {
-  options.atelier.frpc = {
-    enable = lib.mkEnableOption "frp client for tunneling services";
+  options.atelier.bore = {
+    enable = lib.mkEnableOption "bore tunneling service";
 
     serverAddr = lib.mkOption {
       type = lib.types.str;
       default = "bore.dunkirk.sh";
-      description = "frp server address";
+      description = "bore server address";
     };
 
     serverPort = lib.mkOption {
       type = lib.types.port;
       default = 7000;
-      description = "frp server port";
+      description = "bore server port";
     };
 
     domain = lib.mkOption {
@@ -113,7 +113,7 @@ in
   config = lib.mkIf cfg.enable {
     home.packages = [
       pkgs.frp
-      frpc-tunnel
+      bore
     ];
   };
 }
