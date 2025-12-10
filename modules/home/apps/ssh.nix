@@ -108,7 +108,7 @@ in
               extraOptions = hostCfg.extraOptions // (
                 if hostCfg.zmx then
                   {
-                    RemoteCommand = "zmx attach %n";
+                    RemoteCommand = "export PATH=$HOME/.nix-profile/bin:$PATH; zmx attach %n";
                     RequestTTY = "yes";
                     ControlPath = "~/.ssh/cm-%r@%h:%p";
                     ControlMaster = "auto";
@@ -133,7 +133,7 @@ in
                   port = mkIf (patternHost.port or null != null) patternHost.port;
                   user = mkIf (patternHost.user or null != null) patternHost.user;
                   extraOptions = {
-                    RemoteCommand = "zmx attach %k";
+                    RemoteCommand = "export PATH=$HOME/.nix-profile/bin:$PATH; zmx attach %k";
                     RequestTTY = "yes";
                     ControlPath = "~/.ssh/cm-%r@%h:%p";
                     ControlMaster = "auto";
