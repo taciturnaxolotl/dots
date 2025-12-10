@@ -14,6 +14,14 @@ jobs:
       
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@main
+        with:
+          extra-conf: |
+            extra-platforms = aarch64-linux
+      
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
       
       - name: Setup Tailscale
         uses: tailscale/github-action@v3
