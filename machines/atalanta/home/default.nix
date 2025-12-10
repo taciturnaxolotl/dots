@@ -9,8 +9,6 @@
     (inputs.import-tree ../../../modules/home)
   ];
 
-  nixpkgs.enable = true;
-
   home = {
     username = "kierank";
     homeDirectory = "/Users/kierank";

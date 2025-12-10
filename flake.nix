@@ -147,6 +147,8 @@
                 hash = "sha256-7mkrPl2CQSfc1lRjl1ilwxdYcK5iRU//QGKmdCicK30=";
               };
             });
+            
+            zmx-binary = prev.callPackage ./packages/zmx.nix { };
           })
         ];
       };
@@ -258,6 +260,7 @@
             home-manager.darwinModules.home-manager
             agenix.darwinModules.default
             unstable-overlays
+            nur.modules.darwin.default
             ./machines/atalanta
           ];
         };

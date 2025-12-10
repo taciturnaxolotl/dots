@@ -82,16 +82,11 @@ in
   };
 
   config = mkIf cfg.enable {
-    # On macOS (darwin), zmx must be installed manually due to build issues
-    # Download from: https://zmx.sh/a/zmx-0.0.2-macos-aarch64.tar.gz
-    # Extract and place in PATH (e.g., ~/.local/bin/)
-    
-    # On Linux, use the zmx flake
+    # zmx provides pre-built binaries that we download instead of building from source
+    # This avoids the zig2nix dependency which causes issues in CI
     home.packages = 
-      (optionals (cfg.zmx.enable && !pkgs.stdenv.isDarwin) [
-        inputs.zmx.packages.${pkgs.stdenv.hostPlatform.system}.default
-      ])
-      ++ (optionals cfg.zmx.enable [
+      (optionals cfg.zmx.enable [
+        pkgs.zmx-binary
         pkgs.autossh
       ]);
 

@@ -6,6 +6,7 @@
 {
   imports = [
     (inputs.import-tree ../../modules/home)
+    ../../modules/home/system/nixpkgs.nix.disabled
   ];
 
   nixpkgs.enable = true;
