@@ -92,6 +92,11 @@
           hostname = "192.168.0.94";
           zmx = true;
         };
+
+        remarkable = {
+          hostname = "10.11.99.01";
+          user = "root";
+        };
       };
 
       extraConfig = ''
