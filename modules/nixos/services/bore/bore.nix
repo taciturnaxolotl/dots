@@ -126,11 +126,6 @@ in
             Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
           }
           
-          # Proxy /metrics to frps dashboard
-          handle /metrics {
-            reverse_proxy localhost:7400
-          }
-          
           # Proxy /api/* to frps dashboard
           handle /api/* {
             reverse_proxy localhost:7400
