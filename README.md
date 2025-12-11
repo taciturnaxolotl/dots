@@ -18,7 +18,6 @@
 ├── machines
 │   ├── atalanta # my macOS M4 machine
 │   ├── ember # my dell r210 server (in my basement)
-│   ├── john # shared server for cedarville
 │   ├── moonlark # my framework 13 <dead>
 │   ├── nest # shared tilde server through hc
 │   ├── prattle # oracle cloud x86_64 server
