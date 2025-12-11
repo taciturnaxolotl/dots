@@ -185,12 +185,11 @@
     .tunnel-label {
       display: inline-block;
       padding: 0.125rem 0.5rem;
-      background: rgba(251, 146, 60, 0.2);
-      color: #fb923c;
-      border: 1px solid #fb923c;
       font-size: 0.7rem;
       font-weight: 500;
       border-radius: 0;
+      margin-left: 0.25rem;
+      border: 1px solid;
     }
 
     .tunnel-url {
@@ -348,6 +347,55 @@
     const MAX_FAIL_COUNT = 3;
     let lastProxiesState = null;
 
+    // Predefined color palette for labels
+    const labelColors = [
+      { color: '#a78bfa', bg: 'rgba(167, 139, 250, 0.2)' },  // purple
+      { color: '#f472b6', bg: 'rgba(244, 114, 182, 0.2)' },  // pink
+      { color: '#facc15', bg: 'rgba(250, 204, 21, 0.2)' },   // yellow
+      { color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.2)' },   // blue
+      { color: '#f87171', bg: 'rgba(248, 113, 113, 0.2)' },  // red
+      { color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.2)' },   // sky
+      { color: '#c084fc', bg: 'rgba(192, 132, 252, 0.2)' },  // violet
+      { color: '#fb7185', bg: 'rgba(251, 113, 133, 0.2)' },  // rose
+    ];
+
+    // Hash string to index
+    function stringToColorIndex(str) {
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return Math.abs(hash) % labelColors.length;
+    }
+
+    // Get label color and styles
+    function getLabelStyle(label) {
+      const trimmedLabel = label.trim();
+      if (trimmedLabel === 'prod') {
+        return {
+          color: '#22c55e',
+          bgColor: 'rgba(34, 197, 94, 0.2)',
+          borderColor: '#22c55e'
+        };
+      }
+      
+      if (trimmedLabel === 'dev') {
+        return {
+          color: '#fb923c',
+          bgColor: 'rgba(251, 146, 60, 0.2)',
+          borderColor: '#fb923c'
+        };
+      }
+      
+      const colorIndex = stringToColorIndex(trimmedLabel);
+      const colorScheme = labelColors[colorIndex];
+      return {
+        color: colorScheme.color,
+        bgColor: colorScheme.bg,
+        borderColor: colorScheme.color
+      };
+    }
+
     async function fetchStats() {
       try {
         // Fetch server info
@@ -427,17 +475,23 @@
             const subdomain = proxy.conf?.subdomain || 'unknown';
             const url = `https://${subdomain}.bore.dunkirk.sh`;
             
-            // Parse label from proxy name (format: subdomain[label])
+            // Parse labels from proxy name (format: subdomain[label1,label2])
             const labelMatch = proxy.name.match(/\[([^\]]+)\]$/);
-            const label = labelMatch ? labelMatch[1] : null;
-            const displayName = label ? proxy.name.replace(/\[[^\]]+\]$/, '') : proxy.name;
+            const labels = labelMatch ? labelMatch[1].split(',') : [];
+            const displayName = labels.length > 0 ? proxy.name.replace(/\[[^\]]+\]$/, '') : proxy.name;
+
+            const labelHtml = labels.map(label => {
+              const trimmedLabel = label.trim();
+              const style = getLabelStyle(trimmedLabel);
+              return `<span class="tunnel-label" style="color: ${style.color}; background: ${style.bgColor}; border-color: ${style.borderColor};">${trimmedLabel}</span>`;
+            }).join('');
 
             return `
               <div class="tunnel" data-tunnel="${proxy.name}">
                 <div class="tunnel-info">
                   <div class="tunnel-name">
                     ${displayName || 'unnamed'}
-                    ${label ? `<span class="tunnel-label">${label}</span>` : ''}
+                    ${labelHtml}
                   </div>
                   <div class="tunnel-url">
                     <a href="${url}" target="_blank">${url}</a>
@@ -457,15 +511,16 @@
           html += '<div class="offline-tunnels">';
           html += '<div style="color: #8b949e; font-size: 0.85rem; margin-bottom: 0.75rem;">recently disconnected</div>';
           html += offlineTunnels.map(proxy => {
-            // Parse label from proxy name (format: subdomain[label])
+            // Parse labels from proxy name (format: subdomain[label1,label2])
             const labelMatch = proxy.name.match(/\[([^\]]+)\]$/);
-            const label = labelMatch ? labelMatch[1] : null;
-            const displayName = label ? proxy.name.replace(/\[[^\]]+\]$/, '') : proxy.name;
+            const labels = labelMatch ? labelMatch[1].split(',').map(l => l.trim()) : [];
+            const displayName = labels.length > 0 ? proxy.name.replace(/\[[^\]]+\]$/, '') : proxy.name;
+            const labelStr = labels.length > 0 ? ` [${labels.join(', ')}]` : '';
             
             if (!proxy.conf) {
               return `
                 <div class="offline-tunnel" data-tunnel="${proxy.name}">
-                  <span class="offline-tunnel-name">${displayName || 'unnamed'}${label ? ` [${label}]` : ''}</span>
+                  <span class="offline-tunnel-name">${displayName || 'unnamed'}${labelStr}</span>
                   <span class="offline-tunnel-stats">in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span></span>
                 </div>
               `;
@@ -475,7 +530,7 @@
             const url = `https://${subdomain}.bore.dunkirk.sh`;
             return `
               <div class="offline-tunnel" data-tunnel="${proxy.name}">
-                <span class="offline-tunnel-name">${displayName || 'unnamed'}${label ? ` [${label}]` : ''} → ${url}</span>
+                <span class="offline-tunnel-name">${displayName || 'unnamed'}${labelStr} → ${url}</span>
                 <span class="offline-tunnel-stats">in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span></span>
               </div>
             `;

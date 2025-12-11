@@ -183,6 +183,28 @@ let
             ;;
         esac
       done
+      
+      # Prompt for label if not provided via flag and not loaded from saved config
+      if [ -z "$label" ]; then
+        echo
+        # Allow multiple labels selection
+        labels=$(${pkgs.gum}/bin/gum choose --no-limit --header "Labels (select multiple):" "dev" "prod" "custom")
+        
+        if [ -n "$labels" ]; then
+          # Check if custom was selected
+          if echo "$labels" | ${pkgs.gnugrep}/bin/grep -q "custom"; then
+            custom_label=$(${pkgs.gum}/bin/gum input --placeholder "my-label" --prompt "Custom label: ")
+            if [ -z "$custom_label" ]; then
+              ${pkgs.gum}/bin/gum style --foreground 196 "No custom label provided"
+              exit 1
+            fi
+            # Replace 'custom' with the actual custom label
+            labels=$(echo "$labels" | ${pkgs.gnused}/bin/sed "s/custom/$custom_label/")
+          fi
+          # Join labels with comma
+          label=$(echo "$labels" | ${pkgs.coreutils}/bin/tr '\n' ',' | ${pkgs.gnused}/bin/sed 's/,$//')
+        fi
+      fi
     fi
 
     # Check if local port is accessible
@@ -219,7 +241,7 @@ let
     config_file=$(${pkgs.coreutils}/bin/mktemp)
     trap "${pkgs.coreutils}/bin/rm -f $config_file" EXIT
 
-    # Encode label into proxy name if provided (format: subdomain[label])
+    # Encode label into proxy name if provided (format: subdomain[label1,label2])
     proxy_name="$subdomain"
     if [ -n "$label" ]; then
       proxy_name="''${subdomain}[''${label}]"
