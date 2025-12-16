@@ -8,7 +8,7 @@ bore - secure tunneling service for exposing local services to the internet
 
 # SYNOPSIS
 
-**bore** [*SUBDOMAIN*] [*PORT*] [**--label** *LABEL*] [**--save**]
+**bore** [*SUBDOMAIN*] [*PORT*] [**--protocol** *PROTOCOL*] [**--label** *LABEL*] [**--save**]
 
 **bore** **--list** | **-l**
 
@@ -16,7 +16,7 @@ bore - secure tunneling service for exposing local services to the internet
 
 # DESCRIPTION
 
-**bore** is a tunneling service that uses frp (fast reverse proxy) to expose local services to the internet via bore.dunkirk.sh. It provides a simple CLI for creating and managing HTTP tunnels with optional labels and persistent configuration.
+**bore** is a tunneling service that uses frp (fast reverse proxy) to expose local services to the internet via bore.dunkirk.sh. It provides a simple CLI for creating and managing HTTP, TCP, and UDP tunnels with optional labels and persistent configuration.
 
 # OPTIONS
 
@@ -25,6 +25,9 @@ bore - secure tunneling service for exposing local services to the internet
 
 **-s**, **--saved**
 : List all saved tunnel configurations from bore.toml in the current directory.
+
+**-p**, **--protocol** *PROTOCOL*
+: Specify the protocol to use for the tunnel: **http** (default), **tcp**, or **udp**.
 
 **--label** *LABEL*
 : Assign a label/tag to the tunnel for organization and identification.
@@ -52,21 +55,42 @@ port = 8000
 
 [api]
 port = 3000
+protocol = "http"
 label = "dev"
+
+[database]
+port = 5432
+protocol = "tcp"
+label = "postgres"
+
+[game-server]
+port = 27015
+protocol = "udp"
+label = "game"
 ```
 
 When running **bore** without arguments in a directory with bore.toml, you'll be prompted to choose between creating a new tunnel or using a saved configuration.
 
 # EXAMPLES
 
-Create a simple tunnel:
+Create a simple HTTP tunnel:
 ```
 $ bore myapp 8000
 ```
 
-Create a tunnel with a label:
+Create an HTTP tunnel with a label:
 ```
 $ bore api 3000 --label dev
+```
+
+Create a TCP tunnel for a database:
+```
+$ bore database 5432 --protocol tcp --label postgres
+```
+
+Create a UDP tunnel for a game server:
+```
+$ bore game-server 27015 --protocol udp --label game
 ```
 
 Save a tunnel configuration:

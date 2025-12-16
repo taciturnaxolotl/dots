@@ -17,6 +17,8 @@ _bore() {
         '-l[List active tunnels]' \
         '--saved[List saved tunnels from bore.toml]' \
         '-s[List saved tunnels from bore.toml]' \
+        '--protocol[Specify protocol]:protocol:(http tcp udp)' \
+        '-p[Specify protocol]:protocol:(http tcp udp)' \
         '--label[Assign a label to the tunnel]:label:' \
         '--save[Save tunnel configuration to bore.toml]' \
         && return 0

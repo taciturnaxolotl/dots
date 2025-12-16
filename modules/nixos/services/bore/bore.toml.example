@@ -6,8 +6,19 @@ port = 8000
 
 [api]
 port = 3000
+protocol = "http"
 label = "dev"
 
 [frontend]
 port = 5173
 label = "local"
+
+[database]
+port = 5432
+protocol = "tcp"
+label = "postgres"
+
+[game-server]
+port = 27015
+protocol = "udp"
+label = "game"

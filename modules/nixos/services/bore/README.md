@@ -2,7 +2,9 @@
 
 ![screenshot](https://hc-cdn.hel1.your-objectstorage.com/s/v3/7652f29dacb8f76d_screenshot_2025-12-09_at_16.57.47.png)
 
-Bore is a lightweight wrapper around `frp` which provides a dashboard and a nice `gum` based cli. If you would like to run this in your own nix flake then simplify vendor this folder and `./modules/home/bore` and import the folders into the appropriate home manager and nixos configurations.
+Bore is a lightweight wrapper around `frp` which provides a dashboard and a nice `gum` based cli. It supports HTTP, TCP, and UDP tunneling. If you would like to run this in your own nix flake then simplify vendor this folder and `./modules/home/bore` and import the folders into the appropriate home manager and nixos configurations.
+
+## Client Configuration
 
 ```nix
 atelier = {
@@ -27,6 +29,20 @@ age = {
         };
     };
 }
+```
+
+## Server Configuration
+
+For TCP and UDP tunneling support, configure the server with allowed port ranges:
+
+```nix
+atelier.services.frps = {
+    enable = true;
+    domain = "bore.dunkirk.sh";
+    authTokenFile = config.age.secrets.bore.path;
+    allowedTCPPorts = [ 20000 20001 20002 20003 20004 ];
+    allowedUDPPorts = [ 20000 20001 20002 20003 20004 ];
+};
 ```
 
 The secret file is just a oneline file with the key in it. If you do end up deploying this feel free to email me and let me know! I would love to hear about your setup!

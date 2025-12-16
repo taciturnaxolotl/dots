@@ -29,6 +29,20 @@ in
       description = "Port for HTTP virtual host traffic";
     };
 
+    allowedTCPPorts = lib.mkOption {
+      type = lib.types.listOf lib.types.port;
+      default = lib.lists.range 20000 20099;
+      example = [ 20000 20001 20002 20003 20004 ];
+      description = "TCP port range to allow for TCP tunnels (default: 20000-20099)";
+    };
+
+    allowedUDPPorts = lib.mkOption {
+      type = lib.types.listOf lib.types.port;
+      default = lib.lists.range 20000 20099;
+      example = [ 20000 20001 20002 20003 20004 ];
+      description = "UDP port range to allow for UDP tunnels (default: 20000-20099)";
+    };
+
     authToken = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
       default = null;
@@ -62,8 +76,9 @@ in
       }
     ];
 
-    # Open firewall port for frp control connection
-    networking.firewall.allowedTCPPorts = [ cfg.bindPort ];
+    # Open firewall ports for frp control connection and TCP/UDP tunnels
+    networking.firewall.allowedTCPPorts = [ cfg.bindPort ] ++ cfg.allowedTCPPorts;
+    networking.firewall.allowedUDPPorts = cfg.allowedUDPPorts;
 
     # frp server service
     systemd.services.frps =
@@ -93,6 +108,12 @@ in
 
           # Subdomain support for *.${cfg.domain}
           subDomainHost = "${cfg.domain}"
+          
+          # Allow port ranges for TCP/UDP tunnels
+          # Format: [[{"start": 20000, "end": 20099}]]
+          allowPorts = [
+            { start = 20000, end = 20099 }
+          ]
 
           # Custom 404 page
           custom404Page = "${./404.html}"

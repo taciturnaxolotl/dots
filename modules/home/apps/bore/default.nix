@@ -23,7 +23,7 @@ let
       fi
       
       # Filter only online tunnels with valid conf
-      echo "$tunnels" | ${pkgs.jq}/bin/jq -r '.proxies[] | select(.status == "online" and .conf != null) | "\(.name) → https://\(.conf.subdomain).${cfg.domain}"' | while read -r line; do
+      echo "$tunnels" | ${pkgs.jq}/bin/jq -r '.proxies[] | select(.status == "online" and .conf != null) | if .type == "http" then "\(.name) → https://\(.conf.subdomain).${cfg.domain} [http]" elif .type == "tcp" then "\(.name) → tcp://\(.conf.remotePort) → localhost:\(.conf.localPort) [tcp]" elif .type == "udp" then "\(.name) → udp://\(.conf.remotePort) → localhost:\(.conf.localPort) [udp]" else "\(.name) [\(.type)]" end' | while read -r line; do
         ${pkgs.gum}/bin/gum style --foreground 35 "✓ $line"
       done
       exit 0
@@ -44,31 +44,38 @@ let
           current_tunnel="''${BASH_REMATCH[1]}"
         elif [[ "$line" =~ ^port[[:space:]]*=[[:space:]]*([0-9]+) ]]; then
           port="''${BASH_REMATCH[1]}"
+        elif [[ "$line" =~ ^protocol[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
+          protocol="''${BASH_REMATCH[1]}"
         elif [[ "$line" =~ ^label[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
           label="''${BASH_REMATCH[1]}"
-          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$label]"
+          proto_display="''${protocol:-http}"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$proto_display] [$label]"
           label=""
+          protocol=""
         elif [[ -z "$line" ]] && [[ -n "$current_tunnel" ]] && [[ -n "$port" ]]; then
-          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port"
+          proto_display="''${protocol:-http}"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$proto_display]"
           current_tunnel=""
           port=""
+          protocol=""
         fi
       done < "$CONFIG_FILE"
       
       # Handle last entry if file doesn't end with blank line
       if [[ -n "$current_tunnel" ]] && [[ -n "$port" ]]; then
+        proto_display="''${protocol:-http}"
         if [[ -n "$label" ]]; then
-          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$label]"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$proto_display] [$label]"
         else
-          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$proto_display]"
         fi
       fi
       exit 0
     fi
 
-    # Get subdomain
+    # Get tunnel name/subdomain
     if [ -n "$1" ]; then
-      subdomain="$1"
+      tunnel_name="$1"
     else
       # Check if we have a bore.toml in current directory
       if [ -f "$CONFIG_FILE" ]; then
@@ -85,9 +92,9 @@ let
           if [ "$choice" = "Use saved tunnel" ]; then
             # Extract tunnel names from TOML
             saved_names=$(${pkgs.gnugrep}/bin/grep '^\[' "$CONFIG_FILE" | ${pkgs.gnused}/bin/sed 's/^\[\(.*\)\]$/\1/')
-            subdomain=$(echo "$saved_names" | ${pkgs.gum}/bin/gum choose)
+            tunnel_name=$(echo "$saved_names" | ${pkgs.gum}/bin/gum choose)
             
-            if [ -z "$subdomain" ]; then
+            if [ -z "$tunnel_name" ]; then
               ${pkgs.gum}/bin/gum style --foreground 196 "No tunnel selected"
               exit 1
             fi
@@ -96,7 +103,7 @@ let
             in_section=false
             while IFS= read -r line; do
               if [[ "$line" =~ ^\[([^]]+)\] ]]; then
-                if [[ "''${BASH_REMATCH[1]}" = "$subdomain" ]]; then
+                if [[ "''${BASH_REMATCH[1]}" = "$tunnel_name" ]]; then
                   in_section=true
                 else
                   in_section=false
@@ -104,45 +111,82 @@ let
               elif [[ "$in_section" = true ]]; then
                 if [[ "$line" =~ ^port[[:space:]]*=[[:space:]]*([0-9]+) ]]; then
                   port="''${BASH_REMATCH[1]}"
+                elif [[ "$line" =~ ^protocol[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
+                  protocol="''${BASH_REMATCH[1]}"
                 elif [[ "$line" =~ ^label[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
                   label="''${BASH_REMATCH[1]}"
                 fi
               fi
             done < "$CONFIG_FILE"
             
-            ${pkgs.gum}/bin/gum style --foreground 35 "✓ Loaded from bore.toml: $subdomain → localhost:$port''${label:+ [$label]}"
+            proto_display="''${protocol:-http}"
+            ${pkgs.gum}/bin/gum style --foreground 35 "✓ Loaded from bore.toml: $tunnel_name → localhost:$port [$proto_display]''${label:+ [$label]}"
           else
-            # New tunnel
-            subdomain=$(${pkgs.gum}/bin/gum input --placeholder "myapp" --prompt "Subdomain: ")
-            if [ -z "$subdomain" ]; then
-              ${pkgs.gum}/bin/gum style --foreground 196 "No subdomain provided"
+            # New tunnel - prompt for protocol first to determine what to ask for
+            protocol=$(${pkgs.gum}/bin/gum choose --header "Protocol:" "http" "tcp" "udp")
+            if [ -z "$protocol" ]; then
+              protocol="http"
+            fi
+            
+            if [ "$protocol" = "http" ]; then
+              tunnel_name=$(${pkgs.gum}/bin/gum input --placeholder "myapp" --prompt "Subdomain: ")
+            else
+              tunnel_name=$(${pkgs.gum}/bin/gum input --placeholder "my-tunnel" --prompt "Tunnel name: ")
+            fi
+            
+            if [ -z "$tunnel_name" ]; then
+              ${pkgs.gum}/bin/gum style --foreground 196 "No name provided"
               exit 1
             fi
           fi
         else
           ${pkgs.gum}/bin/gum style --bold --foreground 212 "Creating bore tunnel"
           echo
-          subdomain=$(${pkgs.gum}/bin/gum input --placeholder "myapp" --prompt "Subdomain: ")
-          if [ -z "$subdomain" ]; then
-            ${pkgs.gum}/bin/gum style --foreground 196 "No subdomain provided"
+          # Prompt for protocol first
+          protocol=$(${pkgs.gum}/bin/gum choose --header "Protocol:" "http" "tcp" "udp")
+          if [ -z "$protocol" ]; then
+            protocol="http"
+          fi
+          
+          if [ "$protocol" = "http" ]; then
+            tunnel_name=$(${pkgs.gum}/bin/gum input --placeholder "myapp" --prompt "Subdomain: ")
+          else
+            tunnel_name=$(${pkgs.gum}/bin/gum input --placeholder "my-tunnel" --prompt "Tunnel name: ")
+          fi
+          
+          if [ -z "$tunnel_name" ]; then
+            ${pkgs.gum}/bin/gum style --foreground 196 "No name provided"
             exit 1
           fi
         fi
       else
         ${pkgs.gum}/bin/gum style --bold --foreground 212 "Creating bore tunnel"
         echo
-        subdomain=$(${pkgs.gum}/bin/gum input --placeholder "myapp" --prompt "Subdomain: ")
-        if [ -z "$subdomain" ]; then
-          ${pkgs.gum}/bin/gum style --foreground 196 "No subdomain provided"
+        # Prompt for protocol first
+        protocol=$(${pkgs.gum}/bin/gum choose --header "Protocol:" "http" "tcp" "udp")
+        if [ -z "$protocol" ]; then
+          protocol="http"
+        fi
+        
+        if [ "$protocol" = "http" ]; then
+          tunnel_name=$(${pkgs.gum}/bin/gum input --placeholder "myapp" --prompt "Subdomain: ")
+        else
+          tunnel_name=$(${pkgs.gum}/bin/gum input --placeholder "my-tunnel" --prompt "Tunnel name: ")
+        fi
+        
+        if [ -z "$tunnel_name" ]; then
+          ${pkgs.gum}/bin/gum style --foreground 196 "No name provided"
           exit 1
         fi
       fi
     fi
 
-    # Validate subdomain
-    if ! echo "$subdomain" | ${pkgs.gnugrep}/bin/grep -qE '^[a-z0-9-]+$'; then
-      ${pkgs.gum}/bin/gum style --foreground 196 "Invalid subdomain (use only lowercase letters, numbers, and hyphens)"
-      exit 1
+    # Validate tunnel name (only for http subdomains)
+    if [ "$protocol" = "http" ]; then
+      if ! echo "$tunnel_name" | ${pkgs.gnugrep}/bin/grep -qE '^[a-z0-9-]+$'; then
+        ${pkgs.gum}/bin/gum style --foreground 196 "Invalid subdomain (use only lowercase letters, numbers, and hyphens)"
+        exit 1
+      fi
     fi
 
     # Get port (skip if loaded from saved config)
@@ -164,12 +208,16 @@ let
       exit 1
     fi
 
-    # Get optional label and save flag (skip if loaded from saved config)
+    # Get optional protocol, label and save flag (skip if loaded from saved config)
     save_config=false
     if [ -z "$label" ]; then
       shift 2 2>/dev/null || true
       while [[ $# -gt 0 ]]; do
         case "$1" in
+          --protocol|-p)
+            protocol="$2"
+            shift 2
+            ;;
           --label|-l)
             label="$2"
             shift 2
@@ -184,9 +232,16 @@ let
         esac
       done
       
+      # Prompt for protocol if not provided via flag and not loaded from saved config and not already set
+      if [ -z "$protocol" ]; then
+        protocol=$(${pkgs.gum}/bin/gum choose --header "Protocol:" "http" "tcp" "udp")
+        if [ -z "$protocol" ]; then
+          protocol="http"
+        fi
+      fi
+      
       # Prompt for label if not provided via flag and not loaded from saved config
       if [ -z "$label" ]; then
-        echo
         # Allow multiple labels selection
         labels=$(${pkgs.gum}/bin/gum choose --no-limit --header "Labels (select multiple):" "dev" "prod" "custom")
         
@@ -206,6 +261,11 @@ let
         fi
       fi
     fi
+    
+    # Default protocol to http if still not set
+    if [ -z "$protocol" ]; then
+      protocol="http"
+    fi
 
     # Check if local port is accessible
     if ! ${pkgs.netcat}/bin/nc -z 127.0.0.1 "$port" 2>/dev/null; then
@@ -215,18 +275,22 @@ let
     # Save configuration if requested
     if [ "$save_config" = true ]; then
       # Check if tunnel already exists in TOML
-      if [ -f "$CONFIG_FILE" ] && ${pkgs.gnugrep}/bin/grep -q "^\[$subdomain\]" "$CONFIG_FILE"; then
+      if [ -f "$CONFIG_FILE" ] && ${pkgs.gnugrep}/bin/grep -q "^\[$tunnel_name\]" "$CONFIG_FILE"; then
         # Update existing entry
-        ${pkgs.gnused}/bin/sed -i "/^\[$subdomain\]/,/^\[/{ 
+        ${pkgs.gnused}/bin/sed -i "/^\[$tunnel_name\]/,/^\[/{ 
           s/^port[[:space:]]*=.*/port = $port/
+          s/^protocol[[:space:]]*=.*/protocol = \"$protocol\"/
           ''${label:+s/^label[[:space:]]*=.*/label = \"$label\"/}
         }" "$CONFIG_FILE"
       else
         # Append new entry
         {
           echo ""
-          echo "[$subdomain]"
+          echo "[$tunnel_name]"
           echo "port = $port"
+          if [ "$protocol" != "http" ]; then
+            echo "protocol = \"$protocol\""
+          fi
           if [ -n "$label" ]; then
             echo "label = \"$label\""
           fi
@@ -241,13 +305,15 @@ let
     config_file=$(${pkgs.coreutils}/bin/mktemp)
     trap "${pkgs.coreutils}/bin/rm -f $config_file" EXIT
 
-    # Encode label into proxy name if provided (format: subdomain[label1,label2])
-    proxy_name="$subdomain"
+    # Encode label into proxy name if provided (format: tunnel_name[label1,label2])
+    proxy_name="$tunnel_name"
     if [ -n "$label" ]; then
-      proxy_name="''${subdomain}[''${label}]"
+      proxy_name="''${tunnel_name}[''${label}]"
     fi
 
-    ${pkgs.coreutils}/bin/cat > $config_file <<EOF
+    # Build proxy configuration based on protocol
+    if [ "$protocol" = "http" ]; then
+      ${pkgs.coreutils}/bin/cat > $config_file <<EOF
     serverAddr = "${cfg.serverAddr}"
     serverPort = ${toString cfg.serverPort}
 
@@ -260,19 +326,88 @@ let
     type = "http"
     localIP = "127.0.0.1"
     localPort = $port
-    subdomain = "$subdomain"
+    subdomain = "$tunnel_name"
     EOF
+    elif [ "$protocol" = "tcp" ] || [ "$protocol" = "udp" ]; then
+      # For TCP/UDP, enable admin API to query allocated port
+      # Use Python to find a free port (cross-platform and guaranteed to work)
+      admin_port=$(${pkgs.python3}/bin/python3 -c 'import socket; s=socket.socket(); s.bind(("", 0)); print(s.getsockname()[1]); s.close()')
+      
+      ${pkgs.coreutils}/bin/cat > $config_file <<EOF
+    serverAddr = "${cfg.serverAddr}"
+    serverPort = ${toString cfg.serverPort}
+
+    auth.method = "token"
+    auth.tokenSource.type = "file"
+    auth.tokenSource.file.path = "${cfg.authTokenFile}"
+    
+    webServer.addr = "127.0.0.1"
+    webServer.port = $admin_port
+
+    [[proxies]]
+    name = "$proxy_name"
+    type = "$protocol"
+    localIP = "127.0.0.1"
+    localPort = $port
+    remotePort = 0
+    EOF
+    else
+      ${pkgs.gum}/bin/gum style --foreground 196 "Invalid protocol: $protocol (must be http, tcp, or udp)"
+      exit 1
+    fi
 
     # Start tunnel
-    public_url="https://$subdomain.${cfg.domain}"
     echo
     ${pkgs.gum}/bin/gum style --foreground 35 "✓ Tunnel configured"
-    ${pkgs.gum}/bin/gum style --foreground 117 "  Local:  localhost:$port"
-    ${pkgs.gum}/bin/gum style --foreground 117 "  Public: $public_url"
+    ${pkgs.gum}/bin/gum style --foreground 117 "  Local:    localhost:$port"
+    if [ "$protocol" = "http" ]; then
+      public_url="https://$tunnel_name.${cfg.domain}"
+      ${pkgs.gum}/bin/gum style --foreground 117 "  Public:   $public_url"
+    else
+      ${pkgs.gum}/bin/gum style --foreground 117 "  Protocol: $protocol"
+      ${pkgs.gum}/bin/gum style --foreground 214 "  Waiting for server to allocate port..."
+    fi
     echo
     ${pkgs.gum}/bin/gum style --foreground 214 "Connecting to ${cfg.serverAddr}:${toString cfg.serverPort}..."
+    echo
 
-    exec ${pkgs.frp}/bin/frpc -c $config_file
+    # For TCP/UDP, capture output to parse allocated port
+    if [ "$protocol" = "tcp" ] || [ "$protocol" = "udp" ]; then
+      # Start frpc in background and capture its PID
+      ${pkgs.frp}/bin/frpc -c $config_file 2>&1 | while IFS= read -r line; do
+        echo "$line"
+        
+        # Look for successful proxy start
+        if echo "$line" | ${pkgs.gnugrep}/bin/grep -q "start proxy success"; then
+          # Wait a moment for the proxy to fully initialize
+          sleep 1
+          
+          # Query the frpc admin API for proxy status
+          proxy_status=$(${pkgs.curl}/bin/curl -s http://127.0.0.1:$admin_port/api/status 2>/dev/null || echo "{}")
+          
+          # Try to extract remote port from JSON response
+          # Format: "remote_addr":"bore.dunkirk.sh:20097"
+          remote_addr=$(echo "$proxy_status" | ${pkgs.jq}/bin/jq -r ".tcp[]? | select(.name == \"$proxy_name\") | .remote_addr" 2>/dev/null)
+          if [ -z "$remote_addr" ] || [ "$remote_addr" = "null" ]; then
+            remote_addr=$(echo "$proxy_status" | ${pkgs.jq}/bin/jq -r ".udp[]? | select(.name == \"$proxy_name\") | .remote_addr" 2>/dev/null)
+          fi
+          
+          # Extract just the port number
+          remote_port=$(echo "$remote_addr" | ${pkgs.gnugrep}/bin/grep -oP ':\K[0-9]+$')
+          
+          if [ -n "$remote_port" ] && [ "$remote_port" != "null" ]; then
+            echo
+            ${pkgs.gum}/bin/gum style --foreground 35 "✓ Tunnel established"
+            ${pkgs.gum}/bin/gum style --foreground 117 "  Local:  localhost:$port"
+            ${pkgs.gum}/bin/gum style --foreground 117 "  Remote: ${cfg.serverAddr}:$remote_port"
+            ${pkgs.gum}/bin/gum style --foreground 117 "  Type:   $protocol"
+            echo
+          fi
+        fi
+      done
+    else
+      exec ${pkgs.frp}/bin/frpc -c $config_file
+    fi
   '';
 
   bore = pkgs.stdenv.mkDerivation {

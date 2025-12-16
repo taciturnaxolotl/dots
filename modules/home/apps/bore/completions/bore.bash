@@ -5,11 +5,17 @@ _bore_completion() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts="--list --saved --label --save -l -s"
+    opts="--list --saved --protocol --label --save -l -s -p"
 
     # Complete flags
     if [[ ${cur} == -* ]]; then
         COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+        return 0
+    fi
+
+    # Complete protocol values after --protocol or -p
+    if [[ ${prev} == "--protocol" ]] || [[ ${prev} == "-p" ]]; then
+        COMPREPLY=( $(compgen -W "http tcp udp" -- ${cur}) )
         return 0
     fi
 
