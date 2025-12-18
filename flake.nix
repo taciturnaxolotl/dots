@@ -259,7 +259,6 @@
           modules = [
             home-manager.darwinModules.home-manager
             agenix.darwinModules.default
-            unstable-overlays
             nur.modules.darwin.default
             ./machines/atalanta
           ];

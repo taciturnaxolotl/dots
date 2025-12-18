@@ -14,6 +14,16 @@
     config = {
       allowUnfree = true;
     };
+    overlays = [
+      (final: prev: {
+        unstable = import inputs.nixpkgs-unstable {
+          system = final.stdenv.hostPlatform.system;
+          config.allowUnfree = true;
+        };
+        
+        zmx-binary = prev.callPackage ../../packages/zmx.nix { };
+      })
+    ];
   };
 
   # Enable nix-darwin

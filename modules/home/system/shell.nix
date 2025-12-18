@@ -423,7 +423,7 @@ in
                 style = "plain";
                 foreground = "p:grey";
                 background = "transparent";
-                template = "{{if not .Detached}}{{ .HEAD }}{{else}}@{{ printf \"%.7s\" .Commit.Sha }}{{end}}{{ if .Staging.Changed }} ({{ .Staging.String }}){{ end }}{{ if .Working.Changed }}*{{ end }} <cyan>{{ if .BranchStatus }}{{ .BranchStatus }}{{ end }}</>";
+                template = "{{if not .Detached}}{{ .HEAD }}{{else}}@{{ printf \"%.7s\" .Commit.Sha }}{{end}}{{ if .Staging.Changed }} ({{ .Staging.String }}){{ end }}{{ if .Working.Changed }}*{{ end }}{{ if .BranchStatus }}<cyan> {{ .BranchStatus }}</>{{ end }}";
                 properties = {
                   branch_icon = "";
                   branch_identical_icon = "";
