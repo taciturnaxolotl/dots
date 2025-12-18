@@ -129,7 +129,41 @@ in
           dns cloudflare {env.CLOUDFLARE_API_TOKEN}
         }
 
-        reverse_proxy localhost:${toString cfg.port}
+        # Rate limiting for auth endpoints
+        handle /auth/* {
+          rate_limit {
+            zone auth_limit {
+              key {http.request.remote_ip}
+              events 10
+              window 1m
+            }
+          }
+          reverse_proxy localhost:${toString cfg.port}
+        }
+
+        # Rate limiting for API endpoints
+        handle /api/* {
+          rate_limit {
+            zone api_limit {
+              key {http.request.remote_ip}
+              events 30
+              window 1m
+            }
+          }
+          reverse_proxy localhost:${toString cfg.port}
+        }
+
+        # General rate limiting for all other routes
+        handle {
+          rate_limit {
+            zone general_limit {
+              key {http.request.remote_ip}
+              events 60
+              window 1m
+            }
+          }
+          reverse_proxy localhost:${toString cfg.port}
+        }
       '';
     };
   };

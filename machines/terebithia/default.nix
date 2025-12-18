@@ -204,12 +204,16 @@
   services.caddy = {
     enable = true;
     package = pkgs.caddy.withPlugins {
-      plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-      hash = "sha256-dnhEjopeA0UiI+XVYHYpsjcEI6Y1Hacbi28hVKYQURg=";
+      plugins = [ 
+        "github.com/caddy-dns/cloudflare@v0.2.2"
+        "github.com/mholt/caddy-ratelimit@v0.1.0"
+      ];
+      hash = "sha256-BcD9LyR8eVdxRMcNKv8Vr49YeoOdYkGsa6ZKMSG6vrA=";
     };
     email = "me@dunkirk.sh";
     globalConfig = ''
       acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      order rate_limit before basicauth
     '';
     virtualHosts."knot.dunkirk.sh" = {
       extraConfig = ''
@@ -343,7 +347,6 @@
   atelier.services.indiko = {
     enable = true;
     domain = "indiko.dunkirk.sh";
-    autoUpdate = true;
   };
 
   services.n8n = {
