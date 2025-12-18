@@ -1,0 +1,136 @@
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
+let
+  cfg = config.atelier.services.indiko;
+in
+{
+  options.atelier.services.indiko = {
+    enable = lib.mkEnableOption "Indiko IndieAuth/OAuth2 server";
+
+    domain = lib.mkOption {
+      type = lib.types.str;
+      description = "Domain to serve Indiko on";
+    };
+
+    port = lib.mkOption {
+      type = lib.types.port;
+      default = 3003;
+      description = "Port to run Indiko on";
+    };
+
+    dataDir = lib.mkOption {
+      type = lib.types.path;
+      default = "/var/lib/indiko";
+      description = "Directory to store Indiko data";
+    };
+
+    secretsFile = lib.mkOption {
+      type = lib.types.nullOr lib.types.path;
+      default = null;
+      description = ''
+        Path to secrets file (optional).
+        If you need additional environment variables, define them here.
+      '';
+    };
+
+    repository = lib.mkOption {
+      type = lib.types.str;
+      default = "https://github.com/taciturnaxolotl/indiko.git";
+      description = "Git repository URL (optional, for auto-deployment)";
+    };
+
+    autoUpdate = lib.mkEnableOption "Automatically git pull on service restart";
+  };
+
+  config = lib.mkIf cfg.enable {
+    users.groups.services = { };
+
+    users.users.indiko = {
+      isSystemUser = true;
+      group = "indiko";
+      extraGroups = [ "services" ];
+      home = cfg.dataDir;
+      createHome = true;
+      shell = pkgs.bash;
+    };
+
+    users.groups.indiko = { };
+
+    security.sudo.extraRules = [
+      {
+        users = [ "indiko" ];
+        commands = [
+          {
+            command = "/run/current-system/sw/bin/systemctl restart indiko.service";
+            options = [ "NOPASSWD" ];
+          }
+        ];
+      }
+    ];
+
+    systemd.services.indiko = {
+      description = "Indiko IndieAuth/OAuth2 server";
+      wantedBy = [ "multi-user.target" ];
+      after = [ "network.target" ];
+      path = [ pkgs.git ];
+
+      preStart = ''
+        if [ ! -d ${cfg.dataDir}/app/.git ]; then
+          ${pkgs.git}/bin/git clone ${cfg.repository} ${cfg.dataDir}/app
+        fi
+        
+        cd ${cfg.dataDir}/app
+      '' + lib.optionalString cfg.autoUpdate ''
+        ${pkgs.git}/bin/git pull
+      '' + ''
+        
+        if [ ! -f src/index.ts ]; then
+          echo "No code found at ${cfg.dataDir}/app/src/index.ts"
+          exit 1
+        fi
+        
+        echo "Installing dependencies..."
+        ${pkgs.unstable.bun}/bin/bun install
+      '';
+
+      serviceConfig = {
+        Type = "simple";
+        User = "indiko";
+        Group = "indiko";
+        WorkingDirectory = "${cfg.dataDir}/app";
+        Environment = [
+          "NODE_ENV=production"
+          "PORT=${toString cfg.port}"
+          "ORIGIN=https://${cfg.domain}"
+          "RP_ID=${cfg.domain}"
+        ];
+        EnvironmentFile = lib.mkIf (cfg.secretsFile != null) cfg.secretsFile;
+        ExecStart = "${pkgs.unstable.bun}/bin/bun run src/index.ts";
+        Restart = "always";
+        RestartSec = "10s";
+      };
+
+      serviceConfig.ExecStartPre = [
+        "+${pkgs.writeShellScript "indiko-setup" ''
+          mkdir -p ${cfg.dataDir}/app
+          chown -R indiko:services ${cfg.dataDir}
+          chmod -R g+rwX ${cfg.dataDir}
+        ''}"
+      ];
+    };
+
+    services.caddy.virtualHosts.${cfg.domain} = {
+      extraConfig = ''
+        tls {
+          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        }
+
+        reverse_proxy localhost:${toString cfg.port}
+      '';
+    };
+  };
+}

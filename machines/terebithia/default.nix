@@ -340,6 +340,12 @@
     authTokenFile = config.age.secrets.frp-auth-token.path;
   };
 
+  atelier.services.indiko = {
+    enable = true;
+    domain = "indiko.dunkirk.sh";
+    autoUpdate = true;
+  };
+
   services.n8n = {
     enable = true;
     environment = {
