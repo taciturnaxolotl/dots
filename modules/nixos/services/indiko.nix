@@ -101,15 +101,14 @@ in
         Type = "simple";
         User = "indiko";
         Group = "indiko";
-        WorkingDirectory = "${cfg.dataDir}/app";
+        EnvironmentFile = lib.mkIf (cfg.secretsFile != null) cfg.secretsFile;
         Environment = [
           "NODE_ENV=production"
           "PORT=${toString cfg.port}"
           "ORIGIN=https://${cfg.domain}"
           "RP_ID=${cfg.domain}"
         ];
-        EnvironmentFile = lib.mkIf (cfg.secretsFile != null) cfg.secretsFile;
-        ExecStart = "${pkgs.unstable.bun}/bin/bun run src/index.ts";
+        ExecStart = "${pkgs.bash}/bin/bash -c 'cd ${cfg.dataDir}/app && ${pkgs.unstable.bun}/bin/bun run src/index.ts'";
         Restart = "always";
         RestartSec = "10s";
       };
