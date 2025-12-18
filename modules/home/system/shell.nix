@@ -373,44 +373,6 @@ EOF
     ${pkgs.gum}/bin/gum style --foreground 35 --bold "Done! Ghostty is ready on $target"
   '';
 
-  swap-anthropic = pkgs.writeShellScriptBin "swap-anthropic" ''
-    # Swap between Anthropic credential profiles
-    config_dir="$HOME/.config/crush"
-    
-    if [[ ! -d "$config_dir" ]]; then
-      ${pkgs.gum}/bin/gum style --foreground 196 "Error: $config_dir does not exist"
-      exit 1
-    fi
-
-    # Check current state and determine profiles
-    if [[ -d "$config_dir/anthropic" && -d "$config_dir/anthropic.jsp" ]]; then
-      current="krn"
-      target="jsp"
-      backup_suffix=".jsp"
-      new_suffix=".krn"
-    elif [[ -d "$config_dir/anthropic" && -d "$config_dir/anthropic.krn" ]]; then
-      current="jsp"
-      target="krn"
-      backup_suffix=".krn"
-      new_suffix=".jsp"
-    else
-      ${pkgs.gum}/bin/gum style --foreground 196 "Unexpected directory structure"
-      ${pkgs.gum}/bin/gum style --foreground 214 "Expected: anthropic + (anthropic.jsp or anthropic.krn)"
-      exit 1
-    fi
-
-    ${pkgs.gum}/bin/gum style --bold --foreground 212 "Swapping Anthropic credentials: $current → $target"
-
-    mv "$config_dir/anthropic" "$config_dir/anthropic$new_suffix"
-    mv "$config_dir/anthropic$backup_suffix" "$config_dir/anthropic"
-
-    if [[ $? -eq 0 ]]; then
-      ${pkgs.gum}/bin/gum style --foreground 35 "Now using $target profile"
-    else
-      ${pkgs.gum}/bin/gum style --foreground 196 "Failed to swap profiles"
-      exit 1
-    fi
-  '';
 in
 {
   options.atelier.shell.enable = lib.mkEnableOption "Custom shell config";
@@ -654,7 +616,6 @@ in
       hackatime-summary
       now
       ghostty-setup
-      swap-anthropic
       pkgs.unstable.wakatime-cli
       inputs.terminal-wakatime.packages.${pkgs.stdenv.hostPlatform.system}.default
       unzip

@@ -6,6 +6,8 @@
 {
   options.atelier.apps.crush.enable = lib.mkEnableOption "Enable Crush config";
   config = lib.mkIf config.atelier.apps.crush.enable {
+    atelier.apps.anthropic-manager.enable = lib.mkDefault true;
+    
     programs.crush = {
       enable = true;
       settings = {
@@ -200,7 +202,7 @@
             name = "Claude Pro";
             type = "anthropic";
             base_url = "https://api.anthropic.com";
-            api_key = "Bearer $(bunx anthropic-api-key)";
+            api_key = "Bearer $(anthropic-manager --token)";
             system_prompt_prefix = "You are Claude Code, Anthropic's official CLI for Claude.";
             extra_headers = {
               "anthropic-version" = "2023-06-01";
