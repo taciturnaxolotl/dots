@@ -11,7 +11,7 @@ let
         # Manage Anthropic OAuth credential profiles
         # Implements the same functionality as anthropic-api-key but with profile management
         
-        set -euo pipefail
+        set -uo pipefail
         
         CONFIG_DIR="''${ANTHROPIC_CONFIG_DIR:-$HOME/.config/crush}"
         CLIENT_ID="9d1c250a-e61b-44d9-88ed-5944d1962f5e"
