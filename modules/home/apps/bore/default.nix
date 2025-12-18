@@ -10,6 +10,15 @@ let
   boreScript = pkgs.writeShellScript "bore" ''
     CONFIG_FILE="bore.toml"
     
+    # Trap exit signals to ensure cleanup and exit immediately
+    trap 'exit 130' INT
+    trap 'exit 143' TERM
+    trap 'exit 129' HUP
+    
+    # Enable immediate exit on error or pipe failure
+    set -e
+    set -o pipefail
+    
     # Check for flags
     if [ "$1" = "--list" ] || [ "$1" = "-l" ]; then
       ${pkgs.gum}/bin/gum style --bold --foreground 212 "Active tunnels"
