@@ -18,13 +18,13 @@ stdenv.mkDerivation rec {
     else throw "Unsupported platform";
     
     hash = if stdenv.isLinux && stdenv.isAarch64 then
-      "sha256-sv83lR4DLJE+gsMtqCk6VCFdo5n4lhI0P1loxAf0iOg="
+      "sha256-cMGo+Af0VRY3c2EoNzVZFU53Kz5wKL8zsSSXIOtZVU8="
     else if stdenv.isLinux then
-      "sha256-c+wCUcm7DEO55wXuHq0aP0Kn908jj1FM5Z+JQJnKE0M="
+      "sha256-Zmqs/Y3be2z9KMuSwyTLZWKbIInzHgoC9Bm0S2jv3XI="
     else if stdenv.isDarwin && stdenv.isAarch64 then
-      "sha256-dM6MFikdbpN+n8BK6fLbzyJfi88xetCWL9H5VfGB07o="
+      "sha256-34k5Q1cIr3+foubtMJVoHVHZtCLoSjwJK00e1p0JdLg="
     else
-      "sha256-B52NC8NEjVPDNSG11qPb0uRNExB66bllnK7ivXMJbHk=";
+      "sha256-0epjoQhUSBYlE0L7Ubwn/sJF61+4BbxeaRx6EY/SklE=";
   };
 
   nativeBuildInputs = lib.optionals stdenv.isLinux [ autoPatchelfHook ];
