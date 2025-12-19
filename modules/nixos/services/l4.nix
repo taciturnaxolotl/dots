@@ -114,7 +114,7 @@ in
           "PUBLIC_URL=https://${cfg.domain}"
           "LD_LIBRARY_PATH=${pkgs.stdenv.cc.cc.lib}/lib"
         ];
-        ExecStart = "${pkgs.bash}/bin/bash -c 'cd ${cfg.dataDir}/app && export S3_ACCESS_KEY_ID=\"$R2_ACCESS_KEY_ID\" && export S3_SECRET_ACCESS_KEY=\"$R2_SECRET_ACCESS_KEY\" && export S3_BUCKET=\"$R2_BUCKET\" && export S3_ENDPOINT=\"https://$R2_ACCOUNT_ID.r2.cloudflarestorage.com\" && ${pkgs.unstable.bun}/bin/bun run src/index.ts'";
+        ExecStart = "${pkgs.bash}/bin/bash -c 'cd ${cfg.dataDir}/app && ${pkgs.unstable.bun}/bin/bun run src/index.ts'";
         Restart = "always";
         RestartSec = "10s";
       };
