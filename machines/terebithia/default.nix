@@ -130,6 +130,10 @@
     frp-auth-token = {
       file = ../../secrets/frp-auth-token.age;
     };
+    l4 = {
+      file = ../../secrets/l4.age;
+      owner = "l4";
+    };
   };
 
   environment.sessionVariables = {
@@ -347,6 +351,14 @@
   atelier.services.indiko = {
     enable = true;
     domain = "indiko.dunkirk.sh";
+  };
+
+  atelier.services.l4 = {
+    enable = true;
+    domain = "l4.dunkirk.sh";
+    port = 3004;
+    autoUpdate = false;
+    secretsFile = config.age.secrets.l4.path;
   };
 
   services.n8n = {

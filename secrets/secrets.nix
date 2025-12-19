@@ -44,4 +44,7 @@ in
   "frp-auth-token.age".publicKeys = [
     kierank
   ];
+  "l4.age".publicKeys = [
+    kierank
+  ];
 }
