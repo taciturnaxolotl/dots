@@ -26,10 +26,9 @@ let
         }
         
         pkce_pair() {
-          verifier=$(${pkgs.openssl}/bin/openssl rand -base64 32 | base64url)
-          challenge=$(sha256 "$verifier" | base64url)
-          echo "$verifier"
-          echo "$challenge"
+          verifier=$(${pkgs.openssl}/bin/openssl rand 32 | base64url)
+          challenge=$(printf '%s' "$verifier" | ${pkgs.openssl}/bin/openssl dgst -binary -sha256 | base64url)
+          echo "$verifier $challenge"
         }
         
         authorize_url() {
