@@ -14,6 +14,8 @@ anthropic-manager - Manage Anthropic OAuth credential profiles
 
 **anthropic-manager** **--swap** [*PROFILE*]
 
+**anthropic-manager** **--delete** [*PROFILE*]
+
 **anthropic-manager** **--token**
 
 **anthropic-manager** **--list**
@@ -34,6 +36,9 @@ Profile credentials are stored in **~/.config/crush/anthropic.\***profile\* dire
 **--swap**, **-s** [*PROFILE*]
 : Switch to a different profile. If no profile specified, shows interactive selection.
 
+**--delete**, **-d** [*PROFILE*]
+: Delete a profile and its credentials. If no profile specified, shows interactive selection. Prompts for confirmation before deletion. If the deleted profile is active, the symlink is removed.
+
 **--token**, **-t**
 : Print the current bearer token to stdout. Automatically refreshes if expired. Designed for non-interactive use.
 
@@ -52,6 +57,7 @@ When run without arguments in an interactive terminal, **anthropic-manager** dis
 
 - Switch profile
 - Create new profile
+- Delete profile
 - List all profiles
 - Get current token
 
@@ -97,6 +103,12 @@ Switch to the work profile:
 
 ```
 $ anthropic-manager --swap work
+```
+
+Delete a profile:
+
+```
+$ anthropic-manager --delete work
 ```
 
 Get the current bearer token (for scripts):

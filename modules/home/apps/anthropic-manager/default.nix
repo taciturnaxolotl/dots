@@ -32,9 +32,9 @@ let
         }
         
         authorize_url() {
-          local verifier="$1"
-          local challenge="$2"
-          echo "https://claude.ai/oauth/authorize?response_type=code&client_id=$CLIENT_ID&redirect_uri=https://console.anthropic.com/oauth/code/callback&scope=org:create_api_key+user:profile+user:inference&code_challenge=$challenge&code_challenge_method=S256&state=$verifier"
+          local challenge="$1"
+          local state="$2"
+          echo "https://claude.ai/oauth/authorize?response_type=code&client_id=$CLIENT_ID&redirect_uri=https://console.anthropic.com/oauth/code/callback&scope=org:create_api_key+user:profile+user:inference+user:sessions:claude_code&code_challenge=$challenge&code_challenge_method=S256&state=$state"
         }
         
         clean_pasted_code() {
@@ -167,8 +167,10 @@ let
           echo
           
           read -r verifier challenge < <(pkce_pair)
+          local state
+          state=$(${pkgs.openssl}/bin/openssl rand -base64 32 | ${pkgs.gnused}/bin/sed 's/[^A-Za-z0-9]//g')
           local auth_url
-          auth_url=$(authorize_url "$verifier" "$challenge")
+          auth_url=$(authorize_url "$challenge" "$state")
           
           ${pkgs.gum}/bin/gum style --foreground 35 "Opening browser for authorization..."
           ${pkgs.gum}/bin/gum style --foreground 117 "$auth_url"
@@ -301,6 +303,51 @@ let
           fi
         }
         
+        delete_profile() {
+          local target="$1"
+          
+          if [[ -z "$target" ]]; then
+            # Interactive selection
+            local profiles=()
+            for profile_dir in "$CONFIG_DIR"/anthropic.*; do
+              if [[ -d "$profile_dir" ]]; then
+                profiles+=("$(basename "$profile_dir" | ${pkgs.gnused}/bin/sed 's/^anthropic\.//')")
+              fi
+            done
+            
+            if [[ ''${#profiles[@]} -eq 0 ]]; then
+              ${pkgs.gum}/bin/gum style --foreground 196 "No profiles found"
+              exit 1
+            fi
+            
+            target=$(printf '%s\n' "''${profiles[@]}" | ${pkgs.gum}/bin/gum choose --header "Select profile to delete:")
+            [[ -z "$target" ]] && exit 0
+          fi
+          
+          local target_dir="$CONFIG_DIR/anthropic.$target"
+          if [[ ! -d "$target_dir" ]]; then
+            ${pkgs.gum}/bin/gum style --foreground 196 "Profile '$target' does not exist"
+            exit 1
+          fi
+          
+          if ! ${pkgs.gum}/bin/gum confirm "Delete profile '$target'?"; then
+            exit 0
+          fi
+          
+          # Check if this is the active profile
+          if [[ -L "$CONFIG_DIR/anthropic" ]]; then
+            local current
+            current=$(basename "$(readlink "$CONFIG_DIR/anthropic")" | ${pkgs.gnused}/bin/sed 's/^anthropic\.//')
+            if [[ "$current" == "$target" ]]; then
+              rm "$CONFIG_DIR/anthropic"
+              ${pkgs.gum}/bin/gum style --foreground 214 "Unlinked active profile"
+            fi
+          fi
+          
+          rm -rf "$target_dir"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ Deleted profile '$target'"
+        }
+        
         swap_profile() {
           local target="$1"
           
@@ -377,6 +424,7 @@ let
           choice=$(${pkgs.gum}/bin/gum choose \
             "Switch profile" \
             "Create new profile" \
+            "Delete profile" \
             "List all profiles" \
             "Get current token")
           
@@ -386,6 +434,10 @@ let
               ;;
             "Create new profile")
               init_profile ""
+              ;;
+            "Delete profile")
+              echo
+              delete_profile ""
               ;;
             "List all profiles")
               echo
@@ -417,6 +469,9 @@ let
           --swap|-s|swap)
             swap_profile "''${2:-}"
             ;;
+          --delete|-d|delete)
+            delete_profile "''${2:-}"
+            ;;
           --help|-h|help)
             ${pkgs.gum}/bin/gum style --bold --foreground 212 "anthropic-manager - Manage Anthropic OAuth profiles"
             echo
@@ -424,6 +479,7 @@ let
             echo "  anthropic-manager                     Interactive menu"
             echo "  anthropic-manager --init [profile]    Initialize/create a new profile"
             echo "  anthropic-manager --swap [profile]    Switch to a profile (interactive if no profile given)"
+            echo "  anthropic-manager --delete [profile]  Delete a profile (interactive if no profile given)"
             echo "  anthropic-manager --token             Print current bearer token (refresh if needed)"
             echo "  anthropic-manager --list              List all profiles with status"
             echo "  anthropic-manager --current           Show current active profile"
@@ -433,6 +489,7 @@ let
             echo "  anthropic-manager                     Open interactive menu"
             echo "  anthropic-manager --init work         Create 'work' profile"
             echo "  anthropic-manager --swap work         Switch to 'work' profile"
+            echo "  anthropic-manager --delete work       Delete 'work' profile"
             echo "  anthropic-manager --token             Get current bearer token"
             ;;
           "")
