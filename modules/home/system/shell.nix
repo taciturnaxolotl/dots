@@ -633,6 +633,10 @@ in
       glow
     ];
 
+    home.sessionPath = [
+      "$HOME/go/bin"
+    ];
+
     atelier.shell.git.enable = lib.mkDefault true;
   };
 }
