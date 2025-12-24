@@ -130,6 +130,7 @@
     }@inputs:
     let
       outputs = inputs.self.outputs;
+      
       unstable-overlays = {
         nixpkgs.overlays = [
           (final: prev: {
@@ -267,6 +268,28 @@
 
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
       formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
+
+      # Patched deploy-rs for Nix 2.33 compatibility
+      packages.x86_64-linux.deploy-rs = deploy-rs.packages.x86_64-linux.deploy-rs.overrideAttrs (oldAttrs: {
+        patches = (oldAttrs.patches or []) ++ [ ./patches/deploy-rs-nix-2.33.patch ];
+      });
+      packages.aarch64-linux.deploy-rs = deploy-rs.packages.aarch64-linux.deploy-rs.overrideAttrs (oldAttrs: {
+        patches = (oldAttrs.patches or []) ++ [ ./patches/deploy-rs-nix-2.33.patch ];
+      });
+      packages.aarch64-darwin.deploy-rs = deploy-rs.packages.aarch64-darwin.deploy-rs.overrideAttrs (oldAttrs: {
+        patches = (oldAttrs.patches or []) ++ [ ./patches/deploy-rs-nix-2.33.patch ];
+      });
+
+      # Dev shells with patched deploy-rs
+      devShells.aarch64-darwin.default = nixpkgs.legacyPackages.aarch64-darwin.mkShell {
+        packages = [ outputs.packages.aarch64-darwin.deploy-rs ];
+      };
+      devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
+        packages = [ outputs.packages.x86_64-linux.deploy-rs ];
+      };
+      devShells.aarch64-linux.default = nixpkgs.legacyPackages.aarch64-linux.mkShell {
+        packages = [ outputs.packages.aarch64-linux.deploy-rs ];
+      };
 
       # Deploy-rs configurations
       deploy.nodes = {

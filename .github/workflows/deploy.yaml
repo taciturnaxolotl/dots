@@ -38,7 +38,7 @@ jobs:
       
       - name: Deploy all configurations
         run: |
-          nix run github:serokell/deploy-rs -- \
+          nix run .#deploy-rs -- \
             --skip-checks \
             --remote-build \
             --ssh-user kierank \

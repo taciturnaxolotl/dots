@@ -1,0 +1,25 @@
+diff --git a/src/push.rs b/src/push.rs
+index a206afc..68a421c 100644
+--- a/src/push.rs
++++ b/src/push.rs
+@@ -221,7 +221,8 @@ pub async fn build_profile(data: PushProfileData<'_>) -> Result<(), PushProfileE
+     let mut show_derivation_command = Command::new("nix");
+ 
+     show_derivation_command
+-        .arg("show-derivation")
++        .arg("derivation")
++        .arg("show")
+         .arg(&data.deploy_data.profile.profile_settings.path);
+ 
+     let show_derivation_output = show_derivation_command
+@@ -241,6 +242,10 @@ pub async fn build_profile(data: PushProfileData<'_>) -> Result<(), PushProfileE
+     .map_err(PushProfileError::ShowDerivationParse)?;
+ 
+     let deriver_key = derivation_info
++        .get("derivations")
++        .ok_or(PushProfileError::ShowDerivationEmpty)?
++        .as_object()
++        .ok_or(PushProfileError::ShowDerivationEmpty)?
+         .keys()
+         .next()
+         .ok_or(PushProfileError::ShowDerivationEmpty)?;
