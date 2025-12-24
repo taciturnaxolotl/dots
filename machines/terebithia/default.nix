@@ -81,6 +81,7 @@
     gotools
     go-tools
     gcc
+    jre
     # misc
     neofetch
     git
@@ -172,6 +173,18 @@
         "services"
       ];
     };
+    duncan = {
+      initialPassword = "changeme";
+      isNormalUser = true;
+      shell = pkgs.zsh;
+      openssh.authorizedKeys.keys = [
+        "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPe38rGtuixnMpGoCwtzXJ2qkPKt16icS7KI+XO0meAE duncanhalderman@Duncans-MacBook-Air.local"
+      ];
+      extraGroups = [
+        "wheel"
+        "networkmanager"
+      ];
+    };
     root.openssh.authorizedKeys.keys = [
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzEEjvbL/ttqmYoDjxYQmDIq36BabROJoXgQKeh9liBxApwp+2PmgxROzTg42UrRc9pyrkq5kVfxG5hvkqCinhL1fMiowCSEs2L2/Cwi40g5ZU+QwdcwI8a4969kkI46PyB19RHkxg54OUORiIiso/WHGmqQsP+5wbV0+4riSnxwn/JXN4pmnE//stnyAyoiEZkPvBtwJjKb3Ni9n3eNLNs6gnaXrCtaygEZdebikr9kS2g9mM696HvIFgM6cdR/wZ7DcLbG3IdTXuHN7PC3xxL+Y4ek5iMreQIPmuvs4qslbthPGYoYbYLUQiRa9XO5s/ksIj5Z14f7anHE6cuTQVpvNWdGDOigyIVS5qU+4ZF7j+rifzOXVL48gmcAvw/uV68m5Wl/p0qsC/d8vI3GYwEsWG/EzpAlc07l8BU2LxWgN+d7uwBFaJV9VtmUDs5dcslsh8IbzmtC9gq3OLGjklxTfIl6qPiL8U33oc/UwqzvZUrI2BlbagvIZYy6rP+q0= kierank@mockingjay"
     ];
@@ -195,6 +208,10 @@
       22
       80
       443
+      28868 # Minecraft server
+    ];
+    allowedUDPPorts = [
+      28869 # Minecraft voice chat
     ];
     logRefusedConnections = false;
     rejectPackets = true;
