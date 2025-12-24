@@ -13,6 +13,7 @@
     shell = {
       enable = true;
     };
+    ssh.zmx.enable = true;
   };
 
   programs.home-manager.enable = true;
