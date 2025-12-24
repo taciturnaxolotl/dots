@@ -55,6 +55,7 @@
     zsh
     gum
     vim
+    zmx-binary
     # networking
     xh
     curl
