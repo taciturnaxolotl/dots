@@ -111,7 +111,7 @@ atuin import
 
 #### Using nixos-anywhere (Recommended for remote installations)
 
-> [!INFO]
+> [!WARN]
 > This only currently works with `prattle` and `terebithia` as they have the proper disko configs setup.
 
 For remote installations (like Oracle Cloud), use [nixos-anywhere](https://github.com/nix-community/nixos-anywhere):
@@ -126,7 +126,8 @@ nix run github:nix-community/nixos-anywhere -- \
 
 Replace `prattle` with your machine configuration and `<ip-address>` with your target machine's IP.
 
-> **Note**: Make sure your SSH key is in the target machine's `authorized_keys` and the machine configuration has the correct network settings. The `--generate-hardware-config nixos-facter` flag will generate a comprehensive hardware report using [nixos-facter](https://github.com/numtide/nixos-facter) instead of the traditional `nixos-generate-config`.
+> [!NOTE]
+> Make sure your SSH key is in the target machine's `authorized_keys` and the machine configuration has the correct network settings. The `--generate-hardware-config nixos-facter` flag will generate a comprehensive hardware report using [nixos-facter](https://github.com/numtide/nixos-facter) instead of the traditional `nixos-generate-config`.
 
 #### Using the install script
 
