@@ -182,6 +182,7 @@
       openssh.authorizedKeys.keys = [
         "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIPe38rGtuixnMpGoCwtzXJ2qkPKt16icS7KI+XO0meAE duncanhalderman@Duncans-MacBook-Air.local"
         "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzEEjvbL/ttqmYoDjxYQmDIq36BabROJoXgQKeh9liBxApwp+2PmgxROzTg42UrRc9pyrkq5kVfxG5hvkqCinhL1fMiowCSEs2L2/Cwi40g5ZU+QwdcwI8a4969kkI46PyB19RHkxg54OUORiIiso/WHGmqQsP+5wbV0+4riSnxwn/JXN4pmnE//stnyAyoiEZkPvBtwJjKb3Ni9n3eNLNs6gnaXrCtaygEZdebikr9kS2g9mM696HvIFgM6cdR/wZ7DcLbG3IdTXuHN7PC3xxL+Y4ek5iMreQIPmuvs4qslbthPGYoYbYLUQiRa9XO5s/ksIj5Z14f7anHE6cuTQVpvNWdGDOigyIVS5qU+4ZF7j+rifzOXVL48gmcAvw/uV68m5Wl/p0qsC/d8vI3GYwEsWG/EzpAlc07l8BU2LxWgN+d7uwBFaJV9VtmUDs5dcslsh8IbzmtC9gq3OLGjklxTfIl6qPiL8U33oc/UwqzvZUrI2BlbagvIZYy6rP+q0= kierank@mockingjay"
+        "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDX87YPDSScMZ1x/ZmJmiqL1iEagD7o6CZMVSE+WV/L2mKWFiwRrkMwuT07O0cWBbJGrL8s9EHFMm4AFEiLcMVGnM4ZeEKeUNLnvRwa5s/uAnLNq7kfTCxBHGomfrIz68ZrjeclgG4wcP2v5PfjpNnQICQMaJfwVwJTq5d5Vh+qiFdiS/r5bafbECMJZP68r1rbrTpdi220EQ97dlcMpsL9cwwU+A8nnLfMwpiH0bKJFo6hBKX1/ELENZw+usVRTC0YhY0AAuLyT0FOYKuSzH4YA2yHJnPZJPS7ElwoxdjKMFx1HsUhHWAJbrWxUXDsSDlL7V0PPgMU6sIhCHLgfdLsoYMEB31JR0rcSBXJw11Hpj/N3hBLF9vj0X9ENQ0ea8vkWBDnogBHHros/IafPRerkyhUowxLrovYRNHOHAR/IUKtvewFzfnoPQ0hNSdBMt5vL45+y+e+n1HvMkTNL3P0kd7jigmSoTz3x8AK0c1M84E9BtfsLEpZDRi+7kkiqvE= dunca@DESKTOP-9RIG9UH"
       ];
       extraGroups = [
         "wheel"
