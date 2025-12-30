@@ -522,6 +522,102 @@ in
         zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
         eval "$(terminal-wakatime init)"
+
+        # Edit command buffer in $EDITOR (Ctrl+X, Ctrl+E)
+        autoload -Uz edit-command-line
+        zle -N edit-command-line
+        bindkey '^X^E' edit-command-line
+
+        # Magic space - expand history expressions like !! or !$
+        bindkey ' ' magic-space
+
+        # Suffix aliases - open files by extension
+        alias -s json=jless
+        alias -s md=bat
+        alias -s go='$EDITOR'
+        alias -s rs='$EDITOR'
+        alias -s txt=bat
+        alias -s log=bat
+        alias -s py='$EDITOR'
+        alias -s js='$EDITOR'
+        alias -s ts='$EDITOR'
+        ${if pkgs.stdenv.isDarwin then "alias -s html=open" else ""}
+
+        # Global aliases
+        alias -g NE='2>/dev/null'
+        alias -g NO='>/dev/null'
+        alias -g NUL='>/dev/null 2>&1'
+        alias -g J='| jq'
+
+        # OSC 52 clipboard (works over SSH)
+        function osc52copy() {
+          local data=$(cat "$@" | base64 | tr -d '\n')
+          printf "\033]52;c;%s\a" "$data"
+        }
+        alias -g C='| osc52copy'
+
+        # zmv - advanced batch rename/move
+        autoload -Uz zmv
+        alias zcp='zmv -C'
+        alias zln='zmv -L'
+
+        # Clear screen but keep current command buffer (Ctrl+X, Ctrl+L)
+        function clear-screen-and-scrollback() {
+          echoti civis >"$TTY"
+          printf '%b' '\e[H\e[2J\e[3J' >"$TTY"
+          echoti cnorm >"$TTY"
+          zle redisplay
+        }
+        zle -N clear-screen-and-scrollback
+        bindkey '^X^L' clear-screen-and-scrollback
+
+        # Copy current command buffer to clipboard (Ctrl+X, Ctrl+C) - OSC 52 for SSH support
+        function copy-buffer-to-clipboard() {
+          local data=$(echo -n "$BUFFER" | base64 | tr -d '\n')
+          printf "\033]52;c;%s\a" "$data"
+          zle -M "Copied to clipboard"
+        }
+        zle -N copy-buffer-to-clipboard
+        bindkey '^X^C' copy-buffer-to-clipboard
+
+        # chpwd hooks
+        autoload -Uz add-zsh-hook
+
+        function auto_venv() {
+          if [[ -n "$VIRTUAL_ENV" && ! -f "$VIRTUAL_ENV/bin/activate" ]]; then
+            deactivate
+          fi
+          [[ -n "$VIRTUAL_ENV" ]] && return
+          local dir="$PWD"
+          while [[ "$dir" != "/" ]]; do
+            if [[ -f "$dir/.venv/bin/activate" ]]; then
+              source "$dir/.venv/bin/activate"
+              return
+            fi
+            dir="''${dir:h}"
+          done
+        }
+
+        function auto_nix() {
+          [[ -n "$IN_NIX_SHELL" ]] && return
+          local dir="$PWD"
+          while [[ "$dir" != "/" ]]; do
+            if [[ -f "$dir/flake.nix" ]]; then
+              if [[ ! -f "$dir/.envrc" ]]; then
+                cat > "$dir/.envrc" <<'EOF'
+eval "$(nix print-dev-env)"
+EOF
+                command direnv allow "$dir" >/dev/null 2>&1
+              fi
+              command direnv reload >/dev/null 2>&1
+              return
+            fi
+            dir="''${dir:h}"
+          done
+        }
+
+        add-zsh-hook chpwd auto_venv
+        add-zsh-hook chpwd auto_nix
       '';
       history = {
         size = 10000;
@@ -631,6 +727,8 @@ in
       ripgrep-all
       neofetch
       glow
+      tree
+      jless
     ];
 
     home.sessionPath = [
