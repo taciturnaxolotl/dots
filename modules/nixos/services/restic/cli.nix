@@ -135,14 +135,39 @@ let
       if [ "$svc" = "all" ]; then
         for s in $SERVICES; do
           style --foreground 117 "Backing up $s..."
-          systemctl start "restic-backups-$s.service" || style --foreground 214 "! Failed to backup $s"
+          systemctl start "restic-backups-$s.service"
+          journalctl -u "restic-backups-$s.service" -f -n 0 --output=cat &
+          journal_pid=$!
+          while systemctl is-active --quiet "restic-backups-$s.service"; do
+            sleep 1
+          done
+          kill $journal_pid 2>/dev/null || true
+          if systemctl is-failed --quiet "restic-backups-$s.service"; then
+            style --foreground 214 "! Failed to backup $s"
+          else
+            style --foreground 35 "✓ $s complete"
+          fi
+          echo
         done
       else
         style --foreground 117 "Backing up $svc..."
         systemctl start "restic-backups-$svc.service"
+        journalctl -u "restic-backups-$svc.service" -f -n 0 --output=cat &
+        journal_pid=$!
+        while systemctl is-active --quiet "restic-backups-$svc.service"; do
+          sleep 1
+        done
+        kill $journal_pid 2>/dev/null || true
       fi
       
-      style --foreground 35 "✓ Backup triggered"
+      if [ "$svc" != "all" ]; then
+        if systemctl is-failed --quiet "restic-backups-$svc.service"; then
+          style --foreground 196 "✗ Backup failed"
+          exit 1
+        else
+          style --foreground 35 "✓ Backup complete"
+        fi
+      fi
     }
     
     cmd_restore() {
