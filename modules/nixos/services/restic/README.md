@@ -101,12 +101,12 @@ atelier.backup.services.myservice = {
 The `atelier-backup` command provides an interactive TUI:
 
 ```bash
-atelier-backup              # Interactive menu
-atelier-backup status       # Show backup status for all services
-atelier-backup list         # Browse snapshots
-atelier-backup backup       # Trigger manual backup
-atelier-backup restore      # Interactive restore wizard
-atelier-backup dr           # Disaster recovery mode
+sudo atelier-backup              # Interactive menu
+sudo atelier-backup status       # Show backup status for all services
+sudo atelier-backup list         # Browse snapshots
+sudo atelier-backup backup       # Trigger manual backup
+sudo atelier-backup restore      # Interactive restore wizard
+sudo atelier-backup dr           # Disaster recovery mode
 ```
 
 See `man atelier-backup` for full documentation.

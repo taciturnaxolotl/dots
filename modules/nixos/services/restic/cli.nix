@@ -57,6 +57,13 @@ let
     input() { ${pkgs.gum}/bin/gum input "$@"; }
     spin() { ${pkgs.gum}/bin/gum spin "$@"; }
     
+    # Check for root
+    if [ "$(id -u)" -ne 0 ]; then
+      style --foreground 196 "Error: atelier-backup must be run as root"
+      echo "Try: sudo atelier-backup $*"
+      exit 1
+    fi
+    
     # Restic wrapper with secrets
     restic_cmd() {
       ${pkgs.restic}/bin/restic \
@@ -65,8 +72,11 @@ let
         "$@"
     }
     export -f restic_cmd
-    export B2_ACCOUNT_ID=$(cat ${config.age.secrets."restic/env".path} | grep B2_ACCOUNT_ID | cut -d= -f2)
-    export B2_ACCOUNT_KEY=$(cat ${config.age.secrets."restic/env".path} | grep B2_ACCOUNT_KEY | cut -d= -f2)
+    
+    # Load B2 credentials from environment file
+    set -a
+    source ${config.age.secrets."restic/env".path}
+    set +a
     
     # Available services
     SERVICES="${lib.concatStringsSep " " allBackupServices}"

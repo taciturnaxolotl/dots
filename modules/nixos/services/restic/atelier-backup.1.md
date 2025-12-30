@@ -8,17 +8,17 @@ atelier-backup - interactive backup management for atelier services
 
 # SYNOPSIS
 
-**atelier-backup** [*COMMAND*]
+**sudo atelier-backup** [*COMMAND*]
 
-**atelier-backup** **status**
+**sudo atelier-backup** **status**
 
-**atelier-backup** **list**
+**sudo atelier-backup** **list**
 
-**atelier-backup** **backup**
+**sudo atelier-backup** **backup**
 
-**atelier-backup** **restore**
+**sudo atelier-backup** **restore**
 
-**atelier-backup** **dr**
+**sudo atelier-backup** **dr**
 
 # DESCRIPTION
 
@@ -73,32 +73,32 @@ A backup manifest is stored at **/etc/atelier/backup-manifest.json** containing 
 
 Interactive menu:
 ```
-$ atelier-backup
+$ sudo atelier-backup
 ```
 
 Check backup status for all services:
 ```
-$ atelier-backup status
+$ sudo atelier-backup status
 ```
 
 Browse snapshots for a service:
 ```
-$ atelier-backup list
+$ sudo atelier-backup list
 ```
 
 Trigger manual backup:
 ```
-$ atelier-backup backup
+$ sudo atelier-backup backup
 ```
 
 Restore a service from backup:
 ```
-$ atelier-backup restore
+$ sudo atelier-backup restore
 ```
 
 Full disaster recovery:
 ```
-$ atelier-backup dr
+$ sudo atelier-backup dr
 ```
 
 # FILES

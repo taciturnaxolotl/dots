@@ -251,10 +251,10 @@ atuin sync
 Services are automatically backed up nightly using restic to Backblaze B2. The `atelier-backup` CLI provides an interactive TUI for managing backups:
 
 ```bash
-atelier-backup              # Interactive menu
-atelier-backup status       # Show backup status
-atelier-backup restore      # Restore wizard
-atelier-backup dr           # Disaster recovery
+sudo atelier-backup              # Interactive menu
+sudo atelier-backup status       # Show backup status
+sudo atelier-backup restore      # Restore wizard
+sudo atelier-backup dr           # Disaster recovery
 ```
 
 See [modules/nixos/services/restic/README.md](modules/nixos/services/restic/README.md) for setup and usage.

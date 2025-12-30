@@ -221,6 +221,7 @@
     ];
     allowedUDPPorts = [
       28869 # Minecraft voice chat
+      19132 # mc geyser
     ];
     logRefusedConnections = false;
     rejectPackets = true;
@@ -379,7 +380,7 @@
 
   # Backup configuration for tangled services
   atelier.backup.services.knot = {
-    paths = [ "/home/git" ];  # Git repositories managed by knot
+    paths = [ "/home/git" ]; # Git repositories managed by knot
     exclude = [ "*.log" ];
     # Uses SQLite, stop before backup
     preBackup = "systemctl stop knot";
@@ -388,7 +389,10 @@
 
   atelier.backup.services.spindle = {
     paths = [ "/var/lib/spindle" ];
-    exclude = [ "*.log" "cache/*" ];
+    exclude = [
+      "*.log"
+      "cache/*"
+    ];
     # Uses SQLite, stop before backup
     preBackup = "systemctl stop spindle";
     postBackup = "systemctl start spindle";
@@ -414,7 +418,7 @@
     enable = true;
     domain = "l4.dunkirk.sh";
     port = 3004;
-    autoUpdate = false;
+    deploy.autoUpdate = false;
     secretsFile = config.age.secrets.l4.path;
   };
 
@@ -445,7 +449,10 @@
   # Backup configuration for n8n
   atelier.backup.services.n8n = {
     paths = [ "/var/lib/n8n" ];
-    exclude = [ "*.log" "cache/*" ];
+    exclude = [
+      "*.log"
+      "cache/*"
+    ];
     # n8n uses SQLite, stop before backup
     preBackup = "systemctl stop n8n";
     postBackup = "systemctl start n8n";
