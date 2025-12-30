@@ -246,7 +246,7 @@ in {
 
         serviceConfig.ExecStartPre = [
           "+${pkgs.writeShellScript "${name}-setup" ''
-            mkdir -p ${cfg.dataDir}/app
+            mkdir -p ${cfg.dataDir}/app/data
             mkdir -p ${cfg.dataDir}/data
             chown -R ${name}:services ${cfg.dataDir}
             chmod -R g+rwX ${cfg.dataDir}

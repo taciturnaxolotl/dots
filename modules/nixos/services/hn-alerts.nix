@@ -14,10 +14,14 @@ let
     startCommand = "${pkgs.unstable.bun}/bin/bun start";
 
     extraConfig = cfg: {
+      # Set DATABASE_URL environment variable
+      atelier.services.hn-alerts.environment = {
+        DATABASE_URL = "${cfg.dataDir}/data/hn-alerts.db";
+      };
+
       # Data declarations for automatic backup
-      # App uses ./local.db relative to app dir by default
       atelier.services.hn-alerts.data = {
-        sqlite = "${cfg.dataDir}/app/local.db";
+        sqlite = "${cfg.dataDir}/data/hn-alerts.db";
       };
     };
   };

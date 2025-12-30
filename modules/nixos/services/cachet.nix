@@ -17,7 +17,7 @@ mkService {
   entryPoint = "src/index.ts";
 
   extraConfig = cfg: {
-    # Set DATABASE_PATH environment variable (uses the data dir created by mkService)
+    # Set DATABASE_PATH environment variable (uses separate data dir)
     systemd.services.cachet.serviceConfig.Environment = [
       "DATABASE_PATH=${cfg.dataDir}/data/cachet.db"
     ];

@@ -14,11 +14,12 @@ mkService {
   entryPoint = "src/index.ts";
 
   extraConfig = cfg: {
-    # Add ORIGIN and RP_ID environment variables
-    systemd.services.indiko.serviceConfig.Environment = [
-      "ORIGIN=https://${cfg.domain}"
-      "RP_ID=${cfg.domain}"
-    ];
+    # Add ORIGIN, RP_ID, and DATABASE_URL environment variables
+    atelier.services.indiko.environment = {
+      ORIGIN = "https://${cfg.domain}";
+      RP_ID = cfg.domain;
+      DATABASE_URL = "${cfg.dataDir}/data/indiko.db";
+    };
 
     # Custom Caddy config with rate limiting on auth endpoints
     services.caddy.virtualHosts.${cfg.domain}.extraConfig = ''
@@ -67,9 +68,8 @@ mkService {
     atelier.services.indiko.caddy.enable = false;
 
     # Data declarations for automatic backup (SQLite for sessions/tokens)
-    # App uses hardcoded data/indiko.db relative to app dir
     atelier.services.indiko.data = {
-      sqlite = "${cfg.dataDir}/app/data/indiko.db";
+      sqlite = "${cfg.dataDir}/data/indiko.db";
     };
   };
 }
