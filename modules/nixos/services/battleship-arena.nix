@@ -55,6 +55,22 @@ in
       type = types.package;
       description = "The battleship-arena package to use";
     };
+
+    backup = {
+      enable = mkEnableOption "Enable backups for battleship-arena" // { default = true; };
+
+      paths = mkOption {
+        type = types.listOf types.str;
+        default = [ "/var/lib/battleship-arena" ];
+        description = "Paths to back up";
+      };
+
+      exclude = mkOption {
+        type = types.listOf types.str;
+        default = [ "*.log" ];
+        description = "Patterns to exclude from backup";
+      };
+    };
   };
 
   config = mkIf cfg.enable {
@@ -158,5 +174,13 @@ in
     '';
 
     networking.firewall.allowedTCPPorts = [ cfg.sshPort ];
+
+    # Register backup configuration
+    atelier.backup.services.battleship-arena = mkIf cfg.backup.enable {
+      inherit (cfg.backup) paths exclude;
+      # Has SQLite database, stop before backup
+      preBackup = "systemctl stop battleship-arena";
+      postBackup = "systemctl start battleship-arena";
+    };
   };
 }

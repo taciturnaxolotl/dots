@@ -40,6 +40,22 @@ in
     };
 
     autoUpdate = lib.mkEnableOption "Automatically git pull on service restart";
+
+    backup = {
+      enable = lib.mkEnableOption "Enable backups for hn-alerts" // { default = true; };
+
+      paths = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ cfg.dataDir ];
+        description = "Paths to back up";
+      };
+
+      exclude = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ "*.log" "app/.git" "app/node_modules" ];
+        description = "Patterns to exclude from backup";
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -119,6 +135,14 @@ in
 
         reverse_proxy localhost:${toString cfg.port}
       '';
+    };
+
+    # Register backup configuration
+    atelier.backup.services.hn-alerts = lib.mkIf cfg.backup.enable {
+      inherit (cfg.backup) paths exclude;
+      # Has database, stop before backup
+      preBackup = "systemctl stop hn-alerts";
+      postBackup = "systemctl start hn-alerts";
     };
   };
 }

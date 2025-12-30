@@ -137,6 +137,9 @@
       file = ../../secrets/l4.age;
       owner = "l4";
     };
+    "restic/env".file = ../../secrets/restic/env.age;
+    "restic/repo".file = ../../secrets/restic/repo.age;
+    "restic/password".file = ../../secrets/restic/password.age;
   };
 
   environment.sessionVariables = {
@@ -151,6 +154,7 @@
 
   atelier = {
     authentication.enable = true;
+    backup.enable = true;
   };
 
   networking = {
@@ -373,6 +377,23 @@
     };
   };
 
+  # Backup configuration for tangled services
+  atelier.backup.services.knot = {
+    paths = [ "/home/git" ];  # Git repositories managed by knot
+    exclude = [ "*.log" ];
+    # Uses SQLite, stop before backup
+    preBackup = "systemctl stop knot";
+    postBackup = "systemctl start knot";
+  };
+
+  atelier.backup.services.spindle = {
+    paths = [ "/var/lib/spindle" ];
+    exclude = [ "*.log" "cache/*" ];
+    # Uses SQLite, stop before backup
+    preBackup = "systemctl stop spindle";
+    postBackup = "systemctl start spindle";
+  };
+
   atelier.services.knot-sync = {
     enable = true;
     secretsFile = config.age.secrets.github-knot-sync.path;
@@ -419,6 +440,15 @@
         header_up X-Forwarded-For {remote}
       }
     '';
+  };
+
+  # Backup configuration for n8n
+  atelier.backup.services.n8n = {
+    paths = [ "/var/lib/n8n" ];
+    exclude = [ "*.log" "cache/*" ];
+    # n8n uses SQLite, stop before backup
+    preBackup = "systemctl stop n8n";
+    postBackup = "systemctl start n8n";
   };
 
   boot.loader.systemd-boot.enable = true;

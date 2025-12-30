@@ -47,4 +47,13 @@ in
   "l4.age".publicKeys = [
     kierank
   ];
+  "restic/env.age".publicKeys = [
+    kierank
+  ];
+  "restic/repo.age".publicKeys = [
+    kierank
+  ];
+  "restic/password.age".publicKeys = [
+    kierank
+  ];
 }

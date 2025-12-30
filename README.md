@@ -24,6 +24,8 @@
 │   ├── tacyon # rpi 5
 │   └── terebithia # oracle cloud aarch64 server
 ├── modules
+│   ├── lib # shared nix utilities
+│   │   └── mkService.nix # base service factory
 │   ├── home # home-manager modules
 │   │   ├── aesthetics # theming and wallpapers
 │   │   ├── apps # any app specific config
@@ -33,6 +35,8 @@
 │   │       └── hyprland
 │   └── nixos # nixos modules
 │       ├── apps # also app specific configs
+│       ├── services # self-hosted services with automatic backup
+│       │   └── restic # backup system (see modules/nixos/services/restic/README.md)
 │       └── system # pam and my fancy wifi module for now
 └── secrets # keep your grubby hands (or paws) off my data
 
@@ -241,6 +245,19 @@ Finally enable [atuin](https://atuin.sh/)
 atuin login
 atuin sync
 ```
+
+## Backups
+
+Services are automatically backed up nightly using restic to Backblaze B2. The `atelier-backup` CLI provides an interactive TUI for managing backups:
+
+```bash
+atelier-backup              # Interactive menu
+atelier-backup status       # Show backup status
+atelier-backup restore      # Restore wizard
+atelier-backup dr           # Disaster recovery
+```
+
+See [modules/nixos/services/restic/README.md](modules/nixos/services/restic/README.md) for setup and usage.
 
 ## some odd things
 
