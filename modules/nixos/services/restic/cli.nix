@@ -132,42 +132,51 @@ let
         exit 1
       fi
       
+      run_backup() {
+        local svc_name=$1
+        
+        # Check if already running
+        if systemctl is-active --quiet "restic-backups-$svc_name.service"; then
+          style --foreground 214 "! $svc_name backup already in progress"
+          style --foreground 117 "  Use: journalctl -u restic-backups-$svc_name.service -f"
+          return 1
+        fi
+        
+        style --foreground 117 "Backing up $svc_name..."
+        
+        # Start following journal before starting service
+        journalctl -u "restic-backups-$svc_name.service" -f -n 0 --output=cat &
+        journal_pid=$!
+        
+        # Small delay to ensure journalctl is attached
+        sleep 0.2
+        
+        systemctl start "restic-backups-$svc_name.service"
+        
+        while systemctl is-active --quiet "restic-backups-$svc_name.service"; do
+          sleep 1
+        done
+        
+        kill $journal_pid 2>/dev/null || true
+        
+        if systemctl is-failed --quiet "restic-backups-$svc_name.service"; then
+          style --foreground 196 "✗ $svc_name failed"
+          return 1
+        else
+          style --foreground 35 "✓ $svc_name complete"
+          return 0
+        fi
+      }
+      
       if [ "$svc" = "all" ]; then
         for s in $SERVICES; do
-          style --foreground 117 "Backing up $s..."
-          systemctl start "restic-backups-$s.service"
-          journalctl -u "restic-backups-$s.service" -f -n 0 --output=cat &
-          journal_pid=$!
-          while systemctl is-active --quiet "restic-backups-$s.service"; do
-            sleep 1
-          done
-          kill $journal_pid 2>/dev/null || true
-          if systemctl is-failed --quiet "restic-backups-$s.service"; then
-            style --foreground 214 "! Failed to backup $s"
-          else
-            style --foreground 35 "✓ $s complete"
-          fi
+          run_backup "$s" || true
           echo
         done
       else
-        style --foreground 117 "Backing up $svc..."
-        systemctl start "restic-backups-$svc.service"
-        journalctl -u "restic-backups-$svc.service" -f -n 0 --output=cat &
-        journal_pid=$!
-        while systemctl is-active --quiet "restic-backups-$svc.service"; do
-          sleep 1
-        done
-        kill $journal_pid 2>/dev/null || true
+        run_backup "$svc"
       fi
       
-      if [ "$svc" != "all" ]; then
-        if systemctl is-failed --quiet "restic-backups-$svc.service"; then
-          style --foreground 196 "✗ Backup failed"
-          exit 1
-        else
-          style --foreground 35 "✓ Backup complete"
-        fi
-      fi
     }
     
     cmd_restore() {
