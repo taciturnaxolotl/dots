@@ -448,7 +448,7 @@
 
   # Backup configuration for n8n
   atelier.backup.services.n8n = {
-    paths = [ "/var/lib/n8n" ];
+    paths = [ "/var/lib/private/n8n/.n8n" ];
     exclude = [
       "*.log"
       "cache/*"
