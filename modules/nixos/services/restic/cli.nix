@@ -57,11 +57,9 @@ let
     input() { ${pkgs.gum}/bin/gum input "$@"; }
     spin() { ${pkgs.gum}/bin/gum spin "$@"; }
     
-    # Check for root
+    # Auto-elevate to root if needed
     if [ "$(id -u)" -ne 0 ]; then
-      style --foreground 196 "Error: atelier-backup must be run as root"
-      echo "Try: sudo atelier-backup $*"
-      exit 1
+      exec sudo "$0" "$@"
     fi
     
     # Restic wrapper with secrets
