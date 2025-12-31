@@ -93,6 +93,7 @@ let
     
     # Retention policy
     pruneOpts = [
+      "--verbose"
       "--keep-last 3"
       "--keep-daily 7"
       "--keep-weekly 5"
