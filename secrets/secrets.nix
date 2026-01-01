@@ -47,6 +47,9 @@ in
   "l4.age".publicKeys = [
     kierank
   ];
+  "control.age".publicKeys = [
+    kierank
+  ];
   "restic/env.age".publicKeys = [
     kierank
   ];

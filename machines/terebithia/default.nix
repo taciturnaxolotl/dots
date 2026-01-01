@@ -137,6 +137,10 @@
       file = ../../secrets/l4.age;
       owner = "l4";
     };
+    control = {
+      file = ../../secrets/control.age;
+      owner = "control";
+    };
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
     "restic/password".file = ../../secrets/restic/password.age;
@@ -310,10 +314,36 @@
         header {
           Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         }
-        reverse_proxy localhost:8084 {
-          header_up X-Forwarded-Proto {scheme}
-          header_up X-Forwarded-For {remote}
+
+        # Kill-check for protected endpoints via control panel
+        @protected path /sse /sse/* /tiles/*/markers/pl3xmap_players.json
+        handle @protected {
+          reverse_proxy localhost:3010 {
+            rewrite /kill-check
+            header_up X-Orig-Host {host}
+            header_up X-Orig-Path {path}
+
+            @allowed status 200
+            handle_response @allowed {
+              reverse_proxy localhost:8084
+            }
+            handle_response {
+              respond "Temporarily disabled" 503
+            }
+          }
         }
+
+        # Proxy settings.json through control to conditionally redact fields
+        handle /tiles/settings.json {
+          reverse_proxy localhost:3010 {
+            rewrite /proxy/settings.json
+            header_up X-Orig-Host {host}
+            header_up X-Orig-Path {path}
+            header_up X-Backend-Url http://localhost:8084{path}
+          }
+        }
+
+        reverse_proxy localhost:8084
       '';
     };
     extraConfig = ''
@@ -420,6 +450,26 @@
     port = 3004;
     deploy.autoUpdate = false;
     secretsFile = config.age.secrets.l4.path;
+  };
+
+  atelier.services.control = {
+    enable = true;
+    domain = "control.dunkirk.sh";
+    deploy.repository = "https://tangled.org/dunkirk.sh/control";
+    deploy.autoUpdate = true;
+    secretsFile = config.age.secrets.control.path;
+
+    flags."map.dunkirk.sh" = {
+      name = "Map";
+      flags = {
+        "block-tracking" = {
+          name = "Block Player Tracking";
+          description = "Disable real-time player location updates";
+          paths = [ "/sse" "/sse/*" "/tiles/*/markers/pl3xmap_players.json" ];
+          redact."/tiles/settings.json" = [ "players" ];
+        };
+      };
+    };
   };
 
   services.n8n = {

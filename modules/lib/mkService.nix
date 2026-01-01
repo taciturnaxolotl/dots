@@ -196,7 +196,7 @@ in {
         inherit description;
         wantedBy = [ "multi-user.target" ];
         after = [ "network.target" ];
-        path = [ pkgs.git ];
+        path = [ pkgs.git pkgs.openssh ];
 
         preStart = lib.optionalString (cfg.deploy.enable && cfg.deploy.repository != null) ''
           # Clone repository if not present
@@ -245,7 +245,8 @@ in {
         };
 
         serviceConfig.ExecStartPre = [
-          "+${pkgs.writeShellScript "${name}-setup" ''
+          # Run before preStart, creates directories so WorkingDirectory exists
+          "!${pkgs.writeShellScript "${name}-setup" ''
             mkdir -p ${cfg.dataDir}/app/data
             mkdir -p ${cfg.dataDir}/data
             chown -R ${name}:services ${cfg.dataDir}
@@ -253,6 +254,13 @@ in {
           ''}"
         ];
       };
+
+      # Ensure working directory exists before service starts
+      systemd.tmpfiles.rules = [
+        "d ${cfg.dataDir} 0755 ${name} services -"
+        "d ${cfg.dataDir}/app 0755 ${name} services -"
+        "d ${cfg.dataDir}/data 0755 ${name} services -"
+      ];
 
       # Caddy reverse proxy
       services.caddy.virtualHosts.${cfg.domain} = lib.mkIf cfg.caddy.enable {
