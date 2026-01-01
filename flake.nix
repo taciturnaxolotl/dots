@@ -150,6 +150,7 @@
             });
             
             zmx-binary = prev.callPackage ./packages/zmx.nix { };
+            bore-auth = prev.callPackage ./packages/bore-auth.nix { };
           })
         ];
       };

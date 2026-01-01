@@ -41,7 +41,16 @@ in
   "battleship-arena.age".publicKeys = [
     kierank
   ];
-  "frp-auth-token.age".publicKeys = [
+  "bore/auth-token.age".publicKeys = [
+    kierank
+  ];
+  "bore/cookie-hash-key.age".publicKeys = [
+    kierank
+  ];
+  "bore/cookie-block-key.age".publicKeys = [
+    kierank
+  ];
+  "bore/client-secret.age".publicKeys = [
     kierank
   ];
   "l4.age".publicKeys = [

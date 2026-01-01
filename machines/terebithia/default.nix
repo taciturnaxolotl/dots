@@ -130,9 +130,10 @@
       file = ../../secrets/battleship-arena.age;
       owner = "battleship-arena";
     };
-    frp-auth-token = {
-      file = ../../secrets/frp-auth-token.age;
-    };
+    "bore/auth-token".file = ../../secrets/bore/auth-token.age;
+    "bore/cookie-hash-key".file = ../../secrets/bore/cookie-hash-key.age;
+    "bore/cookie-block-key".file = ../../secrets/bore/cookie-block-key.age;
+    "bore/client-secret".file = ../../secrets/bore/client-secret.age;
     l4 = {
       file = ../../secrets/l4.age;
       owner = "l4";
@@ -436,7 +437,14 @@
   atelier.services.frps = {
     enable = true;
     domain = "bore.dunkirk.sh";
-    authTokenFile = config.age.secrets.frp-auth-token.path;
+    authTokenFile = config.age.secrets."bore/auth-token".path;
+    auth = {
+      enable = true;
+      clientID = "ikc_FxqNPjQQYBt35vIfO1Xvd";
+      clientSecretFile = config.age.secrets."bore/client-secret".path;
+      cookieHashKeyFile = config.age.secrets."bore/cookie-hash-key".path;
+      cookieBlockKeyFile = config.age.secrets."bore/cookie-block-key".path;
+    };
   };
 
   atelier.services.indiko = {

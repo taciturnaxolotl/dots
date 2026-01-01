@@ -109,8 +109,8 @@
       file = ../../secrets/context7.age;
       owner = "kierank";
     };
-    frp-auth-token = {
-      file = ../../secrets/frp-auth-token.age;
+    "bore/auth-token" = {
+      file = ../../secrets/bore/auth-token.age;
       owner = "kierank";
     };
   };

@@ -12,6 +12,7 @@ complete -c bore -s l -l list -d 'List active tunnels'
 complete -c bore -s s -l saved -d 'List saved tunnels from bore.toml'
 complete -c bore -s p -l protocol -d 'Specify protocol' -xa 'http tcp udp'
 complete -c bore -l label -d 'Assign a label to the tunnel' -r
+complete -c bore -s a -l auth -d 'Require Indiko authentication'
 complete -c bore -l save -d 'Save tunnel configuration to bore.toml'
 
 # Complete subdomain from saved tunnels (first argument)

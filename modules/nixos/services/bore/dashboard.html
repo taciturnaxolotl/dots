@@ -475,16 +475,23 @@
             const subdomain = proxy.conf?.subdomain || 'unknown';
             const url = `https://${subdomain}.bore.dunkirk.sh`;
             
-            // Parse labels from proxy name (format: subdomain[label1,label2])
-            const labelMatch = proxy.name.match(/\[([^\]]+)\]$/);
-            const labels = labelMatch ? labelMatch[1].split(',') : [];
-            const displayName = labels.length > 0 ? proxy.name.replace(/\[[^\]]+\]$/, '') : proxy.name;
+            // Get labels and auth from metadatas
+            const metadatas = proxy.conf?.metadatas || {};
+            const labelsStr = metadatas.labels || '';
+            const labels = labelsStr ? labelsStr.split(',').map(l => l.trim()) : [];
+            const hasAuth = metadatas.auth === 'indiko';
+            const displayName = proxy.name;
 
-            const labelHtml = labels.map(label => {
+            let labelHtml = labels.map(label => {
               const trimmedLabel = label.trim();
               const style = getLabelStyle(trimmedLabel);
               return `<span class="tunnel-label" style="color: ${style.color}; background: ${style.bgColor}; border-color: ${style.borderColor};">${trimmedLabel}</span>`;
             }).join('');
+            
+            // Add auth badge if protected
+            if (hasAuth) {
+              labelHtml += `<span class="tunnel-label" style="color: #22c55e; background: rgba(34, 197, 94, 0.2); border-color: #22c55e;">🔒 auth</span>`;
+            }
 
             return `
               <div class="tunnel" data-tunnel="${proxy.name}">
@@ -511,16 +518,19 @@
           html += '<div class="offline-tunnels">';
           html += '<div style="color: #8b949e; font-size: 0.85rem; margin-bottom: 0.75rem;">recently disconnected</div>';
           html += offlineTunnels.map(proxy => {
-            // Parse labels from proxy name (format: subdomain[label1,label2])
-            const labelMatch = proxy.name.match(/\[([^\]]+)\]$/);
-            const labels = labelMatch ? labelMatch[1].split(',').map(l => l.trim()) : [];
-            const displayName = labels.length > 0 ? proxy.name.replace(/\[[^\]]+\]$/, '') : proxy.name;
+            // Get labels from metadatas
+            const metadatas = proxy.conf?.metadatas || {};
+            const labelsStr = metadatas.labels || '';
+            const labels = labelsStr ? labelsStr.split(',').map(l => l.trim()) : [];
+            const hasAuth = metadatas.auth === 'indiko';
+            const displayName = proxy.name;
             const labelStr = labels.length > 0 ? ` [${labels.join(', ')}]` : '';
+            const authStr = hasAuth ? ' 🔒' : '';
             
             if (!proxy.conf) {
               return `
                 <div class="offline-tunnel" data-tunnel="${proxy.name}">
-                  <span class="offline-tunnel-name">${displayName || 'unnamed'}${labelStr}</span>
+                  <span class="offline-tunnel-name">${displayName || 'unnamed'}${labelStr}${authStr}</span>
                   <span class="offline-tunnel-stats">in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span></span>
                 </div>
               `;
@@ -530,7 +540,7 @@
             const url = `https://${subdomain}.bore.dunkirk.sh`;
             return `
               <div class="offline-tunnel" data-tunnel="${proxy.name}">
-                <span class="offline-tunnel-name">${displayName || 'unnamed'}${labelStr} → ${url}</span>
+                <span class="offline-tunnel-name">${displayName || 'unnamed'}${labelStr}${authStr} → ${url}</span>
                 <span class="offline-tunnel-stats">in: <span data-traffic-in="${proxy.name}">0 B</span> • out: <span data-traffic-out="${proxy.name}">0 B</span></span>
               </div>
             `;

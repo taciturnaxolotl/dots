@@ -38,7 +38,7 @@
     };
     bore = {
       enable = true;
-      authTokenFile = osConfig.age.secrets.frp-auth-token.path;
+      authTokenFile = osConfig.age.secrets."bore/auth-token".path;
     };
     ssh = {
       enable = true;

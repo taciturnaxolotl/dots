@@ -47,37 +47,55 @@ let
       ${pkgs.gum}/bin/gum style --bold --foreground 212 "Saved tunnels in bore.toml"
       echo
       
+      # Helper function to display tunnel info
+      display_tunnel() {
+        local name="$1" port="$2" protocol="$3" label="$4" auth="$5"
+        local proto_display="''${protocol:-http}"
+        local label_display=""
+        local auth_display=""
+        if [ -n "$label" ]; then
+          label_display=" [$label]"
+        fi
+        if [ "$auth" = "true" ]; then
+          auth_display=" 🔒"
+        fi
+        ${pkgs.gum}/bin/gum style --foreground 35 "✓ $name → localhost:$port [$proto_display]$label_display$auth_display"
+      }
+      
       # Parse TOML and show tunnels
+      current_tunnel=""
+      port=""
+      protocol=""
+      label=""
+      tunnel_auth=""
+      
       while IFS= read -r line; do
         if [[ "$line" =~ ^\[([^]]+)\] ]]; then
+          # Display previous tunnel if exists
+          if [[ -n "$current_tunnel" ]] && [[ -n "$port" ]]; then
+            display_tunnel "$current_tunnel" "$port" "$protocol" "$label" "$tunnel_auth"
+          fi
           current_tunnel="''${BASH_REMATCH[1]}"
+          port=""
+          protocol=""
+          label=""
+          tunnel_auth=""
         elif [[ "$line" =~ ^port[[:space:]]*=[[:space:]]*([0-9]+) ]]; then
           port="''${BASH_REMATCH[1]}"
         elif [[ "$line" =~ ^protocol[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
           protocol="''${BASH_REMATCH[1]}"
         elif [[ "$line" =~ ^label[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
           label="''${BASH_REMATCH[1]}"
-          proto_display="''${protocol:-http}"
-          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$proto_display] [$label]"
-          label=""
-          protocol=""
-        elif [[ -z "$line" ]] && [[ -n "$current_tunnel" ]] && [[ -n "$port" ]]; then
-          proto_display="''${protocol:-http}"
-          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$proto_display]"
-          current_tunnel=""
-          port=""
-          protocol=""
+        elif [[ "$line" =~ ^labels[[:space:]]*=[[:space:]]*\[([^]]+)\] ]]; then
+          label=$(echo "''${BASH_REMATCH[1]}" | ${pkgs.gnused}/bin/sed 's/"//g; s/,[ ]*/,/g; s/^[ ]*//; s/[ ]*$//')
+        elif [[ "$line" =~ ^auth[[:space:]]*=[[:space:]]*(true|false) ]]; then
+          tunnel_auth="''${BASH_REMATCH[1]}"
         fi
       done < "$CONFIG_FILE"
       
-      # Handle last entry if file doesn't end with blank line
+      # Handle last entry
       if [[ -n "$current_tunnel" ]] && [[ -n "$port" ]]; then
-        proto_display="''${protocol:-http}"
-        if [[ -n "$label" ]]; then
-          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$proto_display] [$label]"
-        else
-          ${pkgs.gum}/bin/gum style --foreground 35 "✓ $current_tunnel → localhost:$port [$proto_display]"
-        fi
+        display_tunnel "$current_tunnel" "$port" "$protocol" "$label" "$tunnel_auth"
       fi
       exit 0
     fi
@@ -124,12 +142,23 @@ let
                   protocol="''${BASH_REMATCH[1]}"
                 elif [[ "$line" =~ ^label[[:space:]]*=[[:space:]]*\"([^\"]+)\" ]]; then
                   label="''${BASH_REMATCH[1]}"
+                elif [[ "$line" =~ ^labels[[:space:]]*=[[:space:]]*\[([^]]+)\] ]]; then
+                  # Parse array format: labels = ["dev", "api"]
+                  label=$(echo "''${BASH_REMATCH[1]}" | ${pkgs.gnused}/bin/sed 's/"//g; s/,[ ]*/,/g; s/^[ ]*//; s/[ ]*$//')
+                elif [[ "$line" =~ ^auth[[:space:]]*=[[:space:]]*(true|false) ]]; then
+                  if [[ "''${BASH_REMATCH[1]}" = "true" ]]; then
+                    require_auth="true"
+                  fi
                 fi
               fi
             done < "$CONFIG_FILE"
             
             proto_display="''${protocol:-http}"
-            ${pkgs.gum}/bin/gum style --foreground 35 "✓ Loaded from bore.toml: $tunnel_name → localhost:$port [$proto_display]''${label:+ [$label]}"
+            auth_display=""
+            if [ "$require_auth" = "true" ]; then
+              auth_display=" 🔒"
+            fi
+            ${pkgs.gum}/bin/gum style --foreground 35 "✓ Loaded from bore.toml: $tunnel_name → localhost:$port [$proto_display]''${label:+ [$label]}$auth_display"
           else
             # New tunnel - prompt for protocol first to determine what to ask for
             protocol=$(${pkgs.gum}/bin/gum choose --header "Protocol:" "http" "tcp" "udp")
@@ -217,9 +246,10 @@ let
       exit 1
     fi
 
-    # Get optional protocol, label and save flag (skip if loaded from saved config)
+    # Get optional protocol, label, auth and save flag (skip if loaded from saved config)
     save_config=false
-    if [ -z "$label" ]; then
+    require_auth="''${require_auth:-false}"
+    if [ -z "$label" ] && [ "$require_auth" != "true" ]; then
       shift 2 2>/dev/null || true
       while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -230,6 +260,10 @@ let
           --label|-l)
             label="$2"
             shift 2
+            ;;
+          --auth|-a)
+            require_auth="true"
+            shift
             ;;
           --save)
             save_config=true
@@ -269,6 +303,13 @@ let
           label=$(echo "$labels" | ${pkgs.coreutils}/bin/tr '\n' ',' | ${pkgs.gnused}/bin/sed 's/,$//')
         fi
       fi
+      
+      # Prompt for auth if not already set
+      if [ "$require_auth" != "true" ]; then
+        if ${pkgs.gum}/bin/gum confirm "Require authentication (Indiko)?"; then
+          require_auth="true"
+        fi
+      fi
     fi
     
     # Default protocol to http if still not set
@@ -301,7 +342,10 @@ let
             echo "protocol = \"$protocol\""
           fi
           if [ -n "$label" ]; then
-            echo "label = \"$label\""
+            echo "labels = [\"$(echo "$label" | ${pkgs.gnused}/bin/sed 's/,/", "/g')\"]"
+          fi
+          if [ "$require_auth" = "true" ]; then
+            echo "auth = true"
           fi
         } >> "$CONFIG_FILE"
       fi
@@ -314,10 +358,18 @@ let
     config_file=$(${pkgs.coreutils}/bin/mktemp)
     trap "${pkgs.coreutils}/bin/rm -f $config_file" EXIT
 
-    # Encode label into proxy name if provided (format: tunnel_name[label1,label2])
-    proxy_name="$tunnel_name"
-    if [ -n "$label" ]; then
-      proxy_name="''${tunnel_name}[''${label}]"
+    # Build metadatas section if we have labels or auth
+    metadatas_section=""
+    if [ -n "$label" ] || [ "$require_auth" = "true" ]; then
+      metadatas_section="[proxies.metadatas]"
+      if [ -n "$label" ]; then
+        metadatas_section="$metadatas_section
+    labels = \"$label\""
+      fi
+      if [ "$require_auth" = "true" ]; then
+        metadatas_section="$metadatas_section
+    auth = \"indiko\""
+      fi
     fi
 
     # Build proxy configuration based on protocol
@@ -331,11 +383,13 @@ let
     auth.tokenSource.file.path = "${cfg.authTokenFile}"
 
     [[proxies]]
-    name = "$proxy_name"
+    name = "$tunnel_name"
     type = "http"
     localIP = "127.0.0.1"
     localPort = $port
     subdomain = "$tunnel_name"
+
+    $metadatas_section
     EOF
     elif [ "$protocol" = "tcp" ] || [ "$protocol" = "udp" ]; then
       # For TCP/UDP, enable admin API to query allocated port
@@ -354,11 +408,13 @@ let
     webServer.port = $admin_port
 
     [[proxies]]
-    name = "$proxy_name"
+    name = "$tunnel_name"
     type = "$protocol"
     localIP = "127.0.0.1"
     localPort = $port
     remotePort = 0
+
+    $metadatas_section
     EOF
     else
       ${pkgs.gum}/bin/gum style --foreground 196 "Invalid protocol: $protocol (must be http, tcp, or udp)"

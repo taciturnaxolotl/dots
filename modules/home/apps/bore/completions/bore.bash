@@ -5,7 +5,7 @@ _bore_completion() {
     COMPREPLY=()
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
-    opts="--list --saved --protocol --label --save -l -s -p"
+    opts="--list --saved --protocol --label --auth --save -l -s -p -a"
 
     # Complete flags
     if [[ ${cur} == -* ]]; then

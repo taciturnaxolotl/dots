@@ -20,6 +20,8 @@ _bore() {
         '--protocol[Specify protocol]:protocol:(http tcp udp)' \
         '-p[Specify protocol]:protocol:(http tcp udp)' \
         '--label[Assign a label to the tunnel]:label:' \
+        '--auth[Require Indiko authentication]' \
+        '-a[Require Indiko authentication]' \
         '--save[Save tunnel configuration to bore.toml]' \
         && return 0
 
