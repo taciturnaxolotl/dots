@@ -477,7 +477,11 @@
         "block-tracking" = {
           name = "Block Player Tracking";
           description = "Disable real-time player location updates";
-          paths = [ "/sse" "/sse/*" "/tiles/*/markers/pl3xmap_players.json" ];
+          paths = [
+            "/sse"
+            "/sse/*"
+            "/tiles/*/markers/pl3xmap_players.json"
+          ];
           redact."/tiles/settings.json" = [ "players" ];
         };
       };
@@ -489,8 +493,20 @@
     domain = "serif.blue";
     secretsFile = config.age.secrets.tranquil-pds.path;
     availableUserDomains = [ "serif.blue" ];
-    requireInviteCode = true;
-    
+    requireInviteCode = false;
+
+    # Email configuration
+    mail = {
+      enable = true;
+      fromAddress = "noreply@serif.blue";
+      fromName = "Serif PDS";
+      smtp = {
+        host = "smtp.mailchannels.net";
+        port = 587;
+        username = "kieranklukascontracting";
+      };
+    };
+
     # Use Backblaze B2 instead of local MinIO
     minio.enable = false;
     s3 = {

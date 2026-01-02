@@ -120,6 +120,51 @@ in
       default = false;
       description = "Require invite codes for account creation";
     };
+
+    mail = {
+      enable = lib.mkOption {
+        type = lib.types.bool;
+        default = false;
+        description = "Enable email notifications";
+      };
+
+      fromAddress = lib.mkOption {
+        type = lib.types.str;
+        default = "noreply@${cfg.domain}";
+        description = "Email sender address";
+      };
+
+      fromName = lib.mkOption {
+        type = lib.types.str;
+        default = "Serif PDS";
+        description = "Email sender name";
+      };
+
+      smtp = {
+        host = lib.mkOption {
+          type = lib.types.str;
+          default = "smtp.mailchannels.net";
+          description = "SMTP server hostname";
+        };
+
+        port = lib.mkOption {
+          type = lib.types.port;
+          default = 587;
+          description = "SMTP server port";
+        };
+
+        username = lib.mkOption {
+          type = lib.types.str;
+          description = "SMTP username (set in secrets file with SMTP_USERNAME)";
+        };
+
+        tls = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+          description = "Use STARTTLS";
+        };
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -153,6 +198,21 @@ in
       rootCredentialsFile = cfg.secretsFile;
     };
 
+    # Configure msmtp for email sending
+    programs.msmtp = lib.mkIf cfg.mail.enable {
+      enable = true;
+      accounts.default = {
+        auth = true;
+        tls = cfg.mail.smtp.tls;
+        tls_starttls = cfg.mail.smtp.tls;
+        host = cfg.mail.smtp.host;
+        port = cfg.mail.smtp.port;
+        from = cfg.mail.fromAddress;
+        user = cfg.mail.smtp.username;
+        passwordeval = "${pkgs.coreutils}/bin/cat ${cfg.secretsFile} | ${pkgs.gnugrep}/bin/grep SMTP_PASSWORD | ${pkgs.coreutils}/bin/cut -d= -f2";
+      };
+    };
+
     systemd.services.tranquil-pds = {
       description = "Tranquil PDS - AT Protocol Personal Data Server";
       wantedBy = [ "multi-user.target" ];
@@ -184,6 +244,11 @@ in
         }
         // lib.optionalAttrs cfg.redis.enable {
           REDIS_URL = "redis://localhost:6379";
+        }
+        // lib.optionalAttrs cfg.mail.enable {
+          MAIL_FROM_ADDRESS = cfg.mail.fromAddress;
+          MAIL_FROM_NAME = cfg.mail.fromName;
+          SENDMAIL_PATH = "${pkgs.msmtp}/bin/msmtp";
         };
 
       serviceConfig = {
@@ -210,37 +275,17 @@ in
 
     services.caddy.virtualHosts."${cfg.domain}" = {
       extraConfig = ''
-                tls {
-                  dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-                }
-                header {
-                  Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-                }
-                
-                # Serve ASCII banner for root path
-                handle / {
-                  header Content-Type "text/plain; charset=utf-8"
-                  respond `
-           _____ ______ _____  _____ ______   ____  _      _    _ ______ 
-          / ____|  ____|  __ \|_   _|  ____| |  _ \| |    | |  | |  ____|
-         | (___ | |__  | |__) | | | | |__    | |_) | |    | |  | | |__   
-          \___ \|  __| |  _  /  | | |  __|   |  _ <| |    | |  | |  __|  
-          ____) | |____| | \ \ _| |_| |      | |_) | |____| |__| | |____ 
-         |_____/|______|_|  \_\_____|_|      |____/|______|\____/|______|
-                                                                          
-         AT Protocol Personal Data Server
-         
-         This is a PDS instance running on ${cfg.domain}
-         
-         Powered by Tranquil PDS
-         https://tangled.org/lewis.moe/bspds-sandbox/
-        ` 200
-                }
-                
-                reverse_proxy localhost:${toString cfg.port} {
-                  header_up X-Forwarded-Proto {scheme}
-                  header_up X-Forwarded-For {remote}
-                }
+        tls {
+          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        }
+        header {
+          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        }
+        
+        reverse_proxy localhost:${toString cfg.port} {
+          header_up X-Forwarded-Proto {scheme}
+          header_up X-Forwarded-For {remote}
+        }
       '';
     };
 
