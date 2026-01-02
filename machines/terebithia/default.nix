@@ -142,6 +142,10 @@
       file = ../../secrets/control.age;
       owner = "control";
     };
+    tranquil-pds = {
+      file = ../../secrets/tranquil-pds.age;
+      owner = "tranquil-pds";
+    };
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
     "restic/password".file = ../../secrets/restic/password.age;
@@ -477,6 +481,21 @@
           redact."/tiles/settings.json" = [ "players" ];
         };
       };
+    };
+  };
+
+  atelier.services.tranquil-pds = {
+    enable = true;
+    domain = "serif.blue";
+    secretsFile = config.age.secrets.tranquil-pds.path;
+    availableUserDomains = [ "serif.blue" ];
+    
+    # Use Backblaze B2 instead of local MinIO
+    minio.enable = false;
+    s3 = {
+      endpoint = "https://s3.us-east-005.backblazeb2.com";
+      bucket = "pds-blobs";
+      region = "us-east-005";
     };
   };
 

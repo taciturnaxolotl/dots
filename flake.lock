@@ -1114,6 +1114,7 @@
         "spicetify-nix": "spicetify-nix",
         "tangled": "tangled",
         "terminal-wakatime": "terminal-wakatime",
+        "tranquil-pds": "tranquil-pds",
         "wakatime-ls": "wakatime-ls",
         "zmx": "zmx"
       }
@@ -1376,6 +1377,26 @@
         "owner": "taciturnaxolotl",
         "repo": "terminal-wakatime",
         "type": "github"
+      }
+    },
+    "tranquil-pds": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1767306272,
+        "narHash": "sha256-d8tIcp+eUgfU8cGgNp10+JpYJm/FhLsW1pZGZa+BQfA=",
+        "ref": "refs/heads/main",
+        "rev": "25af771ad6b052eeaa7ba1c879b8b9703a3409b2",
+        "revCount": 109,
+        "type": "git",
+        "url": "https://tangled.org/lewis.moe/bspds-sandbox"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://tangled.org/lewis.moe/bspds-sandbox"
       }
     },
     "utils": {

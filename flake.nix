@@ -113,6 +113,11 @@
     zmx = {
       url = "github:neurosnap/zmx";
     };
+
+    tranquil-pds = {
+      url = "git+https://tangled.org/lewis.moe/bspds-sandbox";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
