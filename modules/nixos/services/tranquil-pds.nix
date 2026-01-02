@@ -114,6 +114,12 @@ in
       default = [ ];
       description = "Available user domains for handles (e.g., [\"serif.blue\"])";
     };
+
+    requireInviteCode = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Require invite codes for account creation";
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -174,6 +180,7 @@ in
           CRAWLERS = lib.concatStringsSep "," cfg.crawlers;
           ACCEPTING_REPO_IMPORTS = if cfg.acceptingRepoImports then "true" else "false";
           AVAILABLE_USER_DOMAINS = lib.concatStringsSep "," cfg.availableUserDomains;
+          INVITE_CODE_REQUIRED = if cfg.requireInviteCode then "true" else "false";
         }
         // lib.optionalAttrs cfg.redis.enable {
           REDIS_URL = "redis://localhost:6379";

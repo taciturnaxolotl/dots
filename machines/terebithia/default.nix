@@ -489,6 +489,7 @@
     domain = "serif.blue";
     secretsFile = config.age.secrets.tranquil-pds.path;
     availableUserDomains = [ "serif.blue" ];
+    requireInviteCode = true;
     
     # Use Backblaze B2 instead of local MinIO
     minio.enable = false;
