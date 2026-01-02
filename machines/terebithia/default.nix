@@ -488,34 +488,6 @@
     };
   };
 
-  atelier.services.tranquil-pds = {
-    enable = true;
-    domain = "serif.blue";
-    secretsFile = config.age.secrets.tranquil-pds.path;
-    availableUserDomains = [ "serif.blue" ];
-    requireInviteCode = false;
-
-    # Email configuration
-    mail = {
-      enable = true;
-      fromAddress = "noreply@serif.blue";
-      fromName = "Serif PDS";
-      smtp = {
-        host = "smtp.mailchannels.net";
-        port = 587;
-        username = "kieranklukascontracting";
-      };
-    };
-
-    # Use Backblaze B2 instead of local MinIO
-    minio.enable = false;
-    s3 = {
-      endpoint = "https://s3.us-east-005.backblazeb2.com";
-      bucket = "pds-blobs";
-      region = "us-east-005";
-    };
-  };
-
   services.n8n = {
     enable = true;
     environment = {
