@@ -3,7 +3,13 @@
 # A feature-rich PDS with passkeys, 2FA, did:web support, and more.
 # Requires PostgreSQL, Redis, and S3-compatible storage.
 
-{ config, lib, pkgs, inputs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  inputs,
+  ...
+}:
 
 let
   cfg = config.atelier.services.tranquil-pds;
@@ -105,7 +111,7 @@ in
 
     availableUserDomains = lib.mkOption {
       type = lib.types.listOf lib.types.str;
-      default = [];
+      default = [ ];
       description = "Available user domains for handles (e.g., [\"serif.blue\"])";
     };
   };
@@ -117,7 +123,7 @@ in
       home = cfg.dataDir;
       createHome = true;
     };
-    users.groups.tranquil-pds = {};
+    users.groups.tranquil-pds = { };
 
     services.postgresql = {
       enable = true;
@@ -144,27 +150,34 @@ in
     systemd.services.tranquil-pds = {
       description = "Tranquil PDS - AT Protocol Personal Data Server";
       wantedBy = [ "multi-user.target" ];
-      after = [ "network.target" "postgresql.service" ]
+      after =
+        [
+          "network.target"
+          "postgresql.service"
+        ]
         ++ lib.optional cfg.minio.enable "minio.service"
         ++ lib.optional cfg.redis.enable "redis-tranquil-pds.service";
-      requires = [ "postgresql.service" ]
+      requires =
+        [ "postgresql.service" ]
         ++ lib.optional cfg.minio.enable "minio.service"
         ++ lib.optional cfg.redis.enable "redis-tranquil-pds.service";
 
-      environment = {
-        SERVER_HOST = "127.0.0.1";
-        SERVER_PORT = toString cfg.port;
-        PDS_HOSTNAME = cfg.domain;
-        DATABASE_URL = "postgres:///${cfg.database.name}?host=/run/postgresql";
-        S3_ENDPOINT = cfg.s3.endpoint;
-        S3_BUCKET = cfg.s3.bucket;
-        AWS_REGION = cfg.s3.region;
-        CRAWLERS = lib.concatStringsSep "," cfg.crawlers;
-        ACCEPTING_REPO_IMPORTS = if cfg.acceptingRepoImports then "true" else "false";
-        AVAILABLE_USER_DOMAINS = lib.concatStringsSep "," cfg.availableUserDomains;
-      } // lib.optionalAttrs cfg.redis.enable {
-        REDIS_URL = "redis://localhost:6379";
-      };
+      environment =
+        {
+          SERVER_HOST = "127.0.0.1";
+          SERVER_PORT = toString cfg.port;
+          PDS_HOSTNAME = cfg.domain;
+          DATABASE_URL = "postgres:///${cfg.database.name}?host=/run/postgresql";
+          S3_ENDPOINT = cfg.s3.endpoint;
+          S3_BUCKET = cfg.s3.bucket;
+          AWS_REGION = cfg.s3.region;
+          CRAWLERS = lib.concatStringsSep "," cfg.crawlers;
+          ACCEPTING_REPO_IMPORTS = if cfg.acceptingRepoImports then "true" else "false";
+          AVAILABLE_USER_DOMAINS = lib.concatStringsSep "," cfg.availableUserDomains;
+        }
+        // lib.optionalAttrs cfg.redis.enable {
+          REDIS_URL = "redis://localhost:6379";
+        };
 
       serviceConfig = {
         Type = "simple";
@@ -190,16 +203,37 @@ in
 
     services.caddy.virtualHosts."${cfg.domain}" = {
       extraConfig = ''
-        tls {
-          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-        }
-        header {
-          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        }
-        reverse_proxy localhost:${toString cfg.port} {
-          header_up X-Forwarded-Proto {scheme}
-          header_up X-Forwarded-For {remote}
-        }
+                tls {
+                  dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+                }
+                header {
+                  Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+                }
+                
+                # Serve ASCII banner for root path
+                handle / {
+                  header Content-Type "text/plain; charset=utf-8"
+                  respond `
+           _____ ______ _____  _____ ______   ____  _      _    _ ______ 
+          / ____|  ____|  __ \|_   _|  ____| |  _ \| |    | |  | |  ____|
+         | (___ | |__  | |__) | | | | |__    | |_) | |    | |  | | |__   
+          \___ \|  __| |  _  /  | | |  __|   |  _ <| |    | |  | |  __|  
+          ____) | |____| | \ \ _| |_| |      | |_) | |____| |__| | |____ 
+         |_____/|______|_|  \_\_____|_|      |____/|______|\____/|______|
+                                                                          
+         AT Protocol Personal Data Server
+         
+         This is a PDS instance running on ${cfg.domain}
+         
+         Powered by Tranquil PDS
+         https://tangled.org/lewis.moe/bspds-sandbox/
+        ` 200
+                }
+                
+                reverse_proxy localhost:${toString cfg.port} {
+                  header_up X-Forwarded-Proto {scheme}
+                  header_up X-Forwarded-For {remote}
+                }
       '';
     };
 
@@ -218,7 +252,10 @@ in
       '';
     };
 
-    networking.firewall.allowedTCPPorts = [ 443 80 ];
+    networking.firewall.allowedTCPPorts = [
+      443
+      80
+    ];
 
     atelier.backup.services.tranquil-pds = {
       paths = [ cfg.dataDir ];
