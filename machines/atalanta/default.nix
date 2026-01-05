@@ -113,6 +113,10 @@
       file = ../../secrets/bore/auth-token.age;
       owner = "kierank";
     };
+    pbnj = {
+      file = ../../secrets/pbnj.age;
+      owner = "kierank";
+    };
   };
 
   environment.variables = {

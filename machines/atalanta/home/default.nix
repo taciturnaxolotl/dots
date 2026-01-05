@@ -40,6 +40,11 @@
       enable = true;
       authTokenFile = osConfig.age.secrets."bore/auth-token".path;
     };
+    pbnj = {
+      enable = true;
+      host = "https://pbnj.dunkirk.sh";
+      authKeyFile = osConfig.age.secrets.pbnj.path;
+    };
     ssh = {
       enable = true;
       

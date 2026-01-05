@@ -74,4 +74,7 @@ in
   "zai.age".publicKeys = [
     kierank
   ];
+  "pbnj.age".publicKeys = [
+    kierank
+  ];
 }

@@ -32,6 +32,10 @@
     apps = {
       helix.enable = true;
     };
+    pbnj = {
+      enable = true;
+      host = "https://pbnj.dunkirk.sh";
+    };
     ssh = {
       enable = true;
       zmx.enable = true;
