@@ -71,4 +71,7 @@ in
   "tranquil-pds.age".publicKeys = [
     kierank
   ];
+  "zai.age".publicKeys = [
+    kierank
+  ];
 }

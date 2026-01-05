@@ -198,6 +198,42 @@
               }
             ];
           };
+          zai = {
+            name = "Z.AI";
+            base_url = "https://api.z.ai/api/paas/v4/";
+            api_key = "$(cat /run/agenix/zai)";
+            type = "openai";
+            models = [
+              {
+                name = "GLM-4.7";
+                id = "glm-4.7";
+                context_window = 200000;
+                default_max_tokens = 128000;
+                can_reason = true;
+              }
+              {
+                name = "GLM-4.6";
+                id = "glm-4.6";
+                context_window = 200000;
+                default_max_tokens = 128000;
+                can_reason = true;
+              }
+              {
+                name = "GLM-4.5";
+                id = "glm-4.5";
+                context_window = 128000;
+                default_max_tokens = 96000;
+                can_reason = true;
+              }
+              {
+                name = "GLM-4.5 Air";
+                id = "glm-4.5-air";
+                context_window = 128000;
+                default_max_tokens = 96000;
+                can_reason = true;
+              }
+            ];
+          };
           claude-pro = {
             name = "Claude Pro";
             type = "anthropic";
