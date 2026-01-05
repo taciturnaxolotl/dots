@@ -180,12 +180,20 @@ HOOKEOF
       };
     };
 
+    systemd.timers.knot-sync = {
+      description = "Debounce timer for Knot sync";
+      timerConfig = {
+        OnActiveSec = "5s";
+        AccuracySec = "1s";
+      };
+    };
+
     systemd.paths.knot-sync = {
       description = "Watch for new Knot repositories";
       wantedBy = [ "multi-user.target" ];
       pathConfig = {
         PathModified = cfg.repoDir;
-        Unit = "knot-sync.service";
+        Unit = "knot-sync.timer";
         MakeDirectory = true;
       };
     };
