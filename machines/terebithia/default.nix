@@ -142,10 +142,7 @@
       file = ../../secrets/control.age;
       owner = "control";
     };
-    tranquil-pds = {
-      file = ../../secrets/tranquil-pds.age;
-      owner = "tranquil-pds";
-    };
+
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
     "restic/password".file = ../../secrets/restic/password.age;
