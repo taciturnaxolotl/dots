@@ -77,4 +77,7 @@ in
   "pbnj.age".publicKeys = [
     kierank
   ];
+  "tangled-session.age".publicKeys = [
+    kierank
+  ];
 }

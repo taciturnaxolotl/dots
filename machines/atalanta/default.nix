@@ -117,6 +117,10 @@
       file = ../../secrets/pbnj.age;
       owner = "kierank";
     };
+    tangled-session = {
+      file = ../../secrets/tangled-session.age;
+      owner = "kierank";
+    };
   };
 
   environment.variables = {

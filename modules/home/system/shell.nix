@@ -373,6 +373,152 @@ EOF
     ${pkgs.gum}/bin/gum style --foreground 35 --bold "Done! Ghostty is ready on $target"
   '';
 
+  ghrpc = pkgs.writeShellScriptBin "ghrpc" ''
+    # Create GitHub and Tangled repos
+    default_plc_id="did:plc:krxbvxvis5skq7jj6eot23ul"
+    default_knot_host="knot.dunkirk.sh"
+    default_tangled_domain="knot.dunkirk.sh"
+    default_branch="main"
+
+    # Check if we're in a git repository
+    if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+      repo_name=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
+      ${pkgs.gum}/bin/gum style --foreground 214 "Already in a git repository: $repo_name"
+      ${pkgs.gum}/bin/gum style --foreground 214 "This will add remotes to the existing repository."
+      echo
+    else
+      # Get repository name
+      repo_name=$(${pkgs.gum}/bin/gum input --placeholder "my-awesome-project" --prompt "Repository name: ")
+      if [[ -z "$repo_name" ]]; then
+        ${pkgs.gum}/bin/gum style --foreground 196 "No repository name provided"
+        exit 1
+      fi
+    fi
+
+    ${pkgs.gum}/bin/gum style --bold --foreground 212 "Creating repository: $repo_name"
+    echo
+
+    # Get description
+    description=$(${pkgs.gum}/bin/gum input --placeholder "A cool project" --prompt "Description: ")
+    description=''${description:-""}
+
+    # Get visibility
+    if ${pkgs.gum}/bin/gum confirm "Make repository public?"; then
+      visibility="public"
+    else
+      visibility="private"
+    fi
+
+    # Create on Tangled
+    if ${pkgs.gum}/bin/gum confirm "Create on Tangled?"; then
+      ${pkgs.gum}/bin/gum style --foreground 117 "Tangled configuration:"
+      
+      # Check for tangled session cookie
+      tangled_cookie=""
+      if [[ -f "/run/agenix/tangled-session" ]]; then
+        tangled_cookie=$(cat /run/agenix/tangled-session)
+      fi
+
+      if [[ -z "$tangled_cookie" ]]; then
+        ${pkgs.gum}/bin/gum style --foreground 214 "⚠ No tangled session cookie found"
+        ${pkgs.gum}/bin/gum style --foreground 214 "  Please copy your appview-session-v2 cookie from tangled.org"
+        tangled_cookie=$(${pkgs.gum}/bin/gum input --password --placeholder "appview-session-v2=..." --prompt "Cookie: ")
+        
+        if [[ -z "$tangled_cookie" ]]; then
+          ${pkgs.gum}/bin/gum style --foreground 196 "No cookie provided, skipping Tangled"
+        fi
+      fi
+
+      if [[ -n "$tangled_cookie" ]]; then
+        tangled_domain=$(${pkgs.gum}/bin/gum input --placeholder "$default_tangled_domain" --prompt "Domain: " --value "$default_tangled_domain")
+        tangled_domain=''${tangled_domain:-$default_tangled_domain}
+
+        # URL encode the description
+        encoded_desc=$(echo -n "$description" | ${pkgs.gnused}/bin/sed 's/ /%20/g; s/!/%21/g; s/"/%22/g; s/#/%23/g; s/\$/%24/g; s/&/%26/g; s/'"'"'/%27/g; s/(/%28/g; s/)/%29/g; s/\*/%2A/g; s/+/%2B/g; s/,/%2C/g; s/\//%2F/g; s/:/%3A/g; s/;/%3B/g; s/=/%3D/g; s/?/%3F/g; s/@/%40/g; s/\[/%5B/g; s/\]/%5D/g')
+
+        ${pkgs.gum}/bin/gum spin --spinner dot --title "Creating repository on Tangled..." -- \
+          ${pkgs.curl}/bin/curl -s 'https://tangled.org/repo/new' \
+            -H 'Accept: */*' \
+            -H 'Content-Type: application/x-www-form-urlencoded' \
+            -b "appview-session-v2=$tangled_cookie" \
+            -H 'HX-Current-URL: https://tangled.org/repo/new' \
+            -H 'HX-Request: true' \
+            -H 'Origin: https://tangled.org' \
+            -H 'Referer: https://tangled.org/repo/new' \
+            --data-raw "name=''${repo_name}&description=''${encoded_desc}&branch=''${default_branch}&domain=''${tangled_domain}" \
+            > /tmp/tangled-response-$$.html
+
+        if grep -q "error\|Error\|failed\|Failed" /tmp/tangled-response-$$.html 2>/dev/null; then
+          ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create Tangled repository"
+          ${pkgs.gum}/bin/gum style --foreground 196 "  Check /tmp/tangled-response-$$.html for details"
+        else
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ Created on Tangled: https://tangled.org/$tangled_domain/$repo_name"
+          
+          # Add tangled remote
+          plc_id=$(${pkgs.gum}/bin/gum input --placeholder "$default_plc_id" --prompt "PLC ID: " --value "$default_plc_id")
+          plc_id=''${plc_id:-$default_plc_id}
+          
+          if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+            if ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
+              ${pkgs.gum}/bin/gum style --foreground 214 "Origin already exists, adding as 'tangled' remote"
+              ${pkgs.git}/bin/git remote add tangled "git@$default_knot_host:''${plc_id}/''${repo_name}" 2>/dev/null || \
+                ${pkgs.git}/bin/git remote set-url tangled "git@$default_knot_host:''${plc_id}/''${repo_name}"
+            else
+              ${pkgs.git}/bin/git remote add origin "git@$default_knot_host:''${plc_id}/''${repo_name}"
+            fi
+          fi
+          
+          rm -f /tmp/tangled-response-$$.html
+        fi
+      fi
+    fi
+
+    # Create on GitHub
+    if ${pkgs.gum}/bin/gum confirm "Create on GitHub?"; then
+      gh_flags=""
+      [[ "$visibility" == "public" ]] && gh_flags="--public" || gh_flags="--private"
+      [[ -n "$description" ]] && gh_flags="$gh_flags --description \"$description\""
+
+      ${pkgs.gum}/bin/gum spin --spinner dot --title "Creating repository on GitHub..." -- \
+        bash -c "${pkgs.gh}/bin/gh repo create \"$repo_name\" $gh_flags --clone 2>&1" > /tmp/gh-response-$$.txt
+
+      if [[ $? -eq 0 ]]; then
+        ${pkgs.gum}/bin/gum style --foreground 35 "✓ Created on GitHub"
+        
+        # If we weren't in a git repo before, cd into the new one
+        if ! ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null && [[ -d "$repo_name" ]]; then
+          cd "$repo_name"
+          ${pkgs.gum}/bin/gum style --foreground 117 "Changed to directory: $repo_name"
+        fi
+        
+        # Add github remote if it doesn't exist
+        if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+          if ! ${pkgs.git}/bin/git remote get-url github &>/dev/null; then
+            github_url=$(${pkgs.git}/bin/git remote get-url origin 2>/dev/null | ${pkgs.gnused}/bin/sed 's/origin/github/')
+            if [[ -n "$github_url" && "$github_url" == *"github.com"* ]]; then
+              ${pkgs.git}/bin/git remote add github "$github_url" 2>/dev/null || true
+            fi
+          fi
+        fi
+      else
+        ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create GitHub repository"
+        cat /tmp/gh-response-$$.txt
+      fi
+      
+      rm -f /tmp/gh-response-$$.txt
+    fi
+
+    echo
+    ${pkgs.gum}/bin/gum style --bold --foreground 35 "Done!"
+    
+    # Show remotes
+    if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+      echo
+      ${pkgs.gum}/bin/gum style --bold "Git remotes:"
+      ${pkgs.git}/bin/git remote -v
+    fi
+  '';
+
 in
 {
   options.atelier.shell.enable = lib.mkEnableOption "Custom shell config";
@@ -509,7 +655,6 @@ in
         gc = "git commit";
         gp = "git push";
         rr = "rm -Rf";
-        ghrpc = "gh repo create -c";
         goops = "git commit --amend --no-edit && git push --force-with-lease";
         vi = "nvim";
         vim = "nvim";
@@ -708,6 +853,7 @@ EOF
 
     home.packages = with pkgs; [
       tangled-setup
+      ghrpc
       assh
       hackatime-summary
       now
