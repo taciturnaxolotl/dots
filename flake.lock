@@ -589,11 +589,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767514898,
-        "narHash": "sha256-ONYqnKrPzfKEEPChoJ9qPcfvBqW9ZgieDKD7UezWPg4=",
+        "lastModified": 1767910483,
+        "narHash": "sha256-MOU5YdVu4DVwuT5ztXgQpPuRRBjSjUGIdUzOQr9iQOY=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "7a06e8a2f844e128d3b210a000a62716b6040b7f",
+        "rev": "82fb7dedaad83e5e279127a38ef410bcfac6d77c",
         "type": "github"
       },
       "original": {
@@ -754,11 +754,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1765066094,
-        "narHash": "sha256-0YSU35gfRFJzx/lTGgOt6ubP8K6LeW0vaywzNNqxkl4=",
+        "lastModified": 1767634391,
+        "narHash": "sha256-owcSz2ICqTSvhBbhPP+1eWzi88e54rRZtfCNE5E/wwg=",
         "owner": "nix-darwin",
         "repo": "nix-darwin",
-        "rev": "688427b1aab9afb478ca07989dc754fa543e03d5",
+        "rev": "08585aacc3d6d6c280a02da195fdbd4b9cf083c2",
         "type": "github"
       },
       "original": {
@@ -794,11 +794,11 @@
         "nixpkgs": "nixpkgs_3"
       },
       "locked": {
-        "lastModified": 1767493793,
-        "narHash": "sha256-MWEsIcQZXrjvvFyPNiK5LKrWu6Xo9AKnjo4OgS4NVjU=",
+        "lastModified": 1767893235,
+        "narHash": "sha256-lEQWUbMZF9NvsdjPNXCqy7EeSU/N8N5MSy7ousqUWBQ=",
         "owner": "nix-community",
         "repo": "nix-vscode-extensions",
-        "rev": "0f7e75f772be341d8e461162c0bcf0f5b971cb86",
+        "rev": "842ee6c0a54cd4d0ed53ab5c8df88368cd1f382f",
         "type": "github"
       },
       "original": {
@@ -855,11 +855,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1767379071,
-        "narHash": "sha256-EgE0pxsrW9jp9YFMkHL9JMXxcqi/OoumPJYwf+Okucw=",
+        "lastModified": 1767767207,
+        "narHash": "sha256-Mj3d3PfwltLmukFal5i3fFt27L6NiKXdBezC1EBuZs4=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "fb7944c166a3b630f177938e478f0378e64ce108",
+        "rev": "5912c1772a44e31bf1c63c0390b90501e5026886",
         "type": "github"
       },
       "original": {
@@ -903,11 +903,11 @@
     },
     "nixpkgs_4": {
       "locked": {
-        "lastModified": 1767480499,
-        "narHash": "sha256-8IQQUorUGiSmFaPnLSo2+T+rjHtiNWc+OAzeHck7N48=",
+        "lastModified": 1767799921,
+        "narHash": "sha256-r4GVX+FToWVE2My8VVZH4V0pTIpnu2ZE8/Z4uxGEMBE=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "30a3c519afcf3f99e2c6df3b359aec5692054d92",
+        "rev": "d351d0653aeb7877273920cd3e823994e7579b0b",
         "type": "github"
       },
       "original": {
@@ -1029,11 +1029,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767554830,
-        "narHash": "sha256-I/Sg+ShT+BePz5fVpovTwIp8HPdiVEvHXYs89hAfT0w=",
+        "lastModified": 1767922500,
+        "narHash": "sha256-icEqKyQAfrCHgc/bFm2xdFEdphqa+pnDjkFxZE5xOb8=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "3c9c572bf4a6b07240b0f0021b21a99bb8589a71",
+        "rev": "124463f31cea3d57fbad2623b5a6cd3e5a828072",
         "type": "github"
       },
       "original": {
@@ -1346,11 +1346,11 @@
         "sqlite-lib-src": "sqlite-lib-src"
       },
       "locked": {
-        "lastModified": 1767490936,
-        "narHash": "sha256-DwlweCkrVRga1dZY/gne7DDsFdLsQ8vlgpWegXAbrLY=",
+        "lastModified": 1767892218,
+        "narHash": "sha256-bv7DyD5szOfMM98H2DxeIdfVmCWibvZvZ8GOV0hT3uA=",
         "ref": "refs/heads/master",
-        "rev": "027459fe631d223933762eda9cb7a0ee6774a852",
-        "revCount": 1781,
+        "rev": "5d3553d7d13c9d82de13a26cc4a3dc1bd70c8020",
+        "revCount": 1795,
         "type": "git",
         "url": "https://tangled.org/tangled.org/core"
       },
@@ -1386,11 +1386,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1767531822,
-        "narHash": "sha256-5Rj+ESeNxptdKOGmRQpnNBRMbEJZxbXiHfg7hs2LCck=",
+        "lastModified": 1767900547,
+        "narHash": "sha256-XLNIdmYJ+EvEBC9BYRFyhqWIrR1qhmL/5uQaDPjGvl8=",
         "ref": "refs/heads/main",
-        "rev": "0be7770b9b6c52e075c480065b43d99fcd27d13e",
-        "revCount": 116,
+        "rev": "cba82290eb4ac113253593c67e6d861a2b88f4e8",
+        "revCount": 131,
         "type": "git",
         "url": "https://tangled.org/lewis.moe/bspds-sandbox"
       },
@@ -1463,11 +1463,11 @@
         "zig2nix": "zig2nix"
       },
       "locked": {
-        "lastModified": 1767114787,
-        "narHash": "sha256-tVodIhuoBdrPA411Ds2j3xNi7qMDa3kP8Yq7XOQ5LHg=",
+        "lastModified": 1767846105,
+        "narHash": "sha256-gFmzw9c9m+OrkCXzh9XfknTAV7RRI6NRPxuL4XcmXCY=",
         "owner": "neurosnap",
         "repo": "zmx",
-        "rev": "c01f8156201e92bf0dab81a229092212ade9f121",
+        "rev": "18d9fc7968ac294250e22dc23cdcc27f9e505b8b",
         "type": "github"
       },
       "original": {
