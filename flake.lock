@@ -561,6 +561,27 @@
         "type": "github"
       }
     },
+    "herald": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1768060179,
+        "narHash": "sha256-tevqlXq0mrTo5KWLHQYjrgnhDvlTYblpEOjFDvnJg+c=",
+        "ref": "main",
+        "rev": "384c53a43b18d6e4351643055cedec76ec43b6c1",
+        "revCount": 44,
+        "type": "git",
+        "url": "https://tangled.org/dunkirk.sh/herald"
+      },
+      "original": {
+        "ref": "main",
+        "type": "git",
+        "url": "https://tangled.org/dunkirk.sh/herald"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -1100,6 +1121,7 @@
         "flare": "flare",
         "frc-nix": "frc-nix",
         "hardware": "hardware",
+        "herald": "herald",
         "home-manager": "home-manager_2",
         "hyprland-contrib": "hyprland-contrib",
         "import-tree": "import-tree",

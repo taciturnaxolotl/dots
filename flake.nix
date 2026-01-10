@@ -73,6 +73,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    herald = {
+      url = "git+https://tangled.org/dunkirk.sh/herald?ref=main";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
     import-tree.url = "github:vic/import-tree";
 
     nur = {
@@ -156,6 +161,7 @@
             
             zmx-binary = prev.callPackage ./packages/zmx.nix { };
             bore-auth = prev.callPackage ./packages/bore-auth.nix { };
+            herald = inputs.herald.packages.${prev.system}.default;
           })
         ];
       };

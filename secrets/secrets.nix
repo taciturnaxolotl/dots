@@ -80,4 +80,10 @@ in
   "tangled-session.age".publicKeys = [
     kierank
   ];
+  "herald.age".publicKeys = [
+    kierank
+  ];
+  "herald-dkim.age".publicKeys = [
+    kierank
+  ];
 }

@@ -11,6 +11,7 @@
     ./home-manager.nix
 
     (inputs.import-tree ../../modules/nixos)
+    ../../modules/nixos/services/herald.nix
     inputs.tangled.nixosModules.knot
     inputs.tangled.nixosModules.spindle
   ];
@@ -142,6 +143,15 @@
       file = ../../secrets/control.age;
       owner = "control";
     };
+    herald = {
+      file = ../../secrets/herald.age;
+      owner = "herald";
+    };
+    herald-dkim = {
+      file = ../../secrets/herald-dkim.age;
+      owner = "herald";
+      mode = "0400";
+    };
 
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
@@ -223,6 +233,7 @@
       22
       80
       443
+      2223 # Herald SSH
       28868 # Minecraft server
     ];
     allowedUDPPorts = [
@@ -483,6 +494,26 @@
         };
       };
     };
+  };
+
+  atelier.services.herald = {
+    enable = true;
+    domain = "herald.dunkirk.sh";
+    sshPort = 2223;
+    externalSshPort = 2223;
+    httpPort = 8085;
+    smtp = {
+      host = "smtp.mailchannels.net";
+      port = 587;
+      user = "kieranklukascontracting";
+      from = "herald@dunkirk.sh";
+      dkim = {
+        selector = "mailchannels";
+        domain = "dunkirk.sh";
+        privateKeyFile = "${config.age.secrets.herald-dkim.path}";
+      };
+    };
+    secretsFile = config.age.secrets.herald.path;
   };
 
   services.n8n = {

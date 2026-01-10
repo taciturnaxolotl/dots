@@ -93,6 +93,11 @@
           zmx = true;
         };
 
+        herald = {
+          hostname = "herald.dunkirk.sh";
+          port = 2223;
+        };
+
         prattle = {
           hostname = "150.136.63.103";
           zmx = true;
