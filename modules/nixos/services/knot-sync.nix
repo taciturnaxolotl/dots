@@ -45,6 +45,8 @@ in
   config = lib.mkIf cfg.enable {
     systemd.services.knot-sync = {
       description = "Sync Knot repositories to GitHub";
+      startLimitIntervalSec = 60;
+      startLimitBurst = 10;
       serviceConfig = {
         Type = "oneshot";
         User = "git";
@@ -183,8 +185,9 @@ HOOKEOF
     systemd.timers.knot-sync = {
       description = "Debounce timer for Knot sync";
       timerConfig = {
-        OnActiveSec = "5s";
-        AccuracySec = "1s";
+        OnActiveSec = "10s";
+        AccuracySec = "5s";
+        RemainAfterElapse = false;
       };
     };
 
