@@ -244,6 +244,58 @@ EOF
     fi
 
     ${pkgs.gum}/bin/gum spin --spinner dot --title "Posting to Bluesky..." -- /bin/bash <<EOF
+    # Function to resolve DID to PDS endpoint
+    resolve_pds() {
+      local identifier="\$1"
+      local did=""
+
+      # If identifier is a handle, resolve to DID first
+      if [[ ! "\$identifier" =~ ^did: ]]; then
+        # Try to resolve handle via DNS first, fallback to bsky.social
+        did=\$(${pkgs.curl}/bin/curl -sf "https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=\$identifier" | ${pkgs.jq}/bin/jq -r '.did // empty')
+        if [[ -z "\$did" ]]; then
+          echo "Failed to resolve handle: \$identifier" >&2
+          return 1
+        fi
+      else
+        did="\$identifier"
+      fi
+
+      # Resolve DID document
+      local pds_endpoint=""
+      if [[ "\$did" =~ ^did:plc: ]]; then
+        # Resolve via PLC directory
+        pds_endpoint=\$(${pkgs.curl}/bin/curl -sf "https://plc.directory/\$did" | ${pkgs.jq}/bin/jq -r '.service[] | select(.type == "AtprotoPersonalDataServer") | .serviceEndpoint' | head -n1)
+      elif [[ "\$did" =~ ^did:web: ]]; then
+        # Resolve via did:web
+        local domain="\''${did#did:web:}"
+        pds_endpoint=\$(${pkgs.curl}/bin/curl -sf "https://\$domain/.well-known/did.json" | ${pkgs.jq}/bin/jq -r '.service[] | select(.type == "AtprotoPersonalDataServer") | .serviceEndpoint' | head -n1)
+      else
+        echo "Unsupported DID method: \$did" >&2
+        return 1
+      fi
+
+      if [[ -z "\$pds_endpoint" ]]; then
+        echo "Failed to resolve PDS endpoint for: \$did" >&2
+        return 1
+      fi
+
+      echo "\$pds_endpoint"
+    }
+
+    # Resolve PDS endpoints for both accounts
+    account1_pds=\$(resolve_pds "$ACCOUNT1")
+    if [[ -z "\$account1_pds" ]]; then
+      echo "Failed to resolve PDS for $ACCOUNT1" >&2
+      exit 1
+    fi
+
+    account2_pds=\$(resolve_pds "$ACCOUNT2")
+    if [[ -z "\$account2_pds" ]]; then
+      echo "Failed to resolve PDS for $ACCOUNT2" >&2
+      exit 1
+    fi
+
     # Generate JWT for ACCOUNT1
     account1_response=\$(${pkgs.curl}/bin/curl -s -X POST \
       -H "Content-Type: application/json" \
@@ -251,9 +303,10 @@ EOF
         "identifier": "'$ACCOUNT1'",
         "password": "'$ACCOUNT1_PASSWORD'"
       }' \
-      "https://bsky.social/xrpc/com.atproto.server.createSession")
+      "\$account1_pds/xrpc/com.atproto.server.createSession")
 
     account1_jwt=\$(echo "\$account1_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
+    account1_did=\$(echo "\$account1_response" | ${pkgs.jq}/bin/jq -r '.did')
 
     if [[ -z "\$account1_jwt" || "\$account1_jwt" == "null" ]]; then
       echo "Failed to authenticate account $ACCOUNT1" >&2
@@ -268,9 +321,10 @@ EOF
         "identifier": "'$ACCOUNT2'",
         "password": "'$ACCOUNT2_PASSWORD'"
       }' \
-      "https://bsky.social/xrpc/com.atproto.server.createSession")
+      "\$account2_pds/xrpc/com.atproto.server.createSession")
 
     account2_jwt=\$(echo "\$account2_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
+    account2_did=\$(echo "\$account2_response" | ${pkgs.jq}/bin/jq -r '.did')
 
     if [[ -z "\$account2_jwt" || "\$account2_jwt" == "null" ]]; then
       echo "Failed to authenticate account $ACCOUNT2" >&2
@@ -284,14 +338,14 @@ EOF
       -H "Authorization: Bearer \$account1_jwt" \
       -d '{
         "collection": "a.status.update",
-        "repo": "'$ACCOUNT1'",
+        "repo": "'\$account1_did'",
         "record": {
           "\$type": "a.status.update",
           "text": "'"$message"'",
           "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
         }
       }' \
-      "https://bsky.social/xrpc/com.atproto.repo.createRecord")
+      "\$account1_pds/xrpc/com.atproto.repo.createRecord")
 
     if [[ \$(echo "\$account1_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
       echo "Error posting to $ACCOUNT1:" >&2
@@ -305,14 +359,14 @@ EOF
       -H "Authorization: Bearer \$account2_jwt" \
       -d '{
         "collection": "app.bsky.feed.post",
-        "repo": "'$ACCOUNT2'",
+        "repo": "'\$account2_did'",
         "record": {
           "\$type": "app.bsky.feed.post",
           "text": "'"$message"'",
           "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
         }
       }' \
-      "https://bsky.social/xrpc/com.atproto.repo.createRecord")
+      "\$account2_pds/xrpc/com.atproto.repo.createRecord")
 
     if [[ \$(echo "\$account2_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
       echo "Error posting to $ACCOUNT2:" >&2
