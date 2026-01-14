@@ -199,6 +199,7 @@ in {
         path = [ pkgs.git pkgs.openssh ];
 
         preStart = lib.optionalString (cfg.deploy.enable && cfg.deploy.repository != null) ''
+          set -e
           # Clone repository if not present
           if [ ! -d ${cfg.dataDir}/app/.git ]; then
             ${pkgs.git}/bin/git clone -b ${cfg.deploy.branch} ${cfg.deploy.repository} ${cfg.dataDir}/app
@@ -212,18 +213,24 @@ in {
           
           if [ -f package.json ]; then
             echo "Installing dependencies..."
-            ${pkgs.unstable.bun}/bin/bun install
+            ${pkgs.unstable.bun}/bin/bun install || {
+              echo "Failed to install dependencies, trying again..."
+              ${pkgs.unstable.bun}/bin/bun install
+            }
           fi
         '' + lib.optionalString (runtime == "node") ''
           
           if [ -f package.json ]; then
             echo "Installing dependencies..."
-            ${pkgs.nodejs_20}/bin/npm ci --production
+            ${pkgs.nodejs_20}/bin/npm ci --production || {
+              echo "Failed to install dependencies, trying again..."
+              ${pkgs.nodejs_20}/bin/npm ci --production
+            }
           fi
         '';
 
         serviceConfig = {
-          Type = "simple";
+          Type = "exec";
           User = name;
           Group = name;
           WorkingDirectory = "${cfg.dataDir}/app";
@@ -233,8 +240,9 @@ in {
             "PORT=${toString cfg.port}"
           ] ++ (lib.mapAttrsToList (k: v: "${k}=${v}") cfg.environment);
           ExecStart = "${pkgs.bash}/bin/bash -c '${finalStartCommand}'";
-          Restart = "always";
+          Restart = "on-failure";
           RestartSec = "10s";
+          TimeoutStartSec = "60s";
           
           # Security hardening
           NoNewPrivileges = true;
