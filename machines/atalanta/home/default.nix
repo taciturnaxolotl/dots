@@ -50,7 +50,7 @@
       
       zmx = {
         enable = true;
-        hosts = [ "t.*" "p.*" "e.*" "j.*" ];
+        hosts = [ "t.*" "p.*" "e.*" ];
       };
 
       hosts = {
@@ -67,16 +67,10 @@
           hostname = "192.168.0.94";  # ember
         };
 
-        "j.*" = {
-          hostname = "john.cedarville.edu";
-          user = "klukas";
-        };
-
         # Regular hosts
         john = {
           hostname = "john.cedarville.edu";
           user = "klukas";
-          zmx = true;
         };
 
         bandit = {
