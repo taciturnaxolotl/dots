@@ -10,88 +10,88 @@ let
   tangled = cfg.tangled;
 
   tangled-setup = pkgs.writeShellScriptBin "tangled-setup" ''
-    set -euo pipefail
+        set -euo pipefail
 
-    # Defaults (configured by Nix)
-    PLC_ID="${tangled.plcId}"
-    GITHUB_USER="${tangled.githubUser}"
-    KNOT_HOST="${tangled.knotHost}"
-    BRANCH="${tangled.defaultBranch}"
-    FORCE=false
+        # Defaults (configured by Nix)
+        PLC_ID="${tangled.plcId}"
+        GITHUB_USER="${tangled.githubUser}"
+        KNOT_HOST="${tangled.knotHost}"
+        BRANCH="${tangled.defaultBranch}"
+        FORCE=false
 
-    usage() {
-      cat <<EOF
-Usage: tangled-setup [OPTIONS]
+        usage() {
+          cat <<EOF
+    Usage: tangled-setup [OPTIONS]
 
-Configure git remotes for tangled workflow.
-Sets: origin → knot, github → GitHub
+    Configure git remotes for tangled workflow.
+    Sets: origin → knot, github → GitHub
 
-Options:
-  --plc ID              PLC ID (default: $PLC_ID)
-  --github-user USER    GitHub username (default: $GITHUB_USER)
-  --knot HOST           Knot host (default: $KNOT_HOST)
-  --branch BRANCH       Default branch (default: $BRANCH)
-  -f, --force           Overwrite existing remotes without checking
-  -h, --help            Show this help
-EOF
-      exit 0
-    }
+    Options:
+      --plc ID              PLC ID (default: $PLC_ID)
+      --github-user USER    GitHub username (default: $GITHUB_USER)
+      --knot HOST           Knot host (default: $KNOT_HOST)
+      --branch BRANCH       Default branch (default: $BRANCH)
+      -f, --force           Overwrite existing remotes without checking
+      -h, --help            Show this help
+    EOF
+          exit 0
+        }
 
-    while [[ $# -gt 0 ]]; do
-      case "$1" in
-        -h|--help) usage ;;
-        --plc) PLC_ID="$2"; shift 2 ;;
-        --github-user) GITHUB_USER="$2"; shift 2 ;;
-        --knot) KNOT_HOST="$2"; shift 2 ;;
-        --branch) BRANCH="$2"; shift 2 ;;
-        -f|--force) FORCE=true; shift ;;
-        -*) echo "Unknown option: $1" >&2; exit 1 ;;
-        *) shift ;;
-      esac
-    done
+        while [[ $# -gt 0 ]]; do
+          case "$1" in
+            -h|--help) usage ;;
+            --plc) PLC_ID="$2"; shift 2 ;;
+            --github-user) GITHUB_USER="$2"; shift 2 ;;
+            --knot) KNOT_HOST="$2"; shift 2 ;;
+            --branch) BRANCH="$2"; shift 2 ;;
+            -f|--force) FORCE=true; shift ;;
+            -*) echo "Unknown option: $1" >&2; exit 1 ;;
+            *) shift ;;
+          esac
+        done
 
-    if ! ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
-      echo "Error: Not a git repository" >&2
-      exit 1
-    fi
+        if ! ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+          echo "Error: Not a git repository" >&2
+          exit 1
+        fi
 
-    repo_name=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
-    knot_url="git@$KNOT_HOST:$PLC_ID/$repo_name"
-    github_url="git@github.com:$GITHUB_USER/$repo_name.git"
+        repo_name=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
+        knot_url="git@$KNOT_HOST:$PLC_ID/$repo_name"
+        github_url="git@github.com:$GITHUB_USER/$repo_name.git"
 
-    echo "Configuring remotes for: $repo_name"
+        echo "Configuring remotes for: $repo_name"
 
-    # Configure origin → knot
-    current_origin=$(${pkgs.git}/bin/git remote get-url origin 2>/dev/null || true)
-    if [[ -z "$current_origin" ]]; then
-      ${pkgs.git}/bin/git remote add origin "$knot_url"
-      echo "✓ origin → $knot_url"
-    elif [[ "$current_origin" == *"$KNOT_HOST"* ]]; then
-      echo "✓ origin → $current_origin (already knot)"
-    elif [[ "$FORCE" == true ]]; then
-      ${pkgs.git}/bin/git remote set-url origin "$knot_url"
-      echo "✓ origin → $knot_url (was: $current_origin)"
-    else
-      echo "! origin → $current_origin (use -f to override)"
-    fi
+        # Configure origin → knot
+        current_origin=$(${pkgs.git}/bin/git remote get-url origin 2>/dev/null || true)
+        if [[ -z "$current_origin" ]]; then
+          ${pkgs.git}/bin/git remote add origin "$knot_url"
+          echo "✓ origin → $knot_url"
+        elif [[ "$current_origin" == *"$KNOT_HOST"* ]]; then
+          echo "✓ origin → $current_origin (already knot)"
+        elif [[ "$FORCE" == true ]]; then
+          ${pkgs.git}/bin/git remote set-url origin "$knot_url"
+          echo "✓ origin → $knot_url (was: $current_origin)"
+        else
+          echo "! origin → $current_origin (use -f to override)"
+        fi
 
-    # Configure github remote
-    current_github=$(${pkgs.git}/bin/git remote get-url github 2>/dev/null || true)
-    if [[ -z "$current_github" ]]; then
-      ${pkgs.git}/bin/git remote add github "$github_url"
-      echo "✓ github → $github_url"
-    elif [[ "$FORCE" == true ]]; then
-      ${pkgs.git}/bin/git remote set-url github "$github_url"
-      echo "✓ github → $github_url (was: $current_github)"
-    else
-      echo "✓ github → $current_github"
-    fi
+        # Configure github remote
+        current_github=$(${pkgs.git}/bin/git remote get-url github 2>/dev/null || true)
+        if [[ -z "$current_github" ]]; then
+          ${pkgs.git}/bin/git remote add github "$github_url"
+          echo "✓ github → $github_url"
+        elif [[ "$FORCE" == true ]]; then
+          ${pkgs.git}/bin/git remote set-url github "$github_url"
+          echo "✓ github → $github_url (was: $current_github)"
+        else
+          echo "✓ github → $current_github"
+        fi
 
-    # Set default push to origin
-    ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
+        # Set default push to origin
+        ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
 
-    echo
-    ${pkgs.git}/bin/git remote -v
+        echo
+        ${pkgs.git}/bin/git remote -v
   '';
 
   assh = pkgs.writeShellScriptBin "assh" ''
@@ -105,7 +105,7 @@ EOF
     fi
 
     ${pkgs.gum}/bin/gum style --foreground 212 "Connecting to $host:$port (auto-reconnect enabled)..."
-    
+
     while true; do
       ${pkgs.openssh}/bin/ssh -p "$port" -o "BatchMode yes" "$host" || {
         ${pkgs.gum}/bin/gum style --foreground 214 "Connection lost. Reconnecting in 1s..."
@@ -207,180 +207,180 @@ EOF
   '';
 
   now = pkgs.writeShellScriptBin "now" ''
-    # Post AtProto status updates
-    message=""
-    prompt_message=true
+        # Post AtProto status updates
+        message=""
+        prompt_message=true
 
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-      case "$1" in
-        -m|--message)
-          message="$2"
-          prompt_message=false
-          shift 2
-          ;;
-        *)
-          ${pkgs.gum}/bin/gum style --foreground 196 "Usage: now [-m|--message \"your message\"]"
+        # Parse arguments
+        while [[ $# -gt 0 ]]; do
+          case "$1" in
+            -m|--message)
+              message="$2"
+              prompt_message=false
+              shift 2
+              ;;
+            *)
+              ${pkgs.gum}/bin/gum style --foreground 196 "Usage: now [-m|--message \"your message\"]"
+              exit 1
+              ;;
+          esac
+        done
+
+        # Load account information from agenix secrets
+        if [[ -f "/run/agenix/bluesky" ]]; then
+          source "/run/agenix/bluesky"
+        else
+          ${pkgs.gum}/bin/gum style --foreground 196 "Error: Bluesky credentials file not found at /run/agenix/bluesky"
           exit 1
-          ;;
-      esac
-    done
-
-    # Load account information from agenix secrets
-    if [[ -f "/run/agenix/bluesky" ]]; then
-      source "/run/agenix/bluesky"
-    else
-      ${pkgs.gum}/bin/gum style --foreground 196 "Error: Bluesky credentials file not found at /run/agenix/bluesky"
-      exit 1
-    fi
-
-    # Prompt for message if none provided
-    if [[ "$prompt_message" = true ]]; then
-      message=$(${pkgs.gum}/bin/gum input --placeholder "What's happening?" --prompt "$ACCOUNT1 is: ")
-      if [[ -z "$message" ]]; then
-        ${pkgs.gum}/bin/gum style --foreground 214 "No message provided. Aborting."
-        exit 1
-      fi
-    fi
-
-    ${pkgs.gum}/bin/gum spin --spinner dot --title "Posting to Bluesky..." -- /bin/bash <<EOF
-    # Function to resolve DID to PDS endpoint
-    resolve_pds() {
-      local identifier="\$1"
-      local did=""
-
-      # If identifier is a handle, resolve to DID first
-      if [[ ! "\$identifier" =~ ^did: ]]; then
-        # Try to resolve handle via DNS first, fallback to bsky.social
-        did=\$(${pkgs.curl}/bin/curl -sf "https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=\$identifier" | ${pkgs.jq}/bin/jq -r '.did // empty')
-        if [[ -z "\$did" ]]; then
-          echo "Failed to resolve handle: \$identifier" >&2
-          return 1
         fi
-      else
-        did="\$identifier"
-      fi
 
-      # Resolve DID document
-      local pds_endpoint=""
-      if [[ "\$did" =~ ^did:plc: ]]; then
-        # Resolve via PLC directory
-        pds_endpoint=\$(${pkgs.curl}/bin/curl -sf "https://plc.directory/\$did" | ${pkgs.jq}/bin/jq -r '.service[] | select(.type == "AtprotoPersonalDataServer") | .serviceEndpoint' | head -n1)
-      elif [[ "\$did" =~ ^did:web: ]]; then
-        # Resolve via did:web
-        local domain="\''${did#did:web:}"
-        pds_endpoint=\$(${pkgs.curl}/bin/curl -sf "https://\$domain/.well-known/did.json" | ${pkgs.jq}/bin/jq -r '.service[] | select(.type == "AtprotoPersonalDataServer") | .serviceEndpoint' | head -n1)
-      else
-        echo "Unsupported DID method: \$did" >&2
-        return 1
-      fi
+        # Prompt for message if none provided
+        if [[ "$prompt_message" = true ]]; then
+          message=$(${pkgs.gum}/bin/gum input --placeholder "What's happening?" --prompt "$ACCOUNT1 is: ")
+          if [[ -z "$message" ]]; then
+            ${pkgs.gum}/bin/gum style --foreground 214 "No message provided. Aborting."
+            exit 1
+          fi
+        fi
 
-      if [[ -z "\$pds_endpoint" ]]; then
-        echo "Failed to resolve PDS endpoint for: \$did" >&2
-        return 1
-      fi
+        ${pkgs.gum}/bin/gum spin --spinner dot --title "Posting to Bluesky..." -- /bin/bash <<EOF
+        # Function to resolve DID to PDS endpoint
+        resolve_pds() {
+          local identifier="\$1"
+          local did=""
 
-      echo "\$pds_endpoint"
-    }
+          # If identifier is a handle, resolve to DID first
+          if [[ ! "\$identifier" =~ ^did: ]]; then
+            # Try to resolve handle via DNS first, fallback to bsky.social
+            did=\$(${pkgs.curl}/bin/curl -sf "https://bsky.social/xrpc/com.atproto.identity.resolveHandle?handle=\$identifier" | ${pkgs.jq}/bin/jq -r '.did // empty')
+            if [[ -z "\$did" ]]; then
+              echo "Failed to resolve handle: \$identifier" >&2
+              return 1
+            fi
+          else
+            did="\$identifier"
+          fi
 
-    # Resolve PDS endpoints for both accounts
-    account1_pds=\$(resolve_pds "$ACCOUNT1")
-    if [[ -z "\$account1_pds" ]]; then
-      echo "Failed to resolve PDS for $ACCOUNT1" >&2
-      exit 1
-    fi
+          # Resolve DID document
+          local pds_endpoint=""
+          if [[ "\$did" =~ ^did:plc: ]]; then
+            # Resolve via PLC directory
+            pds_endpoint=\$(${pkgs.curl}/bin/curl -sf "https://plc.directory/\$did" | ${pkgs.jq}/bin/jq -r '.service[] | select(.type == "AtprotoPersonalDataServer") | .serviceEndpoint' | head -n1)
+          elif [[ "\$did" =~ ^did:web: ]]; then
+            # Resolve via did:web
+            local domain="\''${did#did:web:}"
+            pds_endpoint=\$(${pkgs.curl}/bin/curl -sf "https://\$domain/.well-known/did.json" | ${pkgs.jq}/bin/jq -r '.service[] | select(.type == "AtprotoPersonalDataServer") | .serviceEndpoint' | head -n1)
+          else
+            echo "Unsupported DID method: \$did" >&2
+            return 1
+          fi
 
-    account2_pds=\$(resolve_pds "$ACCOUNT2")
-    if [[ -z "\$account2_pds" ]]; then
-      echo "Failed to resolve PDS for $ACCOUNT2" >&2
-      exit 1
-    fi
+          if [[ -z "\$pds_endpoint" ]]; then
+            echo "Failed to resolve PDS endpoint for: \$did" >&2
+            return 1
+          fi
 
-    # Generate JWT for ACCOUNT1
-    account1_response=\$(${pkgs.curl}/bin/curl -s -X POST \
-      -H "Content-Type: application/json" \
-      -d '{
-        "identifier": "'$ACCOUNT1'",
-        "password": "'$ACCOUNT1_PASSWORD'"
-      }' \
-      "\$account1_pds/xrpc/com.atproto.server.createSession")
-
-    account1_jwt=\$(echo "\$account1_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
-    account1_did=\$(echo "\$account1_response" | ${pkgs.jq}/bin/jq -r '.did')
-
-    if [[ -z "\$account1_jwt" || "\$account1_jwt" == "null" ]]; then
-      echo "Failed to authenticate account $ACCOUNT1" >&2
-      echo "Response: \$account1_response" >&2
-      exit 1
-    fi
-
-    # Generate JWT for ACCOUNT2
-    account2_response=\$(${pkgs.curl}/bin/curl -s -X POST \
-      -H "Content-Type: application/json" \
-      -d '{
-        "identifier": "'$ACCOUNT2'",
-        "password": "'$ACCOUNT2_PASSWORD'"
-      }' \
-      "\$account2_pds/xrpc/com.atproto.server.createSession")
-
-    account2_jwt=\$(echo "\$account2_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
-    account2_did=\$(echo "\$account2_response" | ${pkgs.jq}/bin/jq -r '.did')
-
-    if [[ -z "\$account2_jwt" || "\$account2_jwt" == "null" ]]; then
-      echo "Failed to authenticate account $ACCOUNT2" >&2
-      echo "Response: \$account2_response" >&2
-      exit 1
-    fi
-
-    # Post to ACCOUNT1 as a.status.updates
-    account1_post_response=\$(${pkgs.curl}/bin/curl -s -X POST \
-      -H "Content-Type: application/json" \
-      -H "Authorization: Bearer \$account1_jwt" \
-      -d '{
-        "collection": "a.status.update",
-        "repo": "'\$account1_did'",
-        "record": {
-          "\$type": "a.status.update",
-          "text": "'"$message"'",
-          "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
+          echo "\$pds_endpoint"
         }
-      }' \
-      "\$account1_pds/xrpc/com.atproto.repo.createRecord")
 
-    if [[ \$(echo "\$account1_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
-      echo "Error posting to $ACCOUNT1:" >&2
-      echo "\$account1_post_response" | ${pkgs.jq}/bin/jq >&2
-      exit 1
-    fi
+        # Resolve PDS endpoints for both accounts
+        account1_pds=\$(resolve_pds "$ACCOUNT1")
+        if [[ -z "\$account1_pds" ]]; then
+          echo "Failed to resolve PDS for $ACCOUNT1" >&2
+          exit 1
+        fi
 
-    # Post to ACCOUNT2 as normal post
-    account2_post_response=\$(${pkgs.curl}/bin/curl -s -X POST \
-      -H "Content-Type: application/json" \
-      -H "Authorization: Bearer \$account2_jwt" \
-      -d '{
-        "collection": "app.bsky.feed.post",
-        "repo": "'\$account2_did'",
-        "record": {
-          "\$type": "app.bsky.feed.post",
-          "text": "'"$message"'",
-          "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
-        }
-      }' \
-      "\$account2_pds/xrpc/com.atproto.repo.createRecord")
+        account2_pds=\$(resolve_pds "$ACCOUNT2")
+        if [[ -z "\$account2_pds" ]]; then
+          echo "Failed to resolve PDS for $ACCOUNT2" >&2
+          exit 1
+        fi
 
-    if [[ \$(echo "\$account2_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
-      echo "Error posting to $ACCOUNT2:" >&2
-      echo "\$account2_post_response" | ${pkgs.jq}/bin/jq >&2
-      exit 1
-    fi
-EOF
+        # Generate JWT for ACCOUNT1
+        account1_response=\$(${pkgs.curl}/bin/curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -d '{
+            "identifier": "'$ACCOUNT1'",
+            "password": "'$ACCOUNT1_PASSWORD'"
+          }' \
+          "\$account1_pds/xrpc/com.atproto.server.createSession")
 
-    if [[ $? -eq 0 ]]; then
-      ${pkgs.gum}/bin/gum style --foreground 35 "✓ Posted successfully!"
-    else
-      ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to post"
-      exit 1
-    fi
+        account1_jwt=\$(echo "\$account1_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
+        account1_did=\$(echo "\$account1_response" | ${pkgs.jq}/bin/jq -r '.did')
+
+        if [[ -z "\$account1_jwt" || "\$account1_jwt" == "null" ]]; then
+          echo "Failed to authenticate account $ACCOUNT1" >&2
+          echo "Response: \$account1_response" >&2
+          exit 1
+        fi
+
+        # Generate JWT for ACCOUNT2
+        account2_response=\$(${pkgs.curl}/bin/curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -d '{
+            "identifier": "'$ACCOUNT2'",
+            "password": "'$ACCOUNT2_PASSWORD'"
+          }' \
+          "\$account2_pds/xrpc/com.atproto.server.createSession")
+
+        account2_jwt=\$(echo "\$account2_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
+        account2_did=\$(echo "\$account2_response" | ${pkgs.jq}/bin/jq -r '.did')
+
+        if [[ -z "\$account2_jwt" || "\$account2_jwt" == "null" ]]; then
+          echo "Failed to authenticate account $ACCOUNT2" >&2
+          echo "Response: \$account2_response" >&2
+          exit 1
+        fi
+
+        # Post to ACCOUNT1 as a.status.updates
+        account1_post_response=\$(${pkgs.curl}/bin/curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer \$account1_jwt" \
+          -d '{
+            "collection": "a.status.update",
+            "repo": "'\$account1_did'",
+            "record": {
+              "\$type": "a.status.update",
+              "text": "'"$message"'",
+              "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
+            }
+          }' \
+          "\$account1_pds/xrpc/com.atproto.repo.createRecord")
+
+        if [[ \$(echo "\$account1_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
+          echo "Error posting to $ACCOUNT1:" >&2
+          echo "\$account1_post_response" | ${pkgs.jq}/bin/jq >&2
+          exit 1
+        fi
+
+        # Post to ACCOUNT2 as normal post
+        account2_post_response=\$(${pkgs.curl}/bin/curl -s -X POST \
+          -H "Content-Type: application/json" \
+          -H "Authorization: Bearer \$account2_jwt" \
+          -d '{
+            "collection": "app.bsky.feed.post",
+            "repo": "'\$account2_did'",
+            "record": {
+              "\$type": "app.bsky.feed.post",
+              "text": "'"$message"'",
+              "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
+            }
+          }' \
+          "\$account2_pds/xrpc/com.atproto.repo.createRecord")
+
+        if [[ \$(echo "\$account2_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
+          echo "Error posting to $ACCOUNT2:" >&2
+          echo "\$account2_post_response" | ${pkgs.jq}/bin/jq >&2
+          exit 1
+        fi
+    EOF
+
+        if [[ $? -eq 0 ]]; then
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ Posted successfully!"
+        else
+          ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to post"
+          exit 1
+        fi
   '';
 
   ghostty-setup = pkgs.writeShellScriptBin "ghostty-setup" ''
@@ -422,160 +422,160 @@ EOF
   '';
 
   ghrpc = pkgs.writeShellScriptBin "ghrpc" ''
-   set -euo pipefail
+       set -euo pipefail
 
-   # Defaults (configured by Nix)
-   PLC_ID="${tangled.plcId}"
-   GITHUB_USER="${tangled.githubUser}"
-   KNOT_HOST="${tangled.knotHost}"
-   TANGLED_DOMAIN="${tangled.domain}"
-   BRANCH="${tangled.defaultBranch}"
-   VISIBILITY="public"
-   DESCRIPTION=""
-   GITHUB=true
-   TANGLED=true
-   NAME=""
+       # Defaults (configured by Nix)
+       PLC_ID="${tangled.plcId}"
+       GITHUB_USER="${tangled.githubUser}"
+       KNOT_HOST="${tangled.knotHost}"
+       TANGLED_DOMAIN="${tangled.domain}"
+       BRANCH="${tangled.defaultBranch}"
+       VISIBILITY="public"
+       DESCRIPTION=""
+       GITHUB=true
+       TANGLED=true
+       NAME=""
 
-   usage() {
-     cat <<EOF
-Usage: ghrpc [OPTIONS] [NAME]
+       usage() {
+         cat <<EOF
+    Usage: ghrpc [OPTIONS] [NAME]
 
-Create repositories on GitHub and/or Tangled.
-Remotes: origin → knot (tangled), github → GitHub
+    Create repositories on GitHub and/or Tangled.
+    Remotes: origin → knot (tangled), github → GitHub
 
-Arguments:
-  NAME                    Repository name (defaults to current directory name)
+    Arguments:
+      NAME                    Repository name (defaults to current directory name)
 
-Options:
-  -d, --description STR   Repository description
-  -p, --public            Make repository public (default)
-  --private               Make repository private
-  -g, --github-only       Only create on GitHub
-  -t, --tangled-only      Only create on Tangled
-  --no-github             Skip GitHub
-  --no-tangled            Skip Tangled
-  --plc ID                PLC ID (default: $PLC_ID)
-  --domain DOMAIN         Tangled domain (default: $TANGLED_DOMAIN)
-  -h, --help              Show this help
-EOF
-     exit 0
-   }
+    Options:
+      -d, --description STR   Repository description
+      -p, --public            Make repository public (default)
+      --private               Make repository private
+      -g, --github-only       Only create on GitHub
+      -t, --tangled-only      Only create on Tangled
+      --no-github             Skip GitHub
+      --no-tangled            Skip Tangled
+      --plc ID                PLC ID (default: $PLC_ID)
+      --domain DOMAIN         Tangled domain (default: $TANGLED_DOMAIN)
+      -h, --help              Show this help
+    EOF
+         exit 0
+       }
 
-   while [[ $# -gt 0 ]]; do
-     case "$1" in
-       -h|--help) usage ;;
-       -d|--description) DESCRIPTION="$2"; shift 2 ;;
-       -p|--public) VISIBILITY="public"; shift ;;
-       --private) VISIBILITY="private"; shift ;;
-       -g|--github-only) TANGLED=false; shift ;;
-       -t|--tangled-only) GITHUB=false; shift ;;
-       --no-github) GITHUB=false; shift ;;
-       --no-tangled) TANGLED=false; shift ;;
-       --plc) PLC_ID="$2"; shift 2 ;;
-       --domain) TANGLED_DOMAIN="$2"; shift 2 ;;
-       -*) echo "Unknown option: $1" >&2; exit 1 ;;
-       *) NAME="$1"; shift ;;
-     esac
-   done
+       while [[ $# -gt 0 ]]; do
+         case "$1" in
+           -h|--help) usage ;;
+           -d|--description) DESCRIPTION="$2"; shift 2 ;;
+           -p|--public) VISIBILITY="public"; shift ;;
+           --private) VISIBILITY="private"; shift ;;
+           -g|--github-only) TANGLED=false; shift ;;
+           -t|--tangled-only) GITHUB=false; shift ;;
+           --no-github) GITHUB=false; shift ;;
+           --no-tangled) TANGLED=false; shift ;;
+           --plc) PLC_ID="$2"; shift 2 ;;
+           --domain) TANGLED_DOMAIN="$2"; shift 2 ;;
+           -*) echo "Unknown option: $1" >&2; exit 1 ;;
+           *) NAME="$1"; shift ;;
+         esac
+       done
 
-   # Determine repo name
-   if [[ -z "$NAME" ]]; then
-     if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
-       NAME=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
-     else
-       read -p "Repository name: " NAME
+       # Determine repo name
        if [[ -z "$NAME" ]]; then
-         echo "Error: Repository name is required" >&2
-         exit 1
-       fi
-     fi
-   fi
-
-   # Prompt for description if not provided
-   if [[ -z "$DESCRIPTION" ]]; then
-     read -p "Description (optional): " DESCRIPTION
-   fi
-
-   echo "Creating repository: $NAME"
-
-   # Create on Tangled
-   if [[ "$TANGLED" == true ]]; then
-     tangled_cookie=""
-     if [[ -f "/run/agenix/tangled-session" ]]; then
-       tangled_cookie=$(cat /run/agenix/tangled-session)
-     fi
-
-     if [[ -z "$tangled_cookie" ]]; then
-       echo "Warning: No tangled session cookie found at /run/agenix/tangled-session" >&2
-     else
-       encoded_desc=$(printf '%s' "$DESCRIPTION" | ${pkgs.gnused}/bin/sed 's/ /%20/g; s/!/%21/g; s/"/%22/g; s/#/%23/g; s/\$/%24/g; s/&/%26/g; s/'"'"'/%27/g; s/(/%28/g; s/)/%29/g; s/\*/%2A/g; s/+/%2B/g; s/,/%2C/g; s/\//%2F/g; s/:/%3A/g; s/;/%3B/g; s/=/%3D/g; s/?/%3F/g; s/@/%40/g; s/\[/%5B/g; s/\]/%5D/g')
-
-       response=$(${pkgs.curl}/bin/curl -s 'https://tangled.org/repo/new' \
-         -H 'Accept: */*' \
-         -H 'Content-Type: application/x-www-form-urlencoded' \
-         -b "appview-session-v2=$tangled_cookie" \
-         -H 'HX-Request: true' \
-         -H 'Origin: https://tangled.org' \
-         --data-raw "name=$NAME&description=$encoded_desc&branch=$BRANCH&domain=$TANGLED_DOMAIN")
-
-       if echo "$response" | grep -qi "error\|failed"; then
-         echo "✗ Failed to create Tangled repository" >&2
-       else
-         echo "✓ Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
-       fi
-     fi
-   fi
-
-   # Create on GitHub
-   if [[ "$GITHUB" == true ]]; then
-     gh_flags="--$VISIBILITY"
-     [[ -n "$DESCRIPTION" ]] && gh_flags="$gh_flags --description \"$DESCRIPTION\""
-
-     if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
-       if eval "${pkgs.gh}/bin/gh repo create \"$NAME\" $gh_flags --source=. --push --remote=github 2>/dev/null"; then
-         echo "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
-       else
-         echo "✗ Failed to create GitHub repository" >&2
-       fi
-     else
-       if eval "${pkgs.gh}/bin/gh repo create \"$NAME\" $gh_flags --clone 2>/dev/null"; then
-         echo "✓ GitHub: created and cloned $NAME"
-         cd "$NAME"
-       else
-         echo "✗ Failed to create GitHub repository" >&2
-       fi
-     fi
-   fi
-
-   # Configure remotes: origin → knot, github → GitHub
-   if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
-     knot_url="git@$KNOT_HOST:$PLC_ID/$NAME"
-     github_url="git@github.com:$GITHUB_USER/$NAME.git"
-
-     # Set origin to knot
-     if [[ "$TANGLED" == true ]]; then
-       if ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
-         current_origin=$(${pkgs.git}/bin/git remote get-url origin)
-         if [[ "$current_origin" != *"$KNOT_HOST"* ]]; then
-           ${pkgs.git}/bin/git remote set-url origin "$knot_url"
+         if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+           NAME=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
+         else
+           read -p "Repository name: " NAME
+           if [[ -z "$NAME" ]]; then
+             echo "Error: Repository name is required" >&2
+             exit 1
+           fi
          fi
-       else
-         ${pkgs.git}/bin/git remote add origin "$knot_url"
        fi
-     fi
 
-     # Set github remote
-     if [[ "$GITHUB" == true ]]; then
-       ${pkgs.git}/bin/git remote add github "$github_url" 2>/dev/null || \
-         ${pkgs.git}/bin/git remote set-url github "$github_url"
-     fi
+       # Prompt for description if not provided
+       if [[ -z "$DESCRIPTION" ]]; then
+         read -p "Description (optional): " DESCRIPTION
+       fi
 
-     # Set default push to origin (knot)
-     ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
+       echo "Creating repository: $NAME"
 
-     echo
-     ${pkgs.git}/bin/git remote -v
-   fi
+       # Create on Tangled
+       if [[ "$TANGLED" == true ]]; then
+         tangled_cookie=""
+         if [[ -f "/run/agenix/tangled-session" ]]; then
+           tangled_cookie=$(cat /run/agenix/tangled-session)
+         fi
+
+         if [[ -z "$tangled_cookie" ]]; then
+           echo "Warning: No tangled session cookie found at /run/agenix/tangled-session" >&2
+         else
+           encoded_desc=$(printf '%s' "$DESCRIPTION" | ${pkgs.gnused}/bin/sed 's/ /%20/g; s/!/%21/g; s/"/%22/g; s/#/%23/g; s/\$/%24/g; s/&/%26/g; s/'"'"'/%27/g; s/(/%28/g; s/)/%29/g; s/\*/%2A/g; s/+/%2B/g; s/,/%2C/g; s/\//%2F/g; s/:/%3A/g; s/;/%3B/g; s/=/%3D/g; s/?/%3F/g; s/@/%40/g; s/\[/%5B/g; s/\]/%5D/g')
+
+           response=$(${pkgs.curl}/bin/curl -s 'https://tangled.org/repo/new' \
+             -H 'Accept: */*' \
+             -H 'Content-Type: application/x-www-form-urlencoded' \
+             -b "appview-session-v2=$tangled_cookie" \
+             -H 'HX-Request: true' \
+             -H 'Origin: https://tangled.org' \
+             --data-raw "name=$NAME&description=$encoded_desc&branch=$BRANCH&domain=$TANGLED_DOMAIN")
+
+           if echo "$response" | grep -qi "error\|failed"; then
+             echo "✗ Failed to create Tangled repository" >&2
+           else
+             echo "✓ Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
+           fi
+         fi
+       fi
+
+       # Create on GitHub
+       if [[ "$GITHUB" == true ]]; then
+         gh_flags="--$VISIBILITY"
+         [[ -n "$DESCRIPTION" ]] && gh_flags="$gh_flags --description \"$DESCRIPTION\""
+
+         if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+           if eval "${pkgs.gh}/bin/gh repo create \"$NAME\" $gh_flags --source=. --push --remote=github 2>/dev/null"; then
+             echo "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
+           else
+             echo "✗ Failed to create GitHub repository" >&2
+           fi
+         else
+           if eval "${pkgs.gh}/bin/gh repo create \"$NAME\" $gh_flags --clone 2>/dev/null"; then
+             echo "✓ GitHub: created and cloned $NAME"
+             cd "$NAME"
+           else
+             echo "✗ Failed to create GitHub repository" >&2
+           fi
+         fi
+       fi
+
+       # Configure remotes: origin → knot, github → GitHub
+       if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+         knot_url="git@$KNOT_HOST:$PLC_ID/$NAME"
+         github_url="git@github.com:$GITHUB_USER/$NAME.git"
+
+         # Set origin to knot
+         if [[ "$TANGLED" == true ]]; then
+           if ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
+             current_origin=$(${pkgs.git}/bin/git remote get-url origin)
+             if [[ "$current_origin" != *"$KNOT_HOST"* ]]; then
+               ${pkgs.git}/bin/git remote set-url origin "$knot_url"
+             fi
+           else
+             ${pkgs.git}/bin/git remote add origin "$knot_url"
+           fi
+         fi
+
+         # Set github remote
+         if [[ "$GITHUB" == true ]]; then
+           ${pkgs.git}/bin/git remote add github "$github_url" 2>/dev/null || \
+             ${pkgs.git}/bin/git remote set-url github "$github_url"
+         fi
+
+         # Set default push to origin (knot)
+         ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
+
+         echo
+         ${pkgs.git}/bin/git remote -v
+       fi
   '';
 
 in
@@ -754,109 +754,109 @@ in
         vim = "nvim";
       };
       initContent = ''
-        zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
-        zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
-        zstyle ':completion:*' menu no
-        zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
-        zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
+                zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+                zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
+                zstyle ':completion:*' menu no
+                zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
+                zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
-        eval "$(terminal-wakatime init)"
+                eval "$(terminal-wakatime init)"
 
-        # Edit command buffer in $EDITOR (Ctrl+X, Ctrl+E)
-        autoload -Uz edit-command-line
-        zle -N edit-command-line
-        bindkey '^X^E' edit-command-line
+                # Edit command buffer in $EDITOR (Ctrl+X, Ctrl+E)
+                autoload -Uz edit-command-line
+                zle -N edit-command-line
+                bindkey '^X^E' edit-command-line
 
-        # Magic space - expand history expressions like !! or !$
-        bindkey ' ' magic-space
+                # Magic space - expand history expressions like !! or !$
+                bindkey ' ' magic-space
 
-        # Suffix aliases - open files by extension
-        alias -s json=jless
-        alias -s md=bat
-        alias -s go='$EDITOR'
-        alias -s rs='$EDITOR'
-        alias -s txt=bat
-        alias -s log=bat
-        alias -s py='$EDITOR'
-        alias -s js='$EDITOR'
-        alias -s ts='$EDITOR'
-        ${if pkgs.stdenv.isDarwin then "alias -s html=open" else ""}
+                # Suffix aliases - open files by extension
+                alias -s json=jless
+                alias -s md=bat
+                alias -s go='$EDITOR'
+                alias -s rs='$EDITOR'
+                alias -s txt=bat
+                alias -s log=bat
+                alias -s py='$EDITOR'
+                alias -s js='$EDITOR'
+                alias -s ts='$EDITOR'
+                ${if pkgs.stdenv.isDarwin then "alias -s html=open" else ""}
 
-        # Global aliases
-        alias -g NE='2>/dev/null'
-        alias -g NO='>/dev/null'
-        alias -g NUL='>/dev/null 2>&1'
-        alias -g J='| jq'
+                # Global aliases
+                alias -g NE='2>/dev/null'
+                alias -g NO='>/dev/null'
+                alias -g NUL='>/dev/null 2>&1'
+                alias -g J='| jq'
 
-        # OSC 52 clipboard (works over SSH)
-        function osc52copy() {
-          local data=$(cat "$@" | base64 | tr -d '\n')
-          printf "\033]52;c;%s\a" "$data"
-        }
-        alias -g C='| osc52copy'
+                # OSC 52 clipboard (works over SSH)
+                function osc52copy() {
+                  local data=$(cat "$@" | base64 | tr -d '\n')
+                  printf "\033]52;c;%s\a" "$data"
+                }
+                alias -g C='| osc52copy'
 
-        # zmv - advanced batch rename/move
-        autoload -Uz zmv
-        alias zcp='zmv -C'
-        alias zln='zmv -L'
+                # zmv - advanced batch rename/move
+                autoload -Uz zmv
+                alias zcp='zmv -C'
+                alias zln='zmv -L'
 
-        # Clear screen but keep current command buffer (Ctrl+X, Ctrl+L)
-        function clear-screen-and-scrollback() {
-          echoti civis >"$TTY"
-          printf '%b' '\e[H\e[2J\e[3J' >"$TTY"
-          echoti cnorm >"$TTY"
-          zle redisplay
-        }
-        zle -N clear-screen-and-scrollback
-        bindkey '^X^L' clear-screen-and-scrollback
+                # Clear screen but keep current command buffer (Ctrl+X, Ctrl+L)
+                function clear-screen-and-scrollback() {
+                  echoti civis >"$TTY"
+                  printf '%b' '\e[H\e[2J\e[3J' >"$TTY"
+                  echoti cnorm >"$TTY"
+                  zle redisplay
+                }
+                zle -N clear-screen-and-scrollback
+                bindkey '^X^L' clear-screen-and-scrollback
 
-        # Copy current command buffer to clipboard (Ctrl+X, Ctrl+C) - OSC 52 for SSH support
-        function copy-buffer-to-clipboard() {
-          local data=$(echo -n "$BUFFER" | base64 | tr -d '\n')
-          printf "\033]52;c;%s\a" "$data"
-          zle -M "Copied to clipboard"
-        }
-        zle -N copy-buffer-to-clipboard
-        bindkey '^X^C' copy-buffer-to-clipboard
+                # Copy current command buffer to clipboard (Ctrl+X, Ctrl+C) - OSC 52 for SSH support
+                function copy-buffer-to-clipboard() {
+                  local data=$(echo -n "$BUFFER" | base64 | tr -d '\n')
+                  printf "\033]52;c;%s\a" "$data"
+                  zle -M "Copied to clipboard"
+                }
+                zle -N copy-buffer-to-clipboard
+                bindkey '^X^C' copy-buffer-to-clipboard
 
-        # chpwd hooks
-        autoload -Uz add-zsh-hook
+                # chpwd hooks
+                autoload -Uz add-zsh-hook
 
-        function auto_venv() {
-          if [[ -n "$VIRTUAL_ENV" && ! -f "$VIRTUAL_ENV/bin/activate" ]]; then
-            deactivate
-          fi
-          [[ -n "$VIRTUAL_ENV" ]] && return
-          local dir="$PWD"
-          while [[ "$dir" != "/" ]]; do
-            if [[ -f "$dir/.venv/bin/activate" ]]; then
-              source "$dir/.venv/bin/activate"
-              return
-            fi
-            dir="''${dir:h}"
-          done
-        }
+                function auto_venv() {
+                  if [[ -n "$VIRTUAL_ENV" && ! -f "$VIRTUAL_ENV/bin/activate" ]]; then
+                    deactivate
+                  fi
+                  [[ -n "$VIRTUAL_ENV" ]] && return
+                  local dir="$PWD"
+                  while [[ "$dir" != "/" ]]; do
+                    if [[ -f "$dir/.venv/bin/activate" ]]; then
+                      source "$dir/.venv/bin/activate"
+                      return
+                    fi
+                    dir="''${dir:h}"
+                  done
+                }
 
-        function auto_nix() {
-          [[ -n "$IN_NIX_SHELL" ]] && return
-          local dir="$PWD"
-          while [[ "$dir" != "/" ]]; do
-            if [[ -f "$dir/flake.nix" ]]; then
-              if [[ ! -f "$dir/.envrc" ]]; then
-                cat > "$dir/.envrc" <<'EOF'
-eval "$(nix print-dev-env)"
-EOF
-                command direnv allow "$dir" >/dev/null 2>&1
-              fi
-              command direnv reload >/dev/null 2>&1
-              return
-            fi
-            dir="''${dir:h}"
-          done
-        }
+                function auto_nix() {
+                  [[ -n "$IN_NIX_SHELL" ]] && return
+                  local dir="$PWD"
+                  while [[ "$dir" != "/" ]]; do
+                    if [[ -f "$dir/flake.nix" ]]; then
+                      if [[ ! -f "$dir/.envrc" ]]; then
+                        cat > "$dir/.envrc" <<'EOF'
+        use flake
+        EOF
+                        command direnv allow "$dir" >/dev/null 2>&1
+                      fi
+                      command direnv reload >/dev/null 2>&1
+                      return
+                    fi
+                    dir="''${dir:h}"
+                  done
+                }
 
-        add-zsh-hook chpwd auto_venv
-        add-zsh-hook chpwd auto_nix
+                add-zsh-hook chpwd auto_venv
+                add-zsh-hook chpwd auto_nix
       '';
       history = {
         size = 10000;
