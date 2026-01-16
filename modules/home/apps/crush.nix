@@ -7,7 +7,7 @@
   options.atelier.apps.crush.enable = lib.mkEnableOption "Enable Crush config";
   config = lib.mkIf config.atelier.apps.crush.enable {
     atelier.apps.anthropic-manager.enable = lib.mkDefault true;
-    
+
     programs.crush = {
       enable = true;
       settings = {
@@ -40,14 +40,14 @@
             };
             models = [
               {
-                id = "gpt-4.1";
-                name = "Copilot: GPT-4.1";
+                id = "gpt-5.2-codex";
+                name = "Copilot: OpenAI GPT-5.2-Codex";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
                 cost_per_1m_out_cached = 0;
-                context_window = 128000;
-                default_max_tokens = 16384;
+                context_window = 400000;
+                default_max_tokens = 128000;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;
@@ -79,19 +79,6 @@
                 supports_attachments = true;
               }
               {
-                id = "gpt-4o";
-                name = "Copilot: GPT-4o";
-                cost_per_1m_in = 0;
-                cost_per_1m_out = 0;
-                cost_per_1m_in_cached = 0;
-                cost_per_1m_out_cached = 0;
-                context_window = 128000;
-                default_max_tokens = 4096;
-                can_reason = true;
-                has_reasoning_efforts = false;
-                supports_attachments = true;
-              }
-              {
                 id = "grok-code-fast-1";
                 name = "Copilot: Grok Code Fast 1";
                 cost_per_1m_in = 0;
@@ -105,8 +92,21 @@
                 supports_attachments = false;
               }
               {
-                id = "gpt-5-codex";
-                name = "Copilot: GPT-5-Codex (Preview)";
+                id = "gpt-5.1";
+                name = "Copilot: GPT-5.1";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 264000;
+                default_max_tokens = 64000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "gpt-5.1-codex";
+                name = "Copilot: GPT-5.1-Codex";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
@@ -118,14 +118,40 @@
                 supports_attachments = true;
               }
               {
-                id = "claude-3.5-sonnet";
-                name = "Copilot: Claude Sonnet 3.5";
+                id = "gpt-5.1-codex-mini";
+                name = "Copilot: GPT-5.1-Codex-Mini";
                 cost_per_1m_in = 0;
                 cost_per_1m_out = 0;
                 cost_per_1m_in_cached = 0;
                 cost_per_1m_out_cached = 0;
-                context_window = 90000;
-                default_max_tokens = 8192;
+                context_window = 400000;
+                default_max_tokens = 128000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "gpt-5.1-codex-max";
+                name = "Copilot: GPT-5.1-Codex-Max";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 400000;
+                default_max_tokens = 128000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "gpt-5-codex";
+                name = "Copilot: GPT-5-Codex (Preview)";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 400000;
+                default_max_tokens = 128000;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;
@@ -157,6 +183,19 @@
                 supports_attachments = true;
               }
               {
+                id = "claude-opus-4.5";
+                name = "Copilot: Claude Opus 4.5";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 160000;
+                default_max_tokens = 16000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
                 id = "claude-haiku-4.5";
                 name = "Copilot: Claude Haiku 4.5";
                 cost_per_1m_in = 0;
@@ -170,6 +209,32 @@
                 supports_attachments = true;
               }
               {
+                id = "gemini-3-pro-preview";
+                name = "Copilot: Gemini 3 Pro (Preview)";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 128000;
+                default_max_tokens = 64000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "gemini-3-flash-preview";
+                name = "Copilot: Gemini 3 Flash (Preview)";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 128000;
+                default_max_tokens = 64000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
                 id = "gemini-2.5-pro";
                 name = "Copilot: Gemini 2.5 Pro";
                 cost_per_1m_in = 0;
@@ -178,6 +243,58 @@
                 cost_per_1m_out_cached = 0;
                 context_window = 128000;
                 default_max_tokens = 64000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "oswe-vscode-prime";
+                name = "Copilot: Raptor mini (Preview)";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 264000;
+                default_max_tokens = 64000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "gpt-5.2";
+                name = "Copilot: GPT-5.2";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 264000;
+                default_max_tokens = 64000;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "gpt-4.1";
+                name = "Copilot: GPT-4.1";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 128000;
+                default_max_tokens = 16384;
+                can_reason = true;
+                has_reasoning_efforts = false;
+                supports_attachments = true;
+              }
+              {
+                id = "gpt-4o";
+                name = "Copilot: GPT-4o";
+                cost_per_1m_in = 0;
+                cost_per_1m_out = 0;
+                cost_per_1m_in_cached = 0;
+                cost_per_1m_out_cached = 0;
+                context_window = 128000;
+                default_max_tokens = 4096;
                 can_reason = true;
                 has_reasoning_efforts = false;
                 supports_attachments = true;
