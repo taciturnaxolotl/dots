@@ -162,6 +162,33 @@ in {
   } // extraOptions;
 
   config = lib.mkIf cfg.enable (lib.mkMerge [
+    # Port conflict detection
+    {
+      assertions = 
+        let
+          allServices = lib.filterAttrs (n: v: v.enable or false) config.atelier.services;
+          portsInUse = lib.mapAttrsToList (serviceName: serviceCfg: {
+            inherit serviceName;
+            port = serviceCfg.port or null;
+          }) allServices;
+          portsWithValues = lib.filter (p: p.port != null) portsInUse;
+          
+          # Find if this service's port conflicts with another service
+          conflicts = lib.filter (p: p.port == cfg.port && p.serviceName != name) portsWithValues;
+        in [
+          {
+            assertion = conflicts == [];
+            message = ''
+              Port conflict detected for ${name}!
+              Port ${toString cfg.port} is already used by: ${lib.concatMapStringsSep ", " (c: c.serviceName) conflicts}
+              
+              Ports currently in use:
+              ${lib.concatMapStringsSep "\n  " (p: "${p.serviceName}: ${toString p.port}") portsWithValues}
+            '';
+          }
+        ];
+    }
+    
     # Base service configuration
     {
       # Create user and group

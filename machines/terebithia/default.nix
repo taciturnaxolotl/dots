@@ -115,9 +115,13 @@
       file = ../../secrets/hn-alerts.age;
       owner = "hn-alerts";
     };
-    emojibot = {
-      file = ../../secrets/emojibot.age;
-      owner = "emojibot";
+    "emojibot/hackclub" = {
+      file = ../../secrets/emojibot/hackclub.age;
+      owner = "emojibot-hackclub";
+    };
+    "emojibot/df1317" = {
+      file = ../../secrets/emojibot/df1317.age;
+      owner = "emojibot-df1317";
     };
     cloudflare = {
       file = ../../secrets/cloudflare.age;
@@ -291,20 +295,6 @@
         }
       '';
     };
-    virtualHosts."emojibot.dunkirk.sh" = {
-      extraConfig = ''
-        tls {
-          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-        }
-        header {
-          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        }
-        reverse_proxy localhost:3002 {
-          header_up X-Forwarded-Proto {scheme}
-          header_up X-Forwarded-For {remote}
-        }
-      '';
-    };
     virtualHosts."battleship.dunkirk.sh" = {
       extraConfig = ''
         tls {
@@ -386,10 +376,25 @@
     secretsFile = config.age.secrets.hn-alerts.path;
   };
 
-  atelier.services.emojibot = {
-    enable = true;
-    domain = "emojibot.dunkirk.sh";
-    secretsFile = config.age.secrets.emojibot.path;
+  atelier.services.emojibot.instances = {
+    hackclub = {
+      enable = true;
+      domain = "hc.emojibot.dunkirk.sh";
+      port = 3002;
+      workspace = "hackclub";
+      channel = "C02T3CU03T3";
+      secretsFile = config.age.secrets."emojibot/hackclub".path;
+    };
+
+    df1317 = {
+      enable = true;
+      domain = "df.emojibot.dunkirk.sh";
+      port = 3005;
+      workspace = "df1317";
+      channel = "C06SBHMQU8G";
+      repository = "https://github.com/taciturnaxolotl/emojibot";
+      secretsFile = config.age.secrets."emojibot/df1317".path;
+    };
   };
 
   atelier.services.battleship-arena = {

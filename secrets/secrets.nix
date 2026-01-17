@@ -35,7 +35,10 @@ in
   "github-knot-sync.age".publicKeys = [
     kierank
   ];
-  "emojibot.age".publicKeys = [
+  "emojibot/hackclub.age".publicKeys = [
+    kierank
+  ];
+  "emojibot/df1317.age".publicKeys = [
     kierank
   ];
   "battleship-arena.age".publicKeys = [
