@@ -20,7 +20,7 @@
           system = final.stdenv.hostPlatform.system;
           config.allowUnfree = true;
         };
-        
+
         zmx-binary = prev.callPackage ../../packages/zmx.nix { };
       })
     ];
@@ -232,6 +232,30 @@
                 51
                 20
                 1179648
+              ];
+              type = "standard";
+            };
+          };
+          # Spotlight - Cmd+Space (disabled for Raycast)
+          "64" = {
+            enabled = false;
+            value = {
+              parameters = [
+                32
+                49
+                1048576
+              ];
+              type = "standard";
+            };
+          };
+          # Finder search - Option+Cmd+Space (disabled for Raycast)
+          "65" = {
+            enabled = false;
+            value = {
+              parameters = [
+                32
+                49
+                1572864
               ];
               type = "standard";
             };

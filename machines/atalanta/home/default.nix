@@ -47,24 +47,28 @@
     };
     ssh = {
       enable = true;
-      
+
       zmx = {
         enable = true;
-        hosts = [ "t.*" "p.*" "e.*" ];
+        hosts = [
+          "t.*"
+          "p.*"
+          "e.*"
+        ];
       };
 
       hosts = {
         # Dynamic zmx sessions per server
         "t.*" = {
-          hostname = "150.136.15.177";  # terebithia
+          hostname = "150.136.15.177"; # terebithia
         };
 
         "p.*" = {
-          hostname = "150.136.63.103";  # prattle
+          hostname = "150.136.63.103"; # prattle
         };
 
         "e.*" = {
-          hostname = "192.168.0.94";  # ember
+          hostname = "192.168.0.94"; # ember
         };
 
         # Regular hosts
@@ -176,7 +180,7 @@
       echo "==========================================="
     }
 
-    
+
   '';
 
   # Let Home Manager install and manage itself
