@@ -51,7 +51,7 @@ let
         done
 
         if ! ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
-          echo "Error: Not a git repository" >&2
+          ${pkgs.gum}/bin/gum style --foreground 196 "Error: Not a git repository"
           exit 1
         fi
 
@@ -59,38 +59,40 @@ let
         knot_url="git@$KNOT_HOST:$PLC_ID/$repo_name"
         github_url="git@github.com:$GITHUB_USER/$repo_name.git"
 
-        echo "Configuring remotes for: $repo_name"
+        ${pkgs.gum}/bin/gum style --bold --foreground 212 "Configuring tangled remotes for: $repo_name"
+        echo
 
         # Configure origin → knot
         current_origin=$(${pkgs.git}/bin/git remote get-url origin 2>/dev/null || true)
         if [[ -z "$current_origin" ]]; then
           ${pkgs.git}/bin/git remote add origin "$knot_url"
-          echo "✓ origin → $knot_url"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ origin → $knot_url"
         elif [[ "$current_origin" == *"$KNOT_HOST"* ]]; then
-          echo "✓ origin → $current_origin (already knot)"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ origin → $current_origin (already knot)"
         elif [[ "$FORCE" == true ]]; then
           ${pkgs.git}/bin/git remote set-url origin "$knot_url"
-          echo "✓ origin → $knot_url (was: $current_origin)"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ origin → $knot_url (was: $current_origin)"
         else
-          echo "! origin → $current_origin (use -f to override)"
+          ${pkgs.gum}/bin/gum style --foreground 214 "! origin → $current_origin (use -f to override)"
         fi
 
         # Configure github remote
         current_github=$(${pkgs.git}/bin/git remote get-url github 2>/dev/null || true)
         if [[ -z "$current_github" ]]; then
           ${pkgs.git}/bin/git remote add github "$github_url"
-          echo "✓ github → $github_url"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ github → $github_url"
         elif [[ "$FORCE" == true ]]; then
           ${pkgs.git}/bin/git remote set-url github "$github_url"
-          echo "✓ github → $github_url (was: $current_github)"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ github → $github_url (was: $current_github)"
         else
-          echo "✓ github → $current_github"
+          ${pkgs.gum}/bin/gum style --foreground 35 "✓ github → $current_github"
         fi
 
         # Set default push to origin
         ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
 
         echo
+        ${pkgs.gum}/bin/gum style --foreground 117 "Remotes:"
         ${pkgs.git}/bin/git remote -v
   '';
 
@@ -483,9 +485,9 @@ let
          if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
            NAME=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
          else
-           read -p "Repository name: " NAME
+           NAME=$(${pkgs.gum}/bin/gum input --placeholder "my-repo" --header "Repository name")
            if [[ -z "$NAME" ]]; then
-             echo "Error: Repository name is required" >&2
+             ${pkgs.gum}/bin/gum style --foreground 196 "Error: Repository name is required"
              exit 1
            fi
          fi
@@ -493,10 +495,24 @@ let
 
        # Prompt for description if not provided
        if [[ -z "$DESCRIPTION" ]]; then
-         read -p "Description (optional): " DESCRIPTION
+         DESCRIPTION=$(${pkgs.gum}/bin/gum input --placeholder "A cool project" --header "Description (optional)")
        fi
 
-       echo "Creating repository: $NAME"
+       # Choose visibility if not set via flags
+       if [[ "$VISIBILITY" == "public" ]] && [[ -t 0 ]]; then
+         VISIBILITY=$(${pkgs.gum}/bin/gum choose --header "Visibility" "public" "private")
+       fi
+
+       # Choose where to create
+       if [[ "$GITHUB" == true ]] && [[ "$TANGLED" == true ]] && [[ -t 0 ]]; then
+         TARGET=$(${pkgs.gum}/bin/gum choose --header "Create on" "Both GitHub and Tangled" "GitHub only" "Tangled only")
+         case "$TARGET" in
+           "GitHub only") TANGLED=false ;;
+           "Tangled only") GITHUB=false ;;
+         esac
+       fi
+
+       ${pkgs.gum}/bin/gum style --foreground 212 --bold "Creating repository: $NAME"
 
        # Create on Tangled
        if [[ "$TANGLED" == true ]]; then
@@ -506,7 +522,7 @@ let
          fi
 
          if [[ -z "$tangled_cookie" ]]; then
-           echo "Warning: No tangled session cookie found at /run/agenix/tangled-session" >&2
+           ${pkgs.gum}/bin/gum style --foreground 214 "Warning: No tangled session cookie found at /run/agenix/tangled-session"
          else
            encoded_desc=$(printf '%s' "$DESCRIPTION" | ${pkgs.gnused}/bin/sed 's/ /%20/g; s/!/%21/g; s/"/%22/g; s/#/%23/g; s/\$/%24/g; s/&/%26/g; s/'"'"'/%27/g; s/(/%28/g; s/)/%29/g; s/\*/%2A/g; s/+/%2B/g; s/,/%2C/g; s/\//%2F/g; s/:/%3A/g; s/;/%3B/g; s/=/%3D/g; s/?/%3F/g; s/@/%40/g; s/\[/%5B/g; s/\]/%5D/g')
 
@@ -519,9 +535,9 @@ let
              --data-raw "name=$NAME&description=$encoded_desc&branch=$BRANCH&domain=$TANGLED_DOMAIN")
 
            if echo "$response" | grep -qi "error\|failed"; then
-             echo "✗ Failed to create Tangled repository" >&2
+             ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create Tangled repository"
            else
-             echo "✓ Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
+             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
            fi
          fi
        fi
@@ -533,16 +549,16 @@ let
 
          if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
            if eval "${pkgs.gh}/bin/gh repo create \"$NAME\" $gh_flags --source=. --push --remote=github 2>/dev/null"; then
-             echo "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
+             ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
            else
-             echo "✗ Failed to create GitHub repository" >&2
+             ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create GitHub repository"
            fi
          else
            if eval "${pkgs.gh}/bin/gh repo create \"$NAME\" $gh_flags --clone 2>/dev/null"; then
-             echo "✓ GitHub: created and cloned $NAME"
+             ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: created and cloned $NAME"
              cd "$NAME"
            else
-             echo "✗ Failed to create GitHub repository" >&2
+             ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create GitHub repository"
            fi
          fi
        fi
