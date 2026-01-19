@@ -568,11 +568,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1768601062,
-        "narHash": "sha256-2dvlS0xL89LpQ/JVjoW6xGLJhNf9RCMBIWSsPm3hS3s=",
+        "lastModified": 1768792028,
+        "narHash": "sha256-lbkKbHjbNr8SLogs681FteOR7SA5TJac9/EX1Vgb7qk=",
         "ref": "main",
-        "rev": "5464eda1cbd0892b229129769fa41ffc94a0cb07",
-        "revCount": 56,
+        "rev": "95f9f1ff9986280a2a6a70063b7000e347d16429",
+        "revCount": 57,
         "type": "git",
         "url": "https://tangled.org/dunkirk.sh/herald"
       },
