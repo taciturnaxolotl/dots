@@ -521,6 +521,19 @@
     secretsFile = config.age.secrets.herald.path;
   };
 
+  services.caddy.virtualHosts."terebithia.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
+      root * ${./static}
+      file_server
+    '';
+  };
+
   services.n8n = {
     enable = true;
     environment = {

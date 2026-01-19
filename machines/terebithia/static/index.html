@@ -1,0 +1,1629 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ASCII Animation (WebGPU)</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        background: #0e131c;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      #canvas {
+        width: 100vw;
+        height: 100vh;
+      }
+
+      #error {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: monospace;
+        font-size: 18px;
+        color: #ff6b6b;
+        text-align: center;
+        display: none;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="error">
+      WebGPU not supported in this browser.<br />Try Chrome 113+ or Edge 113+
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script type="module">
+      const CONFIG = {
+        fps: 24,
+        charSize: 16,
+        bgColor: [14 / 255, 19 / 255, 28 / 255],
+        fgColor: [48 / 255, 57 / 255, 85 / 255],
+        fgColorHighlight: [132 / 255, 147 / 255, 193 / 255],
+        trailLength: 64,
+        trailRadius: 6.0,
+        trailRadiusSphere: 4.0,
+        glowRadius: 36,
+        trailDecayMs: 1500,
+        subdivisions: 0, // Base icosahedron (20 triangles)
+      };
+
+      const CHARS =
+        " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+      const SPARKLE_CHARS = [64, 14, 10]; // ` . *
+
+      // 6D sampling configuration (2 rows × 3 columns of circles)
+      // Staggered vertically for better coverage
+      const SAMPLING_POINTS = [
+        { x: 0.167, y: 0.3 }, // top-left (lowered)
+        { x: 0.5, y: 0.2 }, // top-center (raised)
+        { x: 0.833, y: 0.3 }, // top-right (lowered)
+        { x: 0.167, y: 0.7 }, // bottom-left (raised)
+        { x: 0.5, y: 0.8 }, // bottom-center (lowered)
+        { x: 0.833, y: 0.7 }, // bottom-right (raised)
+      ];
+      const SAMPLING_CIRCLE_RADIUS = 0.18; // Relative to cell height
+      const QUANTIZATION_LEVELS = 8; // 8^6 = 262144 entries in lookup table
+
+      // Mouse state
+      const mouseTrail = [];
+      let mousePos = { x: -1000, y: -1000 };
+
+      // Drag rotation state
+      let isDragging = false;
+      let dragStart = { x: 0, y: 0 };
+      let dragRotation = { x: 0, z: 0 }; // Current manual rotation offset
+      let velocity = { x: 0, z: 0 }; // Angular velocity from flick
+      let lastDragPos = { x: 0, y: 0 };
+      let lastDragTime = 0;
+      const DRAG_SENSITIVITY = 0.01;
+      const FRICTION = 0.97; // Velocity decay per frame
+      const VELOCITY_THRESHOLD = 0.0001; // Stop when velocity is tiny
+
+      // Easter egg states
+      let explosionProgress = 0; // 0 = normal, 0->1 = exploding, 1->2 = reassembling
+      let explosionStartTime = 0;
+      const EXPLOSION_DURATION = 800; // ms for each phase
+
+      let discoMode = false;
+      let discoStartTime = 0;
+      let typedKeys = "";
+      const DISCO_BEAT_BPM = 120;
+
+      // Hidden message inside the sphere
+      // Note: only characters in CHARS are available
+      const SECRET_MESSAGE = "eyJzdGFnZTEiOiAxfQ==";
+
+      // Generate icosphere geometry
+      function createIcosphere(subdivisions) {
+        const t = (1 + Math.sqrt(5)) / 2;
+
+        // Initial icosahedron vertices
+        let vertices = [
+          [-1, t, 0],
+          [1, t, 0],
+          [-1, -t, 0],
+          [1, -t, 0],
+          [0, -1, t],
+          [0, 1, t],
+          [0, -1, -t],
+          [0, 1, -t],
+          [t, 0, -1],
+          [t, 0, 1],
+          [-t, 0, -1],
+          [-t, 0, 1],
+        ].map((v) => {
+          const len = Math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2);
+          return [v[0] / len, v[1] / len, v[2] / len];
+        });
+
+        let faces = [
+          [0, 11, 5],
+          [0, 5, 1],
+          [0, 1, 7],
+          [0, 7, 10],
+          [0, 10, 11],
+          [1, 5, 9],
+          [5, 11, 4],
+          [11, 10, 2],
+          [10, 7, 6],
+          [7, 1, 8],
+          [3, 9, 4],
+          [3, 4, 2],
+          [3, 2, 6],
+          [3, 6, 8],
+          [3, 8, 9],
+          [4, 9, 5],
+          [2, 4, 11],
+          [6, 2, 10],
+          [8, 6, 7],
+          [9, 8, 1],
+        ];
+
+        // Subdivide
+        const midpointCache = {};
+        function getMidpoint(i1, i2) {
+          const key = i1 < i2 ? `${i1}_${i2}` : `${i2}_${i1}`;
+          if (midpointCache[key] !== undefined) return midpointCache[key];
+
+          const v1 = vertices[i1],
+            v2 = vertices[i2];
+          const mid = [
+            (v1[0] + v2[0]) / 2,
+            (v1[1] + v2[1]) / 2,
+            (v1[2] + v2[2]) / 2,
+          ];
+          const len = Math.sqrt(mid[0] ** 2 + mid[1] ** 2 + mid[2] ** 2);
+          vertices.push([mid[0] / len, mid[1] / len, mid[2] / len]);
+          midpointCache[key] = vertices.length - 1;
+          return midpointCache[key];
+        }
+
+        for (let i = 0; i < subdivisions; i++) {
+          const newFaces = [];
+          for (const [a, b, c] of faces) {
+            const ab = getMidpoint(a, b);
+            const bc = getMidpoint(b, c);
+            const ca = getMidpoint(c, a);
+            newFaces.push([a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]);
+          }
+          faces = newFaces;
+        }
+
+        // Build vertex buffer with positions and FACE normals (flat shading for faceted look)
+        const vertexData = new Float32Array(faces.length * 3 * 6);
+        let idx = 0;
+        for (const [a, b, c] of faces) {
+          const v0 = vertices[a],
+            v1 = vertices[b],
+            v2 = vertices[c];
+          // Calculate face normal
+          const e1 = [v1[0] - v0[0], v1[1] - v0[1], v1[2] - v0[2]];
+          const e2 = [v2[0] - v0[0], v2[1] - v0[1], v2[2] - v0[2]];
+          const nx = e1[1] * e2[2] - e1[2] * e2[1];
+          const ny = e1[2] * e2[0] - e1[0] * e2[2];
+          const nz = e1[0] * e2[1] - e1[1] * e2[0];
+          const len = Math.sqrt(nx * nx + ny * ny + nz * nz);
+          const normal = [nx / len, ny / len, nz / len];
+
+          for (const vi of [a, b, c]) {
+            const v = vertices[vi];
+            vertexData[idx++] = v[0];
+            vertexData[idx++] = v[1];
+            vertexData[idx++] = v[2];
+            vertexData[idx++] = normal[0];
+            vertexData[idx++] = normal[1];
+            vertexData[idx++] = normal[2];
+          }
+        }
+        return { vertexData, vertexCount: faces.length * 3 };
+      }
+
+      // Golden ratio for non-repeating tumble
+      const PHI = (1 + Math.sqrt(5)) / 2;
+
+      // Ambient drift rotation (when not interacting)
+      function getAmbientRotation(frame) {
+        const fps = CONFIG.fps;
+        const t = frame / fps;
+
+        const speedX = 0.15;
+        const speedZ = speedX * PHI;
+
+        const waveX = Math.sin(t * 0.3) * 0.1;
+        const waveZ = Math.sin(t * 0.19) * 0.08;
+
+        return {
+          x: t * speedX + waveX,
+          z: t * speedZ + waveZ,
+        };
+      }
+
+      // Combined rotation: ambient drift + drag offset + momentum
+      function getRotationAngles(frame) {
+        // Apply momentum (decays each frame)
+        if (!isDragging) {
+          dragRotation.x += velocity.x;
+          dragRotation.z += velocity.z;
+          velocity.x *= FRICTION;
+          velocity.z *= FRICTION;
+
+          // Stop tiny velocities
+          if (Math.abs(velocity.x) < VELOCITY_THRESHOLD) velocity.x = 0;
+          if (Math.abs(velocity.z) < VELOCITY_THRESHOLD) velocity.z = 0;
+        }
+
+        const ambient = getAmbientRotation(frame);
+
+        return {
+          x: ambient.x + dragRotation.x,
+          z: ambient.z + dragRotation.z,
+        };
+      }
+
+      // Build 6D shape vectors for all ASCII characters
+      function buildCharacterVectors(chars, fontSize, fontFamily) {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+
+        ctx.font = `${fontSize}px ${fontFamily}`;
+        const metrics = ctx.measureText("M");
+        const charWidth =
+          metrics.actualBoundingBoxLeft + metrics.actualBoundingBoxRight;
+        const charHeight = fontSize;
+
+        canvas.width = Math.ceil(charWidth * 2);
+        canvas.height = Math.ceil(charHeight * 2);
+
+        const circleRadius = SAMPLING_CIRCLE_RADIUS * charHeight;
+        const samplesPerCircle = 32;
+
+        // Generate spiral sampling points within circle (golden angle)
+        const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+        const circleSamples = [];
+        for (let i = 0; i < samplesPerCircle; i++) {
+          const theta = i * goldenAngle;
+          const r = circleRadius * Math.sqrt((i + 0.5) / samplesPerCircle);
+          circleSamples.push({
+            x: r * Math.cos(theta),
+            y: r * Math.sin(theta),
+          });
+        }
+
+        const vectors = [];
+
+        for (const char of chars) {
+          // Clear and render character
+          ctx.fillStyle = "black";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.font = `${fontSize}px ${fontFamily}`;
+          ctx.fillStyle = "white";
+          ctx.textBaseline = "top";
+          ctx.fillText(char, charWidth * 0.25, charHeight * 0.25);
+
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const pixels = imageData.data;
+
+          // Sample each of the 6 circles
+          const vector = [];
+          for (const point of SAMPLING_POINTS) {
+            const cx = charWidth * 0.25 + point.x * charWidth;
+            const cy = charHeight * 0.25 + point.y * charHeight;
+
+            let total = 0;
+            let count = 0;
+
+            for (const sp of circleSamples) {
+              const px = Math.floor(cx + sp.x);
+              const py = Math.floor(cy + sp.y);
+
+              if (
+                px >= 0 &&
+                px < canvas.width &&
+                py >= 0 &&
+                py < canvas.height
+              ) {
+                const idx = (py * canvas.width + px) * 4;
+                total += pixels[idx] / 255;
+                count++;
+              }
+            }
+
+            vector.push(count > 0 ? total / count : 0);
+          }
+
+          vectors.push({ char, vector });
+        }
+
+        // Normalize vectors: divide each component by max across all characters
+        const maxVals = new Array(6).fill(0);
+        for (const { vector } of vectors) {
+          for (let i = 0; i < 6; i++) {
+            maxVals[i] = Math.max(maxVals[i], vector[i]);
+          }
+        }
+        for (const { vector } of vectors) {
+          for (let i = 0; i < 6; i++) {
+            if (maxVals[i] > 0) vector[i] /= maxVals[i];
+          }
+        }
+
+        return { vectors, charWidth, charHeight };
+      }
+
+      // Create 6D lookup texture: maps quantized 6D vectors to character indices
+      // Uses a 3D texture conceptually, but we flatten to 2D for WebGPU compatibility
+      // Texture dimensions: (levels^3) x (levels^3) where levels = QUANTIZATION_LEVELS
+      function createCharacterLookupTexture(vectors) {
+        const levels = QUANTIZATION_LEVELS;
+        const size = levels * levels * levels; // 512 for levels=8
+        const data = new Uint8Array(size * size);
+
+        // For each possible quantized 6D vector, find best matching character
+        for (let d0 = 0; d0 < levels; d0++) {
+          for (let d1 = 0; d1 < levels; d1++) {
+            for (let d2 = 0; d2 < levels; d2++) {
+              for (let d3 = 0; d3 < levels; d3++) {
+                for (let d4 = 0; d4 < levels; d4++) {
+                  for (let d5 = 0; d5 < levels; d5++) {
+                    // Convert quantized values back to 0-1 range
+                    const lookupVec = [
+                      d0 / (levels - 1),
+                      d1 / (levels - 1),
+                      d2 / (levels - 1),
+                      d3 / (levels - 1),
+                      d4 / (levels - 1),
+                      d5 / (levels - 1),
+                    ];
+
+                    // Find nearest character vector (squared Euclidean distance)
+                    let bestIdx = 0;
+                    let bestDist = Infinity;
+
+                    for (let i = 0; i < vectors.length; i++) {
+                      const vec = vectors[i].vector;
+                      let dist = 0;
+                      for (let j = 0; j < 6; j++) {
+                        const diff = lookupVec[j] - vec[j];
+                        dist += diff * diff;
+                      }
+                      if (dist < bestDist) {
+                        bestDist = dist;
+                        bestIdx = i;
+                      }
+                    }
+
+                    // Pack into 2D texture coordinates
+                    // Row: d0 + d1*levels + d2*levels^2
+                    // Col: d3 + d4*levels + d5*levels^2
+                    const row = d0 + d1 * levels + d2 * levels * levels;
+                    const col = d3 + d4 * levels + d5 * levels * levels;
+                    data[row * size + col] = bestIdx;
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        return { data, size };
+      }
+
+      // Create character atlas
+      function createCharacterAtlas() {
+        const testCanvas = document.createElement("canvas");
+        const testCtx = testCanvas.getContext("2d");
+        testCtx.font = `${CONFIG.charSize}px "Fira Code", Monaco, Consolas, monospace`;
+
+        const charWidth = Math.ceil(testCtx.measureText("M").width);
+        const charHeight = CONFIG.charSize;
+
+        const atlasCanvas = document.createElement("canvas");
+        atlasCanvas.width = charWidth * CHARS.length;
+        atlasCanvas.height = charHeight;
+        const ctx = atlasCanvas.getContext("2d");
+
+        ctx.fillStyle = "black";
+        ctx.fillRect(0, 0, atlasCanvas.width, atlasCanvas.height);
+        ctx.font = `${CONFIG.charSize}px "Fira Code", Monaco, Consolas, monospace`;
+        ctx.fillStyle = "white";
+        ctx.textBaseline = "top";
+
+        for (let i = 0; i < CHARS.length; i++) {
+          ctx.fillText(CHARS[i], i * charWidth, 0);
+        }
+
+        return { canvas: atlasCanvas, charWidth, charHeight };
+      }
+
+      // Matrix helpers
+      function mat4Perspective(fov, aspect, near, far) {
+        const f = 1.0 / Math.tan(fov / 2);
+        return new Float32Array([
+          f / aspect,
+          0,
+          0,
+          0,
+          0,
+          f,
+          0,
+          0,
+          0,
+          0,
+          (far + near) / (near - far),
+          -1,
+          0,
+          0,
+          (2 * far * near) / (near - far),
+          0,
+        ]);
+      }
+
+      function mat4RotateX(angle) {
+        const c = Math.cos(angle),
+          s = Math.sin(angle);
+        return new Float32Array([
+          1,
+          0,
+          0,
+          0,
+          0,
+          c,
+          s,
+          0,
+          0,
+          -s,
+          c,
+          0,
+          0,
+          0,
+          0,
+          1,
+        ]);
+      }
+
+      function mat4RotateZ(angle) {
+        const c = Math.cos(angle),
+          s = Math.sin(angle);
+        return new Float32Array([
+          c,
+          s,
+          0,
+          0,
+          -s,
+          c,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+        ]);
+      }
+
+      function mat4Multiply(a, b) {
+        const result = new Float32Array(16);
+        for (let i = 0; i < 4; i++) {
+          for (let j = 0; j < 4; j++) {
+            result[j * 4 + i] =
+              a[i] * b[j * 4] +
+              a[i + 4] * b[j * 4 + 1] +
+              a[i + 8] * b[j * 4 + 2] +
+              a[i + 12] * b[j * 4 + 3];
+          }
+        }
+        return result;
+      }
+
+      function mat4Translate(x, y, z) {
+        return new Float32Array([
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          0,
+          0,
+          0,
+          1,
+          0,
+          x,
+          y,
+          z,
+          1,
+        ]);
+      }
+
+      // Hash for noise
+      function hash(x, y, seed) {
+        const n = Math.sin(x * 127.1 + y * 311.7 + seed * 113.5) * 43758.5453;
+        return n - Math.floor(n);
+      }
+
+      async function init() {
+        const canvas = document.getElementById("canvas");
+
+        if (!navigator.gpu) {
+          document.getElementById("error").style.display = "block";
+          return;
+        }
+
+        const adapter = await navigator.gpu.requestAdapter();
+        if (!adapter) {
+          document.getElementById("error").style.display = "block";
+          return;
+        }
+
+        const device = await adapter.requestDevice();
+        const context = canvas.getContext("webgpu");
+        const format = navigator.gpu.getPreferredCanvasFormat();
+
+        context.configure({ device, format, alphaMode: "opaque" });
+
+        // Create icosphere
+        const { vertexData, vertexCount } = createIcosphere(
+          CONFIG.subdivisions,
+        );
+        const vertexBuffer = device.createBuffer({
+          size: vertexData.byteLength,
+          usage: GPUBufferUsage.VERTEX | GPUBufferUsage.COPY_DST,
+        });
+        device.queue.writeBuffer(vertexBuffer, 0, vertexData);
+
+        // Create character atlas texture
+        const atlas = createCharacterAtlas();
+        const charAtlasTexture = device.createTexture({
+          size: [atlas.canvas.width, atlas.canvas.height],
+          format: "rgba8unorm",
+          usage:
+            GPUTextureUsage.TEXTURE_BINDING |
+            GPUTextureUsage.COPY_DST |
+            GPUTextureUsage.RENDER_ATTACHMENT,
+        });
+        device.queue.copyExternalImageToTexture(
+          { source: atlas.canvas },
+          { texture: charAtlasTexture },
+          [atlas.canvas.width, atlas.canvas.height],
+        );
+
+        // Build character shape vectors and lookup texture
+        console.log("Building character vectors...");
+        const fontFamily = '"Fira Code", Monaco, Consolas, monospace';
+        const { vectors } = buildCharacterVectors(
+          CHARS.split(""),
+          CONFIG.charSize * 4,
+          fontFamily,
+        );
+        console.log("Creating lookup texture...");
+        const { data: lookupData, size: lookupSize } =
+          createCharacterLookupTexture(vectors);
+        console.log(
+          `Lookup texture: ${lookupSize}x${lookupSize} (${lookupData.length} bytes)`,
+        );
+
+        const charLookupTexture = device.createTexture({
+          size: [lookupSize, lookupSize],
+          format: "r8uint",
+          usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+        });
+        device.queue.writeTexture(
+          { texture: charLookupTexture },
+          lookupData,
+          { bytesPerRow: lookupSize },
+          [lookupSize, lookupSize],
+        );
+
+        // Sphere render shader
+        const sphereShaderCode = `
+        struct Uniforms {
+          modelView: mat4x4f,
+          projection: mat4x4f,
+          lightDir: vec3f,
+          explosionFactor: f32,
+        }
+        @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+
+        struct VertexOutput {
+          @builtin(position) position: vec4f,
+          @location(0) @interpolate(flat) normal: vec3f,
+          @location(1) worldPos: vec3f,
+        }
+        
+        fn hash3(p: vec3f) -> vec3f {
+          var q = vec3f(
+            dot(p, vec3f(127.1, 311.7, 74.7)),
+            dot(p, vec3f(269.5, 183.3, 246.1)),
+            dot(p, vec3f(113.5, 271.9, 124.6))
+          );
+          return fract(sin(q) * 43758.5453) * 2.0 - 1.0;
+        }
+        
+        fn hash1(p: vec3f) -> f32 {
+          return fract(sin(dot(p, vec3f(127.1, 311.7, 74.7))) * 43758.5453);
+        }
+
+        @vertex
+        fn vertexMain(@location(0) position: vec3f, @location(1) normal: vec3f) -> VertexOutput {
+          var output: VertexOutput;
+          
+          // Explosion effect: entire triangle faces fly outward as chunks
+          // Use face normal as seed so all 3 vertices of a face move together
+          var explodedPos = position;
+          if (uniforms.explosionFactor > 0.0) {
+            // Face-based randomness (normal is same for all verts in a face)
+            let faceRand = hash3(normal * 100.0);
+            let faceRand1 = hash1(normal * 100.0);
+            
+            // Chunk flies outward along face normal + slight random offset
+            let explodeDir = normalize(normal + faceRand * 0.3);
+            
+            // Ease out for explosion, ease in for reassembly
+            let factor = uniforms.explosionFactor;
+            let eased = factor * factor * (3.0 - 2.0 * factor); // smoothstep
+            
+            // Calculate face center for rotation pivot
+            // (approximate - offset position toward face center before rotating)
+            let toCenter = normal * dot(position, normal) - position;
+            let faceCenter = position + toCenter * 0.5;
+            let localPos = position - faceCenter;
+            
+            // Tumbling rotation around random axis
+            let tumbleSpeed = 4.0 + faceRand1 * 8.0; // Variable spin speed per chunk
+            let angle = factor * tumbleSpeed;
+            let axis = normalize(faceRand + vec3f(0.1, 0.1, 0.1));
+            
+            // Rodrigues rotation formula
+            let c = cos(angle);
+            let s = sin(angle);
+            let rotatedLocal = localPos * c + cross(axis, localPos) * s + axis * dot(axis, localPos) * (1.0 - c);
+            
+            // Translate chunk outward
+            let chunkPos = faceCenter + rotatedLocal + explodeDir * eased * 2.0;
+            
+            // Add slight spread - chunks drift apart
+            explodedPos = chunkPos + faceRand * eased * 0.3;
+          }
+          
+          let worldPos = uniforms.modelView * vec4f(explodedPos, 1.0);
+          output.position = uniforms.projection * worldPos;
+          output.normal = (uniforms.modelView * vec4f(normal, 0.0)).xyz;
+          output.worldPos = worldPos.xyz;
+          return output;
+        }
+
+        @fragment
+        fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
+          let n = normalize(input.normal);
+          let l = normalize(uniforms.lightDir);
+          
+          // Diffuse lighting (flat shading)
+          let diffuse = max(dot(n, l), 0.0);
+          let brightness = diffuse * 0.8 + 0.15;
+          return vec4f(vec3f(brightness), 1.0);
+        }
+      `;
+
+        // ASCII shader with 6D shape-based character matching
+        const asciiShaderCode = `
+        struct Uniforms {
+          resolution: vec2f,
+          cellSize: vec2f,
+          charCount: f32,
+          charAspect: f32,
+          time: f32,
+          quantLevels: f32,
+          sparkleChars: vec3f,
+          _pad1: f32,
+          bgColor: vec3f,
+          _pad2: f32,
+          fgColor: vec3f,
+          _pad3: f32,
+          fgColorHighlight: vec3f,
+          _pad4: f32,
+          // 6 sampling points (x,y pairs) - staggered for better coverage
+          samplePt0: vec2f,
+          samplePt1: vec2f,
+          samplePt2: vec2f,
+          samplePt3: vec2f,
+          samplePt4: vec2f,
+          samplePt5: vec2f,
+          sampleRadius: f32,
+          explosionFactor: f32,
+          msgLen: f32,
+          _pad5: f32,
+          // Message data: up to 20 characters as char indices (16-byte aligned)
+          msgChars: array<vec4f, 5>,
+        }
+        @group(0) @binding(0) var<uniform> uniforms: Uniforms;
+        @group(0) @binding(1) var sphereTex: texture_2d<f32>;
+        @group(0) @binding(2) var sphereSampler: sampler;
+        @group(0) @binding(3) var charAtlas: texture_2d<f32>;
+        @group(0) @binding(4) var charSampler: sampler;
+        @group(0) @binding(5) var trailTex: texture_2d<f32>;
+        @group(0) @binding(6) var trailSampler: sampler;
+        @group(0) @binding(7) var charLookup: texture_2d<u32>;
+        
+        fn getMsgChar(idx: i32) -> f32 {
+          let vecIdx = idx / 4;
+          let compIdx = idx % 4;
+          var v: vec4f;
+          if (vecIdx == 0) { v = uniforms.msgChars[0]; }
+          else if (vecIdx == 1) { v = uniforms.msgChars[1]; }
+          else if (vecIdx == 2) { v = uniforms.msgChars[2]; }
+          else if (vecIdx == 3) { v = uniforms.msgChars[3]; }
+          else { v = uniforms.msgChars[4]; }
+          if (compIdx == 0) { return v.x; }
+          else if (compIdx == 1) { return v.y; }
+          else if (compIdx == 2) { return v.z; }
+          else { return v.w; }
+        }
+
+        fn hash(p: vec2f) -> f32 {
+          return fract(sin(dot(p, vec2f(127.1, 311.7))) * 43758.5453);
+        }
+        
+        fn sampleChar(charIdx: f32, cellUV: vec2f) -> f32 {
+          let charU = (charIdx + cellUV.x) / uniforms.charCount;
+          return textureSampleLevel(charAtlas, charSampler, vec2f(charU, cellUV.y), 0.0).r;
+        }
+        
+        // Sample a circular region in the sphere texture
+        fn sampleCircle(centerUV: vec2f, radius: f32, imgSize: vec2f) -> f32 {
+          let texelSize = 1.0 / imgSize;
+          let radiusTexels = radius * imgSize.y; // radius relative to cell height
+          
+          // 5-sample pattern: center + 4 cardinal directions
+          var total = 0.0;
+          total += textureSampleLevel(sphereTex, sphereSampler, centerUV, 0.0).r;
+          total += textureSampleLevel(sphereTex, sphereSampler, centerUV + vec2f(radiusTexels * 0.5, 0.0) * texelSize, 0.0).r;
+          total += textureSampleLevel(sphereTex, sphereSampler, centerUV - vec2f(radiusTexels * 0.5, 0.0) * texelSize, 0.0).r;
+          total += textureSampleLevel(sphereTex, sphereSampler, centerUV + vec2f(0.0, radiusTexels * 0.5) * texelSize, 0.0).r;
+          total += textureSampleLevel(sphereTex, sphereSampler, centerUV - vec2f(0.0, radiusTexels * 0.5) * texelSize, 0.0).r;
+          return total / 5.0;
+        }
+        
+        // Look up best character from 6D vector using quantized lookup texture
+        fn lookupCharacter(v: array<f32, 6>) -> f32 {
+          let levels = uniforms.quantLevels;
+          let maxIdx = levels - 1.0;
+          
+          // Quantize each component to 0..levels-1
+          let q0 = u32(clamp(v[0] * maxIdx + 0.5, 0.0, maxIdx));
+          let q1 = u32(clamp(v[1] * maxIdx + 0.5, 0.0, maxIdx));
+          let q2 = u32(clamp(v[2] * maxIdx + 0.5, 0.0, maxIdx));
+          let q3 = u32(clamp(v[3] * maxIdx + 0.5, 0.0, maxIdx));
+          let q4 = u32(clamp(v[4] * maxIdx + 0.5, 0.0, maxIdx));
+          let q5 = u32(clamp(v[5] * maxIdx + 0.5, 0.0, maxIdx));
+          
+          // Pack into 2D texture coordinates
+          let levelsU = u32(levels);
+          let row = q0 + q1 * levelsU + q2 * levelsU * levelsU;
+          let col = q3 + q4 * levelsU + q5 * levelsU * levelsU;
+          
+          let charIdx = textureLoad(charLookup, vec2i(i32(col), i32(row)), 0).r;
+          return f32(charIdx);
+        }
+
+        @vertex
+        fn vertexMain(@builtin(vertex_index) vertexIndex: u32) -> @builtin(position) vec4f {
+          var pos = array<vec2f, 6>(
+            vec2f(-1, -1), vec2f(1, -1), vec2f(-1, 1),
+            vec2f(-1, 1), vec2f(1, -1), vec2f(1, 1)
+          );
+          return vec4f(pos[vertexIndex], 0.0, 1.0);
+        }
+
+        @fragment
+        fn fragmentMain(@builtin(position) fragCoord: vec4f) -> @location(0) vec4f {
+          let pixelPos = fragCoord.xy;
+          let cellPos = floor(pixelPos / uniforms.cellSize);
+          let gridSize = floor(uniforms.resolution / uniforms.cellSize);
+          
+          // Cell UV for character sampling (compute once)
+          var cellUV = fract(pixelPos / uniforms.cellSize);
+          cellUV.y = 1.0 - cellUV.y;
+          
+          // Trail texture lookup (use textureLoad to avoid derivatives)
+          let trailDims = vec2i(textureDimensions(trailTex));
+          let trailCoord = vec2i(i32(cellPos.x), i32(cellPos.y));
+          let clampedCoord = clamp(trailCoord, vec2i(0), trailDims - vec2i(1));
+          let trailVals = textureLoad(trailTex, clampedCoord, 0).rg;
+          let sparkleVal = trailVals.r;
+          let glowVal = trailVals.g;
+          
+          // Calculate image dimensions to maintain square aspect
+          let fitByWidthRows = gridSize.x * uniforms.charAspect;
+          let fitByHeightCols = gridSize.y / uniforms.charAspect;
+          
+          var imgSize: vec2f;
+          if (fitByWidthRows <= gridSize.y) {
+            imgSize = vec2f(gridSize.x, fitByWidthRows);
+          } else {
+            imgSize = vec2f(fitByHeightCols, gridSize.y);
+          }
+          
+          let offset = floor((gridSize - imgSize) * 0.5);
+          let imgCell = cellPos - offset;
+          
+          // Determine if inside bounds
+          let inBounds = imgCell.x >= 0.0 && imgCell.x < imgSize.x && imgCell.y >= 0.0 && imgCell.y < imgSize.y;
+          
+          // Base UV for this cell in image space
+          var baseUV = (clamp(imgCell, vec2f(0.0), imgSize - vec2f(1.0)) + 0.5) / imgSize;
+          baseUV.y = 1.0 - baseUV.y;
+          let cellSizeUV = 1.0 / imgSize;
+          
+          // Sample 6 circular regions to build shape vector
+          let samplePoints = array<vec2f, 6>(
+            uniforms.samplePt0, uniforms.samplePt1, uniforms.samplePt2,
+            uniforms.samplePt3, uniforms.samplePt4, uniforms.samplePt5
+          );
+          
+          var shapeVec: array<f32, 6>;
+          var totalBrightness = 0.0;
+          for (var i = 0u; i < 6u; i++) {
+            let pt = samplePoints[i];
+            // Map point from cell-relative (0-1) to image UV space
+            let sampleUV = baseUV + (pt - vec2f(0.5)) * cellSizeUV;
+            let val = sampleCircle(sampleUV, uniforms.sampleRadius * cellSizeUV.y, imgSize);
+            shapeVec[i] = val;
+            totalBrightness += val;
+          }
+          let brightness = totalBrightness / 6.0;
+          
+          // Calculate sparkle character index
+          let sparkleRand = hash(cellPos + floor(uniforms.time * 8.0));
+          let sparkleIdx = i32(sparkleRand * 3.0) % 3;
+          var sparkleCharIdx: f32;
+          if (sparkleIdx == 0) { sparkleCharIdx = uniforms.sparkleChars.x; }
+          else if (sparkleIdx == 1) { sparkleCharIdx = uniforms.sparkleChars.y; }
+          else { sparkleCharIdx = uniforms.sparkleChars.z; }
+          
+          // Render secret message in center when sphere is exploded
+          if (uniforms.explosionFactor > 0.3 && uniforms.msgLen > 0.0) {
+            let msgLen = i32(uniforms.msgLen);
+            let centerRow = floor(gridSize.y * 0.5);
+            let msgStartCol = floor((gridSize.x - f32(msgLen)) * 0.5);
+            
+            // Check if this cell is part of the message
+            let msgCol = i32(cellPos.x - msgStartCol);
+            let isMessageCell = cellPos.y == centerRow && msgCol >= 0 && msgCol < msgLen;
+            
+            if (isMessageCell) {
+              let msgCharIdx = getMsgChar(msgCol);
+              // Use non-flipped UV for message (cellUV.y was flipped for sphere)
+              let msgUV = vec2f(cellUV.x, 1.0 - cellUV.y);
+              let msgAlpha = sampleChar(msgCharIdx, msgUV);
+              // Fade in based on explosion progress
+              let fadeIn = smoothstep(0.3, 0.6, uniforms.explosionFactor);
+              let fadeOut = 1.0 - smoothstep(0.7, 1.0, uniforms.explosionFactor);
+              let msgFade = fadeIn * fadeOut;
+              if (msgFade > 0.01) {
+                let msgColor = mix(uniforms.fgColor, uniforms.fgColorHighlight, 0.8);
+                return vec4f(mix(uniforms.bgColor, msgColor, msgAlpha * msgFade), 1.0);
+              }
+            }
+          }
+          
+          // Outside bounds case
+          if (!inBounds) {
+            if (sparkleVal > 0.01) {
+              let charAlpha = sampleChar(sparkleCharIdx, cellUV) * sparkleVal;
+              return vec4f(mix(uniforms.bgColor, uniforms.fgColor, charAlpha), 1.0);
+            }
+            return vec4f(uniforms.bgColor, 1.0);
+          }
+          
+          // Dark areas with sparkle
+          if (brightness < 0.1 && sparkleVal > 0.01) {
+            let fade = sparkleVal * (1.0 - brightness * 10.0);
+            let charAlpha = sampleChar(sparkleCharIdx, cellUV) * fade;
+            return vec4f(mix(uniforms.bgColor, uniforms.fgColor, charAlpha), 1.0);
+          }
+          
+          // Boost shape vector from sparkle trail
+          if (sparkleVal > 0.01 && brightness >= 0.1) {
+            let rand = hash(cellPos + floor(uniforms.time * 6.0));
+            let boost = sparkleVal * 0.5 * (0.3 + rand * 0.7);
+            for (var i = 0u; i < 6u; i++) {
+              shapeVec[i] = min(1.0, shapeVec[i] + boost);
+            }
+          }
+          
+          // Look up best matching character using 6D shape vector
+          let charIdx = lookupCharacter(shapeVec);
+          let charAlpha = sampleChar(charIdx, cellUV);
+          
+          // Apply glow
+          var finalFg = uniforms.fgColor;
+          if (glowVal > 0.01) {
+            finalFg = mix(uniforms.fgColor, uniforms.fgColorHighlight, glowVal);
+          }
+          
+          return vec4f(mix(uniforms.bgColor, finalFg, charAlpha), 1.0);
+        }
+      `;
+
+        // Create sphere render pipeline
+        const sphereShaderModule = device.createShaderModule({
+          code: sphereShaderCode,
+        });
+        const sphereUniformBuffer = device.createBuffer({
+          size: 160, // 2 mat4 + vec3 + f32 (explosionFactor) + padding
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        const sphereBindGroupLayout = device.createBindGroupLayout({
+          entries: [
+            {
+              binding: 0,
+              visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+              buffer: { type: "uniform" },
+            },
+          ],
+        });
+
+        const spherePipeline = device.createRenderPipeline({
+          layout: device.createPipelineLayout({
+            bindGroupLayouts: [sphereBindGroupLayout],
+          }),
+          vertex: {
+            module: sphereShaderModule,
+            entryPoint: "vertexMain",
+            buffers: [
+              {
+                arrayStride: 24,
+                attributes: [
+                  { shaderLocation: 0, offset: 0, format: "float32x3" },
+                  { shaderLocation: 1, offset: 12, format: "float32x3" },
+                ],
+              },
+            ],
+          },
+          fragment: {
+            module: sphereShaderModule,
+            entryPoint: "fragmentMain",
+            targets: [{ format: "rgba8unorm" }],
+          },
+          primitive: { topology: "triangle-list", cullMode: "back" },
+          depthStencil: {
+            format: "depth24plus",
+            depthWriteEnabled: true,
+            depthCompare: "less",
+          },
+        });
+
+        // Create ASCII pipeline
+        const asciiShaderModule = device.createShaderModule({
+          code: asciiShaderCode,
+        });
+        const asciiUniformBuffer = device.createBuffer({
+          size: 272, // Expanded uniforms with 6 sampling points + radius + explosion + message (20 chars)
+          usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+        });
+
+        // Convert secret message to character indices
+        function messageToCharIndices(msg) {
+          const indices = new Array(20).fill(0);
+          for (let i = 0; i < Math.min(msg.length, 20); i++) {
+            const charIdx = CHARS.indexOf(msg[i]);
+            indices[i] = charIdx >= 0 ? charIdx : 0;
+          }
+          return indices;
+        }
+        const msgCharIndices = messageToCharIndices(SECRET_MESSAGE);
+
+        const asciiBindGroupLayout = device.createBindGroupLayout({
+          entries: [
+            {
+              binding: 0,
+              visibility: GPUShaderStage.FRAGMENT,
+              buffer: { type: "uniform" },
+            },
+            {
+              binding: 1,
+              visibility: GPUShaderStage.FRAGMENT,
+              texture: { sampleType: "float" },
+            },
+            {
+              binding: 2,
+              visibility: GPUShaderStage.FRAGMENT,
+              sampler: { type: "filtering" },
+            },
+            {
+              binding: 3,
+              visibility: GPUShaderStage.FRAGMENT,
+              texture: { sampleType: "float" },
+            },
+            {
+              binding: 4,
+              visibility: GPUShaderStage.FRAGMENT,
+              sampler: { type: "filtering" },
+            },
+            {
+              binding: 5,
+              visibility: GPUShaderStage.FRAGMENT,
+              texture: { sampleType: "float" },
+            },
+            {
+              binding: 6,
+              visibility: GPUShaderStage.FRAGMENT,
+              sampler: { type: "filtering" },
+            },
+            {
+              binding: 7,
+              visibility: GPUShaderStage.FRAGMENT,
+              texture: { sampleType: "uint" },
+            },
+          ],
+        });
+
+        const asciiPipeline = device.createRenderPipeline({
+          layout: device.createPipelineLayout({
+            bindGroupLayouts: [asciiBindGroupLayout],
+          }),
+          vertex: { module: asciiShaderModule, entryPoint: "vertexMain" },
+          fragment: {
+            module: asciiShaderModule,
+            entryPoint: "fragmentMain",
+            targets: [{ format }],
+          },
+          primitive: { topology: "triangle-list" },
+        });
+
+        const sampler = device.createSampler({
+          magFilter: "linear",
+          minFilter: "linear",
+        });
+        const nearestSampler = device.createSampler({
+          magFilter: "nearest",
+          minFilter: "nearest",
+        });
+
+        // Render targets (will be resized)
+        let sphereTexture, sphereDepthTexture, trailTexture;
+        let sphereBindGroup, asciiBindGroup;
+        let currentWidth = 0,
+          currentHeight = 0;
+        let trailCols = 0,
+          trailRows = 0;
+
+        function updateTrailTexture(cols, rows, charWidth, charHeight) {
+          const data = new Uint8Array(cols * rows * 2);
+          const now = performance.now();
+          const timeSeed = now * 0.001;
+
+          // Image bounds calc
+          const charAspect = charWidth / charHeight;
+          const fitByWidthRows = cols * charAspect;
+          const fitByHeightCols = rows / charAspect;
+          let imgCols, imgRows;
+          if (fitByWidthRows <= rows) {
+            imgCols = cols;
+            imgRows = fitByWidthRows;
+          } else {
+            imgRows = rows;
+            imgCols = fitByHeightCols;
+          }
+          const offsetCol = Math.floor((cols - imgCols) / 2);
+          const offsetRow = Math.floor((rows - imgRows) / 2);
+
+          // Remove expired
+          while (
+            mouseTrail.length > 0 &&
+            now - mouseTrail[0].time > CONFIG.trailDecayMs
+          ) {
+            mouseTrail.shift();
+          }
+
+          // Draw sparkle trail
+          for (let i = 0; i < mouseTrail.length; i++) {
+            const point = mouseTrail[i];
+            const timeAge = 1 - (now - point.time) / CONFIG.trailDecayMs;
+            const posAge = (i + 1) / mouseTrail.length;
+            const age = Math.min(timeAge, posAge);
+            const baseIntensity = age * 255;
+            const bgSparkleRadius = CONFIG.trailRadius * (0.3 + age * 0.7);
+            const sphereSparkleRadius =
+              CONFIG.trailRadiusSphere * (0.3 + age * 0.7);
+            const maxRadius = Math.max(bgSparkleRadius, sphereSparkleRadius);
+
+            const cellX = Math.floor(point.x / charWidth);
+            const cellY = Math.floor(point.y / charHeight);
+
+            for (
+              let dy = -Math.ceil(maxRadius);
+              dy <= Math.ceil(maxRadius);
+              dy++
+            ) {
+              for (
+                let dx = -Math.ceil(maxRadius);
+                dx <= Math.ceil(maxRadius);
+                dx++
+              ) {
+                const px = cellX + dx,
+                  py = cellY + dy;
+                if (px < 0 || px >= cols || py < 0 || py >= rows) continue;
+
+                const imgCellX = px - offsetCol;
+                const imgCellY = rows - 1 - py - offsetRow;
+                const inSphere =
+                  imgCellX >= 0 &&
+                  imgCellX < imgCols &&
+                  imgCellY >= 0 &&
+                  imgCellY < imgRows;
+                const sparkleRadius = inSphere
+                  ? sphereSparkleRadius
+                  : bgSparkleRadius;
+
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > sparkleRadius) continue;
+
+                const idx = (py * cols + px) * 2;
+                const normalizedDist = dist / sparkleRadius;
+                const noiseStrength = normalizedDist * 2.0;
+                const noiseX = (hash(px, py, timeSeed) - 0.5) * noiseStrength;
+                const noiseY =
+                  (hash(px + 100, py + 100, timeSeed) - 0.5) * noiseStrength;
+                const noisyDist = Math.sqrt(
+                  (dx + noiseX) ** 2 + (dy + noiseY) ** 2,
+                );
+
+                if (noisyDist <= sparkleRadius) {
+                  const baseFalloff = 1 - noisyDist / sparkleRadius;
+                  const fadeNoise = hash(px, py, timeSeed + i * 0.1);
+                  const edgeFactor = normalizedDist;
+                  const noisyFalloff =
+                    baseFalloff * (1 - edgeFactor * 0.7 * (1 - fadeNoise));
+                  const val = Math.floor(baseIntensity * noisyFalloff);
+                  data[idx] = Math.max(data[idx], val);
+                }
+              }
+            }
+          }
+
+          // Glow channel
+          if (mousePos.x >= 0 && mousePos.y >= 0) {
+            const cellX = Math.floor(mousePos.x / charWidth);
+            const cellY = Math.floor(mousePos.y / charHeight);
+            const glowRadius = CONFIG.glowRadius;
+            const aspectRatio = charHeight / charWidth;
+            const yRadius = Math.ceil(glowRadius / aspectRatio);
+
+            for (let dy = -yRadius; dy <= yRadius; dy++) {
+              for (
+                let dx = -Math.ceil(glowRadius);
+                dx <= Math.ceil(glowRadius);
+                dx++
+              ) {
+                const px = cellX + dx,
+                  py = cellY + dy;
+                if (px < 0 || px >= cols || py < 0 || py >= rows) continue;
+
+                const dist = Math.sqrt(dx * dx + (dy * aspectRatio) ** 2);
+                if (dist > glowRadius) continue;
+
+                const imgCellX = px - offsetCol;
+                const imgCellY = rows - 1 - py - offsetRow;
+                if (
+                  imgCellX >= 0 &&
+                  imgCellX < imgCols &&
+                  imgCellY >= 0 &&
+                  imgCellY < imgRows
+                ) {
+                  const idx = (py * cols + px) * 2;
+                  const falloff = Math.pow(1 - dist / glowRadius, 2.2);
+                  const val = Math.floor(255 * falloff);
+                  data[idx + 1] = Math.max(data[idx + 1], val);
+                }
+              }
+            }
+          }
+
+          return data;
+        }
+
+        function resizeIfNeeded() {
+          const width = canvas.clientWidth * devicePixelRatio;
+          const height = canvas.clientHeight * devicePixelRatio;
+
+          if (width !== currentWidth || height !== currentHeight) {
+            currentWidth = width;
+            currentHeight = height;
+            canvas.width = width;
+            canvas.height = height;
+
+            // Recreate sphere render target (always square, 4x resolution for better sampling)
+            if (sphereTexture) sphereTexture.destroy();
+            if (sphereDepthTexture) sphereDepthTexture.destroy();
+
+            const sphereSize = Math.max(width, height) * 2; // 2x supersampling
+            sphereTexture = device.createTexture({
+              size: [sphereSize, sphereSize],
+              format: "rgba8unorm",
+              usage:
+                GPUTextureUsage.RENDER_ATTACHMENT |
+                GPUTextureUsage.TEXTURE_BINDING,
+            });
+
+            sphereDepthTexture = device.createTexture({
+              size: [sphereSize, sphereSize],
+              format: "depth24plus",
+              usage: GPUTextureUsage.RENDER_ATTACHMENT,
+            });
+
+            sphereBindGroup = device.createBindGroup({
+              layout: sphereBindGroupLayout,
+              entries: [
+                { binding: 0, resource: { buffer: sphereUniformBuffer } },
+              ],
+            });
+          }
+
+          // Update trail texture size
+          const cols = Math.floor(width / (atlas.charWidth * devicePixelRatio));
+          const rows = Math.floor(
+            height / (atlas.charHeight * devicePixelRatio),
+          );
+
+          if (cols !== trailCols || rows !== trailRows) {
+            trailCols = cols;
+            trailRows = rows;
+            if (trailTexture) trailTexture.destroy();
+            trailTexture = device.createTexture({
+              size: [cols, rows],
+              format: "rg8unorm",
+              usage: GPUTextureUsage.TEXTURE_BINDING | GPUTextureUsage.COPY_DST,
+            });
+          }
+
+          // Update trail data
+          const trailData = updateTrailTexture(
+            cols,
+            rows,
+            atlas.charWidth,
+            atlas.charHeight,
+          );
+          device.queue.writeTexture(
+            { texture: trailTexture },
+            trailData,
+            { bytesPerRow: cols * 2 },
+            [cols, rows],
+          );
+
+          // Recreate ASCII bind group
+          asciiBindGroup = device.createBindGroup({
+            layout: asciiBindGroupLayout,
+            entries: [
+              { binding: 0, resource: { buffer: asciiUniformBuffer } },
+              { binding: 1, resource: sphereTexture.createView() },
+              { binding: 2, resource: sampler },
+              { binding: 3, resource: charAtlasTexture.createView() },
+              { binding: 4, resource: sampler },
+              { binding: 5, resource: trailTexture.createView() },
+              { binding: 6, resource: nearestSampler },
+              { binding: 7, resource: charLookupTexture.createView() },
+            ],
+          });
+        }
+
+        let frame = 0;
+        const startTime = performance.now();
+
+        function render() {
+          resizeIfNeeded();
+
+          const now = performance.now();
+
+          // Update explosion animation
+          let explosionFactor = 0;
+          if (explosionProgress > 0) {
+            const elapsed = now - explosionStartTime;
+            if (explosionProgress === 1) {
+              // Exploding phase
+              explosionFactor = Math.min(elapsed / EXPLOSION_DURATION, 1);
+              if (elapsed >= EXPLOSION_DURATION) {
+                explosionProgress = 2;
+                explosionStartTime = now;
+              }
+            } else if (explosionProgress === 2) {
+              // Reassembling phase
+              explosionFactor = 1 - Math.min(elapsed / EXPLOSION_DURATION, 1);
+              if (elapsed >= EXPLOSION_DURATION) {
+                explosionProgress = 0;
+              }
+            }
+          }
+
+          const angles = getRotationAngles(frame);
+
+          // Update sphere uniforms (square aspect for sphere render)
+          const sphereSize = Math.max(currentWidth, currentHeight) * 2;
+          const projection = mat4Perspective(Math.PI / 4, 1.0, 0.1, 100);
+          // Zoom out during explosion to keep chunks in view
+          const zoomOut = 1 + explosionFactor * 1.5;
+          const translate = mat4Translate(0, 0, -3 * zoomOut);
+          // Tumbling drift rotation on two axes
+          const rotX = mat4RotateX(angles.x);
+          const rotZ = mat4RotateZ(angles.z);
+          const modelView = mat4Multiply(translate, mat4Multiply(rotX, rotZ));
+
+          const sphereUniforms = new Float32Array(40);
+          sphereUniforms.set(modelView, 0);
+          sphereUniforms.set(projection, 16);
+          sphereUniforms.set([0.5, 0.7, 1.0], 32); // Light direction
+          sphereUniforms[35] = explosionFactor; // explosionFactor
+          device.queue.writeBuffer(sphereUniformBuffer, 0, sphereUniforms);
+
+          // Update ASCII uniforms (matches struct with padding)
+          const time = (performance.now() - startTime) / 1000;
+
+          // Calculate disco colors if active
+          let fgColor = CONFIG.fgColor;
+          let fgColorHighlight = CONFIG.fgColorHighlight;
+          if (discoMode) {
+            const discoTime = (now - discoStartTime) / 1000;
+            const beatInterval = 60 / DISCO_BEAT_BPM;
+            const beatPhase = (discoTime % beatInterval) / beatInterval;
+            const pulse = Math.pow(1 - beatPhase, 3); // Sharp attack, slow decay
+
+            // Cycle through rainbow hues
+            const hue = (discoTime * 0.5) % 1;
+            const hue2 = (hue + 0.3) % 1;
+
+            // HSL to RGB conversion
+            const hslToRgb = (h, s, l) => {
+              const c = (1 - Math.abs(2 * l - 1)) * s;
+              const x = c * (1 - Math.abs(((h * 6) % 2) - 1));
+              const m = l - c / 2;
+              let r, g, b;
+              if (h < 1 / 6) {
+                r = c;
+                g = x;
+                b = 0;
+              } else if (h < 2 / 6) {
+                r = x;
+                g = c;
+                b = 0;
+              } else if (h < 3 / 6) {
+                r = 0;
+                g = c;
+                b = x;
+              } else if (h < 4 / 6) {
+                r = 0;
+                g = x;
+                b = c;
+              } else if (h < 5 / 6) {
+                r = x;
+                g = 0;
+                b = c;
+              } else {
+                r = c;
+                g = 0;
+                b = x;
+              }
+              return [r + m, g + m, b + m];
+            };
+
+            const baseColor = hslToRgb(hue, 0.8, 0.3 + pulse * 0.2);
+            const highlightColor = hslToRgb(hue2, 1.0, 0.5 + pulse * 0.3);
+            fgColor = baseColor;
+            fgColorHighlight = highlightColor;
+          }
+
+          const asciiUniforms = new Float32Array(68); // 272 bytes / 4
+          asciiUniforms[0] = currentWidth; // resolution.x
+          asciiUniforms[1] = currentHeight; // resolution.y
+          asciiUniforms[2] = atlas.charWidth * devicePixelRatio; // cellSize.x
+          asciiUniforms[3] = atlas.charHeight * devicePixelRatio; // cellSize.y
+          asciiUniforms[4] = CHARS.length; // charCount
+          asciiUniforms[5] = atlas.charWidth / atlas.charHeight; // charAspect
+          asciiUniforms[6] = time; // time
+          asciiUniforms[7] = QUANTIZATION_LEVELS; // quantLevels
+          asciiUniforms[8] = SPARKLE_CHARS[0]; // sparkleChars.x
+          asciiUniforms[9] = SPARKLE_CHARS[1]; // sparkleChars.y
+          asciiUniforms[10] = SPARKLE_CHARS[2]; // sparkleChars.z
+          asciiUniforms[11] = 0; // _pad1
+          asciiUniforms[12] = CONFIG.bgColor[0]; // bgColor.x
+          asciiUniforms[13] = CONFIG.bgColor[1]; // bgColor.y
+          asciiUniforms[14] = CONFIG.bgColor[2]; // bgColor.z
+          asciiUniforms[15] = 0; // _pad2
+          asciiUniforms[16] = fgColor[0]; // fgColor.x
+          asciiUniforms[17] = fgColor[1]; // fgColor.y
+          asciiUniforms[18] = fgColor[2]; // fgColor.z
+          asciiUniforms[19] = 0; // _pad3
+          asciiUniforms[20] = fgColorHighlight[0]; // fgColorHighlight.x
+          asciiUniforms[21] = fgColorHighlight[1]; // fgColorHighlight.y
+          asciiUniforms[22] = fgColorHighlight[2]; // fgColorHighlight.z
+          asciiUniforms[23] = 0; // _pad4
+          // 6 sampling points
+          asciiUniforms[24] = SAMPLING_POINTS[0].x;
+          asciiUniforms[25] = SAMPLING_POINTS[0].y;
+          asciiUniforms[26] = SAMPLING_POINTS[1].x;
+          asciiUniforms[27] = SAMPLING_POINTS[1].y;
+          asciiUniforms[28] = SAMPLING_POINTS[2].x;
+          asciiUniforms[29] = SAMPLING_POINTS[2].y;
+          asciiUniforms[30] = SAMPLING_POINTS[3].x;
+          asciiUniforms[31] = SAMPLING_POINTS[3].y;
+          asciiUniforms[32] = SAMPLING_POINTS[4].x;
+          asciiUniforms[33] = SAMPLING_POINTS[4].y;
+          asciiUniforms[34] = SAMPLING_POINTS[5].x;
+          asciiUniforms[35] = SAMPLING_POINTS[5].y;
+          asciiUniforms[36] = SAMPLING_CIRCLE_RADIUS; // sampleRadius
+          asciiUniforms[37] = explosionFactor; // explosionFactor
+          asciiUniforms[38] = SECRET_MESSAGE.length; // msgLen
+          asciiUniforms[39] = 0; // _pad5
+          // Message character indices (5 vec4s = 20 chars, starts at index 40 for 16-byte alignment)
+          for (let i = 0; i < 20; i++) {
+            asciiUniforms[40 + i] = msgCharIndices[i];
+          }
+          device.queue.writeBuffer(asciiUniformBuffer, 0, asciiUniforms);
+
+          const commandEncoder = device.createCommandEncoder();
+
+          // Render sphere to texture (square viewport)
+          const spherePass = commandEncoder.beginRenderPass({
+            colorAttachments: [
+              {
+                view: sphereTexture.createView(),
+                clearValue: { r: 0, g: 0, b: 0, a: 1 },
+                loadOp: "clear",
+                storeOp: "store",
+              },
+            ],
+            depthStencilAttachment: {
+              view: sphereDepthTexture.createView(),
+              depthClearValue: 1.0,
+              depthLoadOp: "clear",
+              depthStoreOp: "store",
+            },
+          });
+          spherePass.setViewport(0, 0, sphereSize, sphereSize, 0, 1);
+          spherePass.setPipeline(spherePipeline);
+          spherePass.setBindGroup(0, sphereBindGroup);
+          spherePass.setVertexBuffer(0, vertexBuffer);
+          spherePass.draw(vertexCount);
+          spherePass.end();
+
+          // Render ASCII
+          const asciiPass = commandEncoder.beginRenderPass({
+            colorAttachments: [
+              {
+                view: context.getCurrentTexture().createView(),
+                clearValue: {
+                  r: CONFIG.bgColor[0],
+                  g: CONFIG.bgColor[1],
+                  b: CONFIG.bgColor[2],
+                  a: 1,
+                },
+                loadOp: "clear",
+                storeOp: "store",
+              },
+            ],
+          });
+          asciiPass.setPipeline(asciiPipeline);
+          asciiPass.setBindGroup(0, asciiBindGroup);
+          asciiPass.draw(6);
+          asciiPass.end();
+
+          device.queue.submit([commandEncoder.finish()]);
+
+          frame++;
+        }
+
+        function animate() {
+          render();
+          setTimeout(() => requestAnimationFrame(animate), 1000 / CONFIG.fps);
+        }
+
+        // Mouse events for sparkle trail
+        canvas.addEventListener("mousemove", (e) => {
+          const now = performance.now();
+          const newPos = { x: e.clientX, y: e.clientY, time: now };
+
+          // Handle drag rotation
+          if (isDragging) {
+            const dx = e.clientX - lastDragPos.x;
+            const dy = e.clientY - lastDragPos.y;
+            const dt = now - lastDragTime;
+
+            // Update rotation based on drag (inverted Z for natural feel)
+            dragRotation.z -= dx * DRAG_SENSITIVITY;
+            dragRotation.x -= dy * DRAG_SENSITIVITY;
+
+            // Track velocity for flick (pixels per ms -> radians)
+            if (dt > 0) {
+              const newVelX = -(dy / dt) * DRAG_SENSITIVITY * 4;
+              const newVelZ = -(dx / dt) * DRAG_SENSITIVITY * 4;
+              // Smooth velocity tracking
+              velocity.x = velocity.x * 0.5 + newVelX * 0.5;
+              velocity.z = velocity.z * 0.5 + newVelZ * 0.5;
+            }
+
+            lastDragPos = { x: e.clientX, y: e.clientY };
+            lastDragTime = now;
+          }
+
+          // Sparkle trail
+          if (mouseTrail.length > 0) {
+            const last = mouseTrail[mouseTrail.length - 1];
+            const dx = newPos.x - last.x;
+            const dy = newPos.y - last.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const step = atlas.charWidth * 0.5;
+
+            if (dist > step) {
+              const steps = Math.floor(dist / step);
+              for (let i = 1; i < steps; i++) {
+                const t = i / steps;
+                mouseTrail.push({
+                  x: last.x + dx * t,
+                  y: last.y + dy * t,
+                  time: last.time + (now - last.time) * t,
+                });
+              }
+            }
+          }
+
+          mouseTrail.push(newPos);
+          while (mouseTrail.length > CONFIG.trailLength) mouseTrail.shift();
+          mousePos = { x: e.clientX, y: e.clientY };
+        });
+
+        canvas.addEventListener("mousedown", (e) => {
+          isDragging = true;
+          dragStart = { x: e.clientX, y: e.clientY };
+          lastDragPos = { x: e.clientX, y: e.clientY };
+          lastDragTime = performance.now();
+          velocity = { x: 0, z: 0 }; // Reset velocity on new drag
+          canvas.style.cursor = "grabbing";
+        });
+
+        canvas.addEventListener("mouseup", () => {
+          isDragging = false;
+          canvas.style.cursor = "grab";
+        });
+
+        canvas.addEventListener("mouseleave", () => {
+          isDragging = false;
+          mouseTrail.length = 0;
+          mousePos = { x: -1000, y: -1000 };
+          canvas.style.cursor = "grab";
+        });
+
+        // Easter egg: Double-click to explode and reassemble
+        canvas.addEventListener("dblclick", () => {
+          if (explosionProgress === 0) {
+            explosionProgress = 1;
+            explosionStartTime = performance.now();
+          }
+        });
+
+        // Easter egg: Type "disco" to toggle disco mode
+        document.addEventListener("keydown", (e) => {
+          // Ignore if typing in an input
+          if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")
+            return;
+
+          typedKeys += e.key.toLowerCase();
+          // Keep only last 5 characters
+          if (typedKeys.length > 5) {
+            typedKeys = typedKeys.slice(-5);
+          }
+
+          if (typedKeys === "disco") {
+            discoMode = !discoMode;
+            if (discoMode) {
+              discoStartTime = performance.now();
+            }
+            typedKeys = "";
+          }
+        });
+
+        // Set initial cursor
+        canvas.style.cursor = "grab";
+
+        animate();
+      }
+
+      init();
+    </script>
+  </body>
+</html>
