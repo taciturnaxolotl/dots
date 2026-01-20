@@ -120,7 +120,7 @@
     };
 
     tranquil-pds = {
-      url = "git+https://tangled.org/lewis.moe/bspds-sandbox";
+      url = "git+https://tangled.org/tranquil.farm/tranquil-pds";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
@@ -140,7 +140,7 @@
     }@inputs:
     let
       outputs = inputs.self.outputs;
-      
+
       unstable-overlays = {
         nixpkgs.overlays = [
           (final: prev: {
@@ -158,7 +158,7 @@
                 hash = "sha256-7mkrPl2CQSfc1lRjl1ilwxdYcK5iRU//QGKmdCicK30=";
               };
             });
-            
+
             zmx-binary = prev.callPackage ./packages/zmx.nix { };
             bore-auth = prev.callPackage ./packages/bore-auth.nix { };
             herald = inputs.herald.packages.${prev.system}.default;
@@ -282,15 +282,21 @@
       formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
 
       # Patched deploy-rs for Nix 2.33 compatibility
-      packages.x86_64-linux.deploy-rs = deploy-rs.packages.x86_64-linux.deploy-rs.overrideAttrs (oldAttrs: {
-        patches = (oldAttrs.patches or []) ++ [ ./patches/deploy-rs-nix-2.33.patch ];
-      });
-      packages.aarch64-linux.deploy-rs = deploy-rs.packages.aarch64-linux.deploy-rs.overrideAttrs (oldAttrs: {
-        patches = (oldAttrs.patches or []) ++ [ ./patches/deploy-rs-nix-2.33.patch ];
-      });
-      packages.aarch64-darwin.deploy-rs = deploy-rs.packages.aarch64-darwin.deploy-rs.overrideAttrs (oldAttrs: {
-        patches = (oldAttrs.patches or []) ++ [ ./patches/deploy-rs-nix-2.33.patch ];
-      });
+      packages.x86_64-linux.deploy-rs =
+        deploy-rs.packages.x86_64-linux.deploy-rs.overrideAttrs
+          (oldAttrs: {
+            patches = (oldAttrs.patches or [ ]) ++ [ ./patches/deploy-rs-nix-2.33.patch ];
+          });
+      packages.aarch64-linux.deploy-rs =
+        deploy-rs.packages.aarch64-linux.deploy-rs.overrideAttrs
+          (oldAttrs: {
+            patches = (oldAttrs.patches or [ ]) ++ [ ./patches/deploy-rs-nix-2.33.patch ];
+          });
+      packages.aarch64-darwin.deploy-rs =
+        deploy-rs.packages.aarch64-darwin.deploy-rs.overrideAttrs
+          (oldAttrs: {
+            patches = (oldAttrs.patches or [ ]) ++ [ ./patches/deploy-rs-nix-2.33.patch ];
+          });
 
       # Dev shells with patched deploy-rs
       devShells.aarch64-darwin.default = nixpkgs.legacyPackages.aarch64-darwin.mkShell {
