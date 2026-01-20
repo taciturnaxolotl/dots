@@ -688,6 +688,7 @@ in
                   branch_behind_icon = "⇣";
                   commit_icon = "@";
                   fetch_status = true;
+                  fetch_upstream_icon = false;
                 };
               }
             ];
