@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>ASCII Animation (WebGPU)</title>
+    <title>the icocenter</title>
     <style>
       * {
         margin: 0;
@@ -101,9 +101,122 @@
       let typedKeys = "";
       const DISCO_BEAT_BPM = 120;
 
-      // Hidden message inside the sphere
+      // CTF state - must complete stages in order
+      // Stage 1: Double-click to explode sphere and see first hint
+      // Stage 2: Paste decoded JSON with application/json MIME type
+      // Stage 3: console.log(flag) to trigger final overlay
+      let ctfStage = 1;
+      let stage2Active = false;
+      let stage2StartTime = 0;
+
+      // Title hints for each stage
+      const STAGE_HINTS = [
+        "",                                   // Stage 1: no hint
+        "application/json",                   // Stage 2: hint at MIME type
+        "String.fromCharCode(...)",           // Stage 3: hint at decoding ASCII
+      ];
+
+      function updateTitle() {
+        const hint = STAGE_HINTS[ctfStage - 1];
+        document.title = hint ? `the icocenter -- ${hint}` : "the icocenter";
+      }
+
+      // Hidden message inside the sphere (stage 1 hint)
+      // Decodes to: {"_debug":{"ack":true}}
       // Note: only characters in CHARS are available
-      const SECRET_MESSAGE = "eyJzdGFnZTEiOiAxfQ==";
+      const SECRET_MESSAGE = "eyJfZGVidWciOnsiYWNrIjp0cnVlfX0=";
+      // Stage 2 message shown after correct paste
+      // Shows ASCII codes: 102 108 97 103 -> "flag"
+      const STAGE2_MESSAGE = "[102,108,97,103]";
+
+      // CTF Final Stage: Hidden flag variable with getter trap
+      // Only works after completing stage 2
+      let flagOverlayShown = false;
+      Object.defineProperty(window, "flag", {
+        get() {
+          if (ctfStage < 3) {
+            return undefined;
+          }
+          if (!flagOverlayShown) {
+            flagOverlayShown = true;
+            showFlagOverlay();
+          }
+          return "✓";
+        },
+        enumerable: false,
+        configurable: false,
+      });
+
+      function showFlagOverlay() {
+        const overlay = document.createElement("div");
+        overlay.id = "flag-overlay";
+        overlay.innerHTML = `
+          <div class="flag-backdrop"></div>
+          <div class="flag-popover">
+<pre>
+╔══════════════════════════════════════════╗
+║                                          ║
+║              Well done!                  ║
+║                                          ║
+║   Feel free to shoot me an email at:     ║
+║                                          ║
+║   ┌────────────────────────────────────┐ ║
+║   │       kieran@dunkirk.sh            │ ║
+║   └────────────────────────────────────┘ ║
+║                                          ║
+║             [ press esc ]                ║
+╚══════════════════════════════════════════╝
+</pre>
+          </div>
+        `;
+        const style = document.createElement("style");
+        style.textContent = `
+          #flag-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            font-family: monospace;
+          }
+          #flag-overlay .flag-backdrop {
+            position: absolute;
+            inset: 0;
+            background: rgba(14, 19, 28, 0.85);
+            cursor: pointer;
+          }
+          #flag-overlay .flag-popover {
+            position: relative;
+            z-index: 1;
+          }
+          #flag-overlay .flag-popover pre {
+            margin: 0;
+            color: #8493c1;
+            background: #0e131c;
+            padding: 0.5rem;
+            font-size: clamp(8px, 1.4vw, 14px);
+            line-height: 1.3;
+            text-shadow: 0 0 8px rgba(132, 147, 193, 0.4);
+            border: 1px solid #303955;
+            box-shadow: 0 0 30px rgba(132, 147, 193, 0.15);
+          }
+        `;
+        document.head.appendChild(style);
+        document.body.appendChild(overlay);
+
+        const close = () => {
+          overlay.remove();
+          style.remove();
+        };
+        overlay.querySelector(".flag-backdrop").addEventListener("click", close);
+        document.addEventListener("keydown", function esc(e) {
+          if (e.key === "Escape") {
+            close();
+            document.removeEventListener("keydown", esc);
+          }
+        });
+      }
 
       // Generate icosphere geometry
       function createIcosphere(subdivisions) {
@@ -868,12 +981,11 @@
           }
           let brightness = totalBrightness / 6.0;
           
-          // Calculate sparkle character index
-          let sparkleRand = hash(cellPos + floor(uniforms.time * 8.0));
-          let sparkleIdx = i32(sparkleRand * 3.0) % 3;
+          // Calculate sparkle character index - use cell position * time for variety
+          let sparkleRand = hash(cellPos * 127.1 + vec2f(floor(uniforms.time * 8.0), floor(uniforms.time * 5.0)));
           var sparkleCharIdx: f32;
-          if (sparkleIdx == 0) { sparkleCharIdx = uniforms.sparkleChars.x; }
-          else if (sparkleIdx == 1) { sparkleCharIdx = uniforms.sparkleChars.y; }
+          if (sparkleRand < 0.333) { sparkleCharIdx = uniforms.sparkleChars.x; }
+          else if (sparkleRand < 0.666) { sparkleCharIdx = uniforms.sparkleChars.y; }
           else { sparkleCharIdx = uniforms.sparkleChars.z; }
           
           // Render secret message in center when sphere is exploded
@@ -1008,7 +1120,8 @@
           }
           return indices;
         }
-        const msgCharIndices = messageToCharIndices(SECRET_MESSAGE);
+        const stage1MsgIndices = messageToCharIndices(SECRET_MESSAGE);
+        const stage2MsgIndices = messageToCharIndices(STAGE2_MESSAGE);
 
         const asciiBindGroupLayout = device.createBindGroupLayout({
           entries: [
@@ -1448,11 +1561,14 @@
           asciiUniforms[35] = SAMPLING_POINTS[5].y;
           asciiUniforms[36] = SAMPLING_CIRCLE_RADIUS; // sampleRadius
           asciiUniforms[37] = explosionFactor; // explosionFactor
-          asciiUniforms[38] = SECRET_MESSAGE.length; // msgLen
+          // Select message based on CTF stage
+          const currentMsg = stage2Active ? STAGE2_MESSAGE : SECRET_MESSAGE;
+          const currentMsgIndices = stage2Active ? stage2MsgIndices : stage1MsgIndices;
+          asciiUniforms[38] = currentMsg.length; // msgLen
           asciiUniforms[39] = 0; // _pad5
           // Message character indices (5 vec4s = 20 chars, starts at index 40 for 16-byte alignment)
           for (let i = 0; i < 20; i++) {
-            asciiUniforms[40 + i] = msgCharIndices[i];
+            asciiUniforms[40 + i] = currentMsgIndices[i];
           }
           device.queue.writeBuffer(asciiUniformBuffer, 0, asciiUniforms);
 
@@ -1589,10 +1705,16 @@
         });
 
         // Easter egg: Double-click to explode and reassemble
+        // Also advances CTF from stage 1 to stage 2
         canvas.addEventListener("dblclick", () => {
           if (explosionProgress === 0) {
             explosionProgress = 1;
             explosionStartTime = performance.now();
+            // Complete stage 1 on first explosion
+            if (ctfStage === 1) {
+              ctfStage = 2;
+              updateTitle();
+            }
           }
         });
 
@@ -1614,6 +1736,31 @@
               discoStartTime = performance.now();
             }
             typedKeys = "";
+          }
+        });
+
+        // CTF: Paste handler for stage progression (stage 2 -> stage 3)
+        document.addEventListener("paste", (e) => {
+          if (ctfStage !== 2) return;
+          
+          // Check for application/json MIME type
+          const jsonData = e.clipboardData.getData("application/json");
+          if (jsonData) {
+            try {
+              const parsed = JSON.parse(jsonData);
+              if (parsed._debug?.ack === true) {
+                ctfStage = 3;
+                updateTitle();
+                stage2Active = true;
+                stage2StartTime = performance.now();
+                // Trigger explosion to reveal stage 3 hint
+                if (explosionProgress === 0) {
+                  explosionProgress = 1;
+                  explosionStartTime = performance.now();
+                }
+                e.preventDefault();
+              }
+            } catch {}
           }
         });
 
