@@ -481,7 +481,7 @@
     enable = true;
     domain = "control.dunkirk.sh";
     deploy.repository = "https://tangled.org/dunkirk.sh/control";
-    deploy.autoUpdate = true;
+    deploy.autoUpdate = false;
     secretsFile = config.age.secrets.control.path;
 
     flags."map.dunkirk.sh" = {

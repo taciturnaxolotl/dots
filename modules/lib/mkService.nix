@@ -234,8 +234,8 @@ in {
           
           cd ${cfg.dataDir}/app
         '' + lib.optionalString (cfg.deploy.enable && cfg.deploy.autoUpdate) ''
-          ${pkgs.git}/bin/git fetch origin
-          ${pkgs.git}/bin/git reset --hard origin/${cfg.deploy.branch}
+          ${pkgs.git}/bin/git fetch origin || true
+          ${pkgs.git}/bin/git reset --hard origin/${cfg.deploy.branch} || true
         '' + lib.optionalString (runtime == "bun") ''
           
           if [ -f package.json ]; then
