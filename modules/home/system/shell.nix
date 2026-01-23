@@ -440,26 +440,26 @@ let
 
        usage() {
          cat <<EOF
-    Usage: ghrpc [OPTIONS] [NAME]
+Usage: ghrpc [OPTIONS] [NAME]
 
-    Create repositories on GitHub and/or Tangled.
-    Remotes: origin → knot (tangled), github → GitHub
+Create repositories on GitHub and/or Tangled.
+Remotes: origin → knot (tangled), github → GitHub
 
-    Arguments:
-      NAME                    Repository name (defaults to current directory name)
+Arguments:
+  NAME                    Repository name (defaults to current directory name)
 
-    Options:
-      -d, --description STR   Repository description
-      -p, --public            Make repository public (default)
-      --private               Make repository private
-      -g, --github-only       Only create on GitHub
-      -t, --tangled-only      Only create on Tangled
-      --no-github             Skip GitHub
-      --no-tangled            Skip Tangled
-      --plc ID                PLC ID (default: $PLC_ID)
-      --domain DOMAIN         Tangled domain (default: $TANGLED_DOMAIN)
-      -h, --help              Show this help
-    EOF
+Options:
+  -d, --description STR   Repository description
+  -p, --public            Make repository public (default)
+  --private               Make repository private
+  -g, --github-only       Only create on GitHub
+  -t, --tangled-only      Only create on Tangled
+  --no-github             Skip GitHub
+  --no-tangled            Skip Tangled
+  --plc ID                PLC ID (default: \$PLC_ID)
+  --domain DOMAIN         Tangled domain (default: \$TANGLED_DOMAIN)
+  -h, --help              Show this help
+EOF
          exit 0
        }
 
@@ -614,7 +614,7 @@ let
        CURRENT_YEAR=$(date +%Y)
        if [[ "$ADD_README" == true ]] && [[ ! -f "README.md" ]]; then
          if [[ "$TANGLED" == true ]] && [[ "$GITHUB" == true ]]; then
-           cat > README.md <<'READMEEOF'
+           cat > README.md <<"READMEEOF"
 # $NAME
 
 $DESCRIPTION
@@ -635,7 +635,7 @@ The canonical repo for this is hosted on tangled over at [`dunkirk.sh/$NAME`](ht
 READMEEOF
            ${pkgs.gnused}/bin/sed -i "s/\$NAME/$NAME/g; s/\$DESCRIPTION/$DESCRIPTION/g; s/\$CURRENT_YEAR/$CURRENT_YEAR/g; s/\$LICENSE_TYPE/$LICENSE_TYPE/g" README.md
          elif [[ "$GITHUB" == true ]]; then
-           cat > README.md <<'READMEEOF'
+           cat > README.md <<"READMEEOF"
 # $NAME
 
 $DESCRIPTION
@@ -654,7 +654,7 @@ $DESCRIPTION
 READMEEOF
            ${pkgs.gnused}/bin/sed -i "s/\$NAME/$NAME/g; s/\$DESCRIPTION/$DESCRIPTION/g; s/\$CURRENT_YEAR/$CURRENT_YEAR/g; s/\$LICENSE_TYPE/$LICENSE_TYPE/g; s/\$GITHUB_USER/$GITHUB_USER/g" README.md
          else
-           cat > README.md <<'READMEEOF'
+           cat > README.md <<"READMEEOF"
 # $NAME
 
 $DESCRIPTION
