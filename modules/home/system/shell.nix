@@ -514,25 +514,84 @@ EOF
 
        ${pkgs.gum}/bin/gum style --foreground 212 --bold "Creating repository: $NAME"
 
+       # Check if we're in an existing directory
+       IS_EXISTING_DIR=false
+       IS_GIT_REPO=false
+       HAS_COMMITS=false
+       if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+         IS_GIT_REPO=true
+         IS_EXISTING_DIR=true
+         if ${pkgs.git}/bin/git rev-parse HEAD &>/dev/null; then
+           HAS_COMMITS=true
+         fi
+       elif [[ -d "." ]] && [[ "$(ls -A 2>/dev/null)" ]]; then
+         IS_EXISTING_DIR=true
+       fi
+
+       # Initialize git repo if needed
+       if [[ "$IS_GIT_REPO" == false ]]; then
+         if [[ "$IS_EXISTING_DIR" == true ]] && [[ -t 0 ]]; then
+           if ${pkgs.gum}/bin/gum confirm "Directory has files but no git repo. Initialize git?"; then
+             ${pkgs.git}/bin/git init -b "$BRANCH"
+             IS_GIT_REPO=true
+             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Initialized git repository"
+           else
+             ${pkgs.gum}/bin/gum style --foreground 196 "Error: Git repository required"
+             exit 1
+           fi
+         else
+           ${pkgs.git}/bin/git init -b "$BRANCH"
+           IS_GIT_REPO=true
+         fi
+       fi
+
+       # Check if remote repos already exist and offer to skip creation
+       SKIP_REMOTE_CREATION=false
+       if [[ "$HAS_COMMITS" == true ]] && [[ -t 0 ]]; then
+         ${pkgs.gum}/bin/gum style --foreground 214 "Existing git repo detected with commits"
+         if ! ${pkgs.gum}/bin/gum confirm "Create new remote repositories?"; then
+           SKIP_REMOTE_CREATION=true
+           ${pkgs.gum}/bin/gum style --foreground 35 "Skipping remote repo creation, will only configure remotes"
+         fi
+       fi
+
        # Prompt for templates
        ADD_README=false
        ADD_LICENSE=false
        LICENSE_TYPE=""
+       README_EXISTS=false
+       LICENSE_EXISTS=false
+       [[ -f "README.md" ]] && README_EXISTS=true
+       [[ -f "LICENSE.md" ]] && LICENSE_EXISTS=true
+
        if [[ -t 0 ]]; then
-         if ${pkgs.gum}/bin/gum confirm "Add templates (README/LICENSE)?"; then
-           TEMPLATES=$(${pkgs.gum}/bin/gum choose --no-limit --header "Select templates to add" "README.md" "LICENSE.md")
-           if echo "$TEMPLATES" | grep -q "README.md"; then
-             ADD_README=true
+         # Build template options based on what exists
+         TEMPLATE_OPTIONS=""
+         if [[ "$README_EXISTS" == false ]]; then
+           TEMPLATE_OPTIONS="README.md"
+         fi
+         if [[ "$LICENSE_EXISTS" == false ]]; then
+           [[ -n "$TEMPLATE_OPTIONS" ]] && TEMPLATE_OPTIONS="$TEMPLATE_OPTIONS\nLICENSE.md" || TEMPLATE_OPTIONS="LICENSE.md"
+         fi
+
+         if [[ -n "$TEMPLATE_OPTIONS" ]]; then
+           if ${pkgs.gum}/bin/gum confirm "Add templates (README/LICENSE)?"; then
+             TEMPLATES=$(echo -e "$TEMPLATE_OPTIONS" | ${pkgs.gum}/bin/gum choose --no-limit --header "Select templates to add")
+             if echo "$TEMPLATES" | grep -q "README.md"; then
+               ADD_README=true
+             fi
+             if echo "$TEMPLATES" | grep -q "LICENSE.md"; then
+               ADD_LICENSE=true
+               LICENSE_TYPE=$(${pkgs.gum}/bin/gum choose --header "Select license" "MIT" "Apache-2.0" "GPL-3.0" "BSD-3-Clause" "ISC" "O'Saasy" "Unlicense")
+             fi
            fi
-           if echo "$TEMPLATES" | grep -q "LICENSE.md"; then
-             ADD_LICENSE=true
-             LICENSE_TYPE=$(${pkgs.gum}/bin/gum choose --header "Select license" "MIT" "Apache-2.0" "GPL-3.0" "BSD-3-Clause" "ISC" "O'Saasy" "Unlicense")
-           fi
+         elif [[ "$README_EXISTS" == true ]] && [[ "$LICENSE_EXISTS" == true ]]; then
+           ${pkgs.gum}/bin/gum style --foreground 214 "README.md and LICENSE.md already exist, skipping templates"
          fi
        fi
 
        # Create on Tangled
-       if [[ "$TANGLED" == true ]]; then
+       if [[ "$TANGLED" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
          tangled_cookie=""
          if [[ -f "/run/agenix/tangled-session" ]]; then
            tangled_cookie=$(cat /run/agenix/tangled-session)
@@ -560,7 +619,7 @@ EOF
        fi
 
        # Create on GitHub
-       if [[ "$GITHUB" == true ]]; then
+       if [[ "$GITHUB" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
          gh_flags="--$VISIBILITY"
          [[ -n "$DESCRIPTION" ]] && gh_flags="$gh_flags --description \"$DESCRIPTION\""
 
