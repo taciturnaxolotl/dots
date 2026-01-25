@@ -1057,6 +1057,21 @@ in
                 alias -g NUL='>/dev/null 2>&1'
                 alias -g J='| jq'
 
+                # Override source to handle .env files safely
+                function source() {
+                  if [[ "$1" == *.env ]]; then
+                    [[ ! -f "$1" ]] && { echo "File not found: $1" >&2; return 1; }
+                    while IFS= read -r line || [[ -n "$line" ]]; do
+                      [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+                      if [[ "$line" =~ ^([a-zA-Z_][a-zA-Z0-9_]*)=(.*)$ ]]; then
+                        export "''${match[1]}=''${match[2]}"
+                      fi
+                    done < "$1"
+                  else
+                    builtin source "$@"
+                  fi
+                }
+
                 # OSC 52 clipboard (works over SSH)
                 function osc52copy() {
                   local data=$(cat "$@" | base64 | tr -d '\n')
