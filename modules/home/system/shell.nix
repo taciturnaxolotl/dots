@@ -641,19 +641,10 @@ EOF
          gh_flags="--$VISIBILITY"
          [[ -n "$DESCRIPTION" ]] && gh_flags="$gh_flags --description \"$DESCRIPTION\""
 
-         if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
-           if eval "${pkgs.gh}/bin/gh repo create \"$NAME\" $gh_flags --source=. --push --remote=github 2>/dev/null"; then
-             ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
-           else
-             ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create GitHub repository"
-           fi
+         if eval "${pkgs.gh}/bin/gh repo create \"$GITHUB_USER/$NAME\" $gh_flags 2>/dev/null"; then
+           ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
          else
-           if eval "${pkgs.gh}/bin/gh repo create \"$NAME\" $gh_flags --clone 2>/dev/null"; then
-             ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: created and cloned $NAME"
-             cd "$NAME"
-           else
-             ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create GitHub repository"
-           fi
+           ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create GitHub repository"
          fi
        fi
 
