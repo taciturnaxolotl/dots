@@ -518,6 +518,23 @@ EOF
        IS_EXISTING_DIR=false
        IS_GIT_REPO=false
        HAS_COMMITS=false
+
+       # Check if we're already in a git repo with the same name
+       CURRENT_REPO_NAME=""
+       if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+         CURRENT_REPO_NAME=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
+       fi
+
+       # If NAME was provided and we're not in a matching git repo, create/enter the directory
+       if [[ -n "$NAME" ]] && [[ "$CURRENT_REPO_NAME" != "$NAME" ]]; then
+         if [[ -d "$NAME" ]]; then
+           cd "$NAME"
+         else
+           mkdir -p "$NAME"
+           cd "$NAME"
+         fi
+       fi
+
        if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
          IS_GIT_REPO=true
          IS_EXISTING_DIR=true
@@ -542,6 +559,7 @@ EOF
          else
            ${pkgs.git}/bin/git init -b "$BRANCH"
            IS_GIT_REPO=true
+           ${pkgs.gum}/bin/gum style --foreground 35 "✓ Initialized git repository"
          fi
        fi
 
