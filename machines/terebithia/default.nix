@@ -160,6 +160,7 @@
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
     "restic/password".file = ../../secrets/restic/password.age;
+    clawdbot.file = ../../secrets/clawdbot.age;
   };
 
   environment.sessionVariables = {
@@ -251,6 +252,23 @@
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "client";
+  };
+
+  # Clawdbot - AI assistant in isolated container
+  virtualisation.podman.enable = true;
+
+  virtualisation.oci-containers = {
+    backend = "podman";
+    containers.clawdbot = {
+      image = "clawdbot:local";
+      volumes = [
+        "/var/lib/clawdbot:/home/node/.clawdbot"
+        "/home/git:/home/node/knot"          # knot repos
+        "/var/lib/clawdbot/ssh:/home/node/.ssh"  # git credentials
+      ];
+      environmentFiles = [ config.age.secrets.clawdbot.path ];
+      extraOptions = [ "--pull=never" ];
+    };
   };
 
   services.caddy = {

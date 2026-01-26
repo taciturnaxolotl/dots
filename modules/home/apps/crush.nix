@@ -359,7 +359,7 @@
             system_prompt_prefix = "You are Claude Code, Anthropic's official CLI for Claude.";
             extra_headers = {
               "anthropic-version" = "2023-06-01";
-              "anthropic-beta" = "oauth-2025-04-20";
+              "anthropic-beta" = "oauth-2025-04-20,claude-code-20250219,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14";
             };
             models = [
               {
