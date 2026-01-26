@@ -89,7 +89,4 @@ in
   "herald-dkim.age".publicKeys = [
     kierank
   ];
-  "clawdbot.age".publicKeys = [
-    kierank
-  ];
 }
