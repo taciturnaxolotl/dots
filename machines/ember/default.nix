@@ -15,6 +15,11 @@
     username = "kierank";
     homeDirectory = "/home/kierank";
 
+    sessionPath = [
+      "$HOME/.npm-global/bin"
+      "$HOME/.local/share/pnpm"
+    ];
+
     packages = with pkgs; [
       # apps
       iodine
