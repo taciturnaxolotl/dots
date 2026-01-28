@@ -110,6 +110,12 @@
           hostname = "10.11.99.01";
           user = "root";
         };
+
+        acm-battlestation = {
+          hostname = "163.11.237.224";
+          user = "Jacket20";
+          identityFile = "~/.ssh/id_ed25519_cedarville";
+        };
       };
 
       extraConfig = ''
