@@ -143,6 +143,7 @@
 
       unstable-overlays = {
         nixpkgs.overlays = [
+          nur.overlays.default
           (final: prev: {
             unstable = import nixpkgs-unstable {
               system = final.stdenv.hostPlatform.system;
@@ -178,7 +179,6 @@
             agenix.nixosModules.default
             unstable-overlays
             ./machines/moonlark
-            nur.modules.nixos.default
           ];
         };
 
@@ -191,7 +191,6 @@
             { config.facter.reportPath = ./machines/prattle/facter.json; }
             unstable-overlays
             ./machines/prattle
-            nur.modules.nixos.default
           ];
         };
 
@@ -204,7 +203,6 @@
             { config.facter.reportPath = ./machines/terebithia/facter.json; }
             unstable-overlays
             ./machines/terebithia
-            nur.modules.nixos.default
           ];
         };
       };
@@ -272,7 +270,6 @@
           modules = [
             home-manager.darwinModules.home-manager
             agenix.darwinModules.default
-            nur.modules.darwin.default
             ./machines/atalanta
           ];
         };
