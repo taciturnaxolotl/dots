@@ -22,6 +22,7 @@
         };
 
         zmx-binary = prev.callPackage ../../packages/zmx.nix { };
+        wut = prev.callPackage ../../packages/wut.nix { };
       })
     ];
   };

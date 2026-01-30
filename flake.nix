@@ -161,6 +161,7 @@
 
             zmx-binary = prev.callPackage ./packages/zmx.nix { };
             bore-auth = prev.callPackage ./packages/bore-auth.nix { };
+            wut = prev.callPackage ./packages/wut.nix { };
             herald = inputs.herald.packages.${prev.system}.default;
           })
         ];

@@ -1269,5 +1269,6 @@ in
     ];
 
     atelier.shell.git.enable = lib.mkDefault true;
+    atelier.shell.wut.enable = lib.mkDefault true;
   };
 }
