@@ -102,14 +102,7 @@
       file = ../../secrets/bluesky.age;
       owner = "kierank";
     };
-    crush = {
-      file = ../../secrets/crush.age;
-      owner = "kierank";
-    };
-    context7 = {
-      file = ../../secrets/context7.age;
-      owner = "kierank";
-    };
+
     "bore/auth-token" = {
       file = ../../secrets/bore/auth-token.age;
       owner = "kierank";

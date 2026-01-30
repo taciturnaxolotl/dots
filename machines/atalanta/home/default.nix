@@ -12,9 +12,8 @@
   home = {
     username = "kierank";
     homeDirectory = "/Users/kierank";
-    packages = with pkgs; [
+    packages = [
       inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
-      vesktop
     ];
   };
 
@@ -30,7 +29,7 @@
     };
     apps = {
       halloy.enable = true;
-      crush.enable = true;
+
       helix = {
         enable = true;
         swift = true;

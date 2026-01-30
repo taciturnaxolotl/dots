@@ -21,7 +21,7 @@
       irssi.enable = true;
       qutebrowser.enable = true;
       spotify.enable = true;
-      crush.enable = true;
+
     };
     theming.enable = true;
     wm.hyprland.enable = true;

@@ -17,12 +17,7 @@ in
   "iodine.age".publicKeys = [
     kierank
   ];
-  "crush.age".publicKeys = [
-    kierank
-  ];
-  "context7.age".publicKeys = [
-    kierank
-  ];
+
   "cloudflare.age".publicKeys = [
     kierank
   ];
@@ -74,9 +69,7 @@ in
   "tranquil-pds.age".publicKeys = [
     kierank
   ];
-  "zai.age".publicKeys = [
-    kierank
-  ];
+
   "pbnj.age".publicKeys = [
     kierank
   ];

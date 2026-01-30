@@ -436,7 +436,7 @@ in
       wut() {
         export WUT_WRAPPER_ACTIVE=1
         local output
-        output=$("$(command -v wut)" "$@" 2>&1)
+        output=$(${wut}/bin/wut "$@" 2>&1)
         local exit_code=$?
         local cd_marker
         cd_marker=$(echo "$output" | grep "^__WUT_CD__:" | head -1)
