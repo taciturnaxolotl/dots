@@ -114,6 +114,9 @@
           hostname = "163.11.237.224";
           user = "Jacket20";
           identityFile = "~/.ssh/id_ed25519_cedarville";
+          extraOptions = {
+            SetEnv = "TERM=xterm-256color";
+          };
         };
       };
 
