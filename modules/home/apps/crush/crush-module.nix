@@ -2,14 +2,9 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 {
-  imports = [
-    inputs.nur.modules.homeManager.default
-  ];
-
   options.programs.crush = {
     enable = lib.mkEnableOption "Enable crush";
     settings = import ./_crush-options.nix { inherit lib; };
