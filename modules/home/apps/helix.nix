@@ -37,10 +37,6 @@
           kotlin-language-server
           harper
           inputs.wakatime-ls.packages.${pkgs.stdenv.hostPlatform.system}.default
-        ]
-        ++ lib.optionals config.atelier.apps.helix.swift [
-          sourcekit-lsp
-          unstable.sourcekit-lsp
         ];
       settings = {
         theme = "catppuccin_macchiato";
