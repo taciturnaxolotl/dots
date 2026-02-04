@@ -114,7 +114,7 @@
         };
 
         acm-battlestation = {
-          hostname = "163.11.237.224";
+          hostname = "163.11.236.52";
           user = "Jacket20";
           identityFile = "~/.ssh/id_ed25519_cedarville";
         };
