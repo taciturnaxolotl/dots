@@ -62,12 +62,8 @@
           hostname = "150.136.15.177"; # terebithia
         };
 
-        "p.*" = {
-          hostname = "150.136.63.103"; # prattle
-        };
-
         "e.*" = {
-          hostname = "192.168.0.94"; # ember
+          hostname = "ember"; # ember
         };
 
         # Regular hosts
@@ -93,16 +89,6 @@
         herald = {
           hostname = "herald.dunkirk.sh";
           port = 2223;
-        };
-
-        prattle = {
-          hostname = "150.136.63.103";
-          zmx = true;
-        };
-
-        ember = {
-          hostname = "192.168.0.94";
-          zmx = true;
         };
 
         remarkable = {
