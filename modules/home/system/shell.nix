@@ -618,7 +618,7 @@ EOF
          if [[ -z "$tangled_cookie" ]]; then
            ${pkgs.gum}/bin/gum style --foreground 214 "Warning: No tangled session cookie found at /run/agenix/tangled-session"
          else
-           encoded_desc=$(printf '%s' "$DESCRIPTION" | ${pkgs.gnused}/bin/sed 's/ /%20/g; s/!/%21/g; s/"/%22/g; s/#/%23/g; s/\$/%24/g; s/&/%26/g; s/'"'"'/%27/g; s/(/%28/g; s/)/%29/g; s/\*/%2A/g; s/+/%2B/g; s/,/%2C/g; s/\//%2F/g; s/:/%3A/g; s/;/%3B/g; s/=/%3D/g; s/?/%3F/g; s/@/%40/g; s/\[/%5B/g; s/\]/%5D/g')
+           encoded_desc=$(printf '%s' "$DESCRIPTION" | ${pkgs.gnused}/bin/sed 's| |%20|g; s|!|%21|g; s|"|%22|g; s|#|%23|g; s|\$|%24|g; s|&|%26|g; s|'"'"'|%27|g; s|(|%28|g; s|)|%29|g; s|\*|%2A|g; s|+|%2B|g; s|,|%2C|g; s|/|%2F|g; s|:|%3A|g; s|;|%3B|g; s|=|%3D|g; s|\?|%3F|g; s|@|%40|g; s|\[|%5B|g; s|\]|%5D|g')
 
            response=$(${pkgs.curl}/bin/curl -s 'https://tangled.org/repo/new' \
              -H 'Accept: */*' \
