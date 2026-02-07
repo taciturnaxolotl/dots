@@ -77,15 +77,18 @@
           port = 2220;
         };
 
-        kali = {
-          user = "kali";
-        };
-
         terebithia = {
           hostname = "150.136.15.177";
           zmx = true;
         };
 
+        kali = {
+          user = "blueteam";
+          hostname = "100.70.248.109";
+          extraOptions = {
+            SetEnv = "TERM=xterm-256color";
+          };
+        };
         herald = {
           hostname = "herald.dunkirk.sh";
           port = 2223;
@@ -103,6 +106,17 @@
           hostname = "163.11.236.52";
           user = "Jacket20";
           identityFile = "~/.ssh/id_ed25519_cedarville";
+        };
+
+        jump = {
+          hostname = "vce2.ncaecybergames.org";
+          port = 2213;
+          user = "kieranklukas@cedarville.edu";
+          identityFile = "~/.ssh/id_ed25519_cedarville";
+          forwardAgent = true;
+          extraOptions = {
+            SetEnv = "TERM=xterm-256color";
+          };
         };
       };
 
