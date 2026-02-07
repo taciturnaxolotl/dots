@@ -19,7 +19,7 @@
       window-padding-x = 12
       window-padding-y = 12
       keybind = ctrl+shift+w=close_surface
-      shell-integration-features = true
+      shell-integration-features = sudo, cursor, title 
     '';
   };
 }
