@@ -503,6 +503,12 @@
     };
   };
 
+  atelier.services.traverse = {
+    enable = true;
+    domain = "traverse.dunkirk.sh";
+    deploy.repository = "https://github.com/taciturnaxolotl/traverse";
+  };
+
   atelier.services.herald = {
     enable = true;
     domain = "herald.dunkirk.sh";
