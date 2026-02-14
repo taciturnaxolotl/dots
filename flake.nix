@@ -162,7 +162,7 @@
 
             zmx-binary = prev.callPackage ./packages/zmx.nix { };
             bore-auth = prev.callPackage ./packages/bore-auth.nix { };
-            herald = inputs.herald.packages.${prev.system}.default;
+            herald = inputs.herald.packages.${prev.stdenv.hostPlatform.system}.default;
           })
         ];
       };
