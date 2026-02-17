@@ -270,12 +270,16 @@ in {
           Restart = "on-failure";
           RestartSec = "10s";
           TimeoutStartSec = "60s";
-          
+
+          # Automatic state directory management
+          # Creates /var/lib/${name} with proper ownership before namespace setup
+          StateDirectory = name;
+          StateDirectoryMode = "0755";
+
           # Security hardening
           NoNewPrivileges = true;
           ProtectSystem = "strict";
           ProtectHome = true;
-          ReadWritePaths = [ cfg.dataDir ];
           PrivateTmp = true;
         };
 
@@ -290,9 +294,8 @@ in {
         ];
       };
 
-      # Ensure working directory exists before service starts
+      # StateDirectory handles base dir, tmpfiles creates subdirectories
       systemd.tmpfiles.rules = [
-        "d ${cfg.dataDir} 0755 ${name} services -"
         "d ${cfg.dataDir}/app 0755 ${name} services -"
         "d ${cfg.dataDir}/data 0755 ${name} services -"
       ];
