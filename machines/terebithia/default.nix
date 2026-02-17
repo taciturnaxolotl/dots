@@ -378,12 +378,14 @@
   atelier.services.cachet = {
     enable = true;
     domain = "cachet.dunkirk.sh";
+    deploy.repository = "https://github.com/taciturnaxolotl/cachet";
     secretsFile = config.age.secrets.cachet.path;
   };
 
   atelier.services.hn-alerts = {
     enable = true;
     domain = "hn.dunkirk.sh";
+    deploy.repository = "https://github.com/taciturnaxolotl/hn-alerts";
     secretsFile = config.age.secrets.hn-alerts.path;
   };
 
@@ -394,6 +396,7 @@
       port = 3002;
       workspace = "hackclub";
       channel = "C02T3CU03T3";
+      repository = "https://github.com/taciturnaxolotl/emojibot";
       secretsFile = config.age.secrets."emojibot/hackclub".path;
     };
 
@@ -478,12 +481,14 @@
   atelier.services.indiko = {
     enable = true;
     domain = "indiko.dunkirk.sh";
+    deploy.repository = "https://github.com/taciturnaxolotl/indiko";
   };
 
   atelier.services.l4 = {
     enable = true;
     domain = "l4.dunkirk.sh";
     port = 3004;
+    deploy.repository = "https://github.com/taciturnaxolotl/l4";
     deploy.autoUpdate = false;
     secretsFile = config.age.secrets.l4.path;
   };
@@ -491,7 +496,7 @@
   atelier.services.control = {
     enable = true;
     domain = "control.dunkirk.sh";
-    deploy.repository = "https://tangled.org/dunkirk.sh/control";
+    deploy.repository = "https://github.com/taciturnaxolotl/control";
     deploy.autoUpdate = false;
     secretsFile = config.age.secrets.control.path;
 
@@ -541,11 +546,11 @@
   atelier.services.canvas-mcp = {
     enable = true;
     domain = "canvas.dunkirk.sh";
+    deploy.repository = "https://github.com/taciturnaxolotl/canvas-mcp";
     secretsFile = config.age.secrets.canvas-mcp.path;
     environment = {
       DKIM_PRIVATE_KEY_FILE = "${config.age.secrets.canvas-mcp-dkim.path}";
     };
-    repository = "https://github.com/taciturnaxolotl/emojibot";
   };
 
   services.caddy.virtualHosts."terebithia.dunkirk.sh" = {

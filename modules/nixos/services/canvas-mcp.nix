@@ -21,7 +21,6 @@ mkService {
     systemd.services.canvas-mcp.serviceConfig.Environment = [
       "DATABASE_PATH=${cfg.dataDir}/data/canvas-mcp.db"
       "BASE_URL=https://${cfg.domain}"
-      "PORT=${toString cfg.port}"
     ];
 
     # Load secrets from agenix if configured
