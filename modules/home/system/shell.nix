@@ -675,10 +675,10 @@ EOF
 
        # Create on GitHub via gh CLI
        if [[ "$GITHUB" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
-         gh_args="$GITHUB_USER/$NAME --$VISIBILITY"
-         [[ -n "$DESCRIPTION" ]] && gh_args="$gh_args --description \"$DESCRIPTION\""
+         gh_args=("$GITHUB_USER/$NAME" "--$VISIBILITY")
+         [[ -n "$DESCRIPTION" ]] && gh_args+=("--description" "$DESCRIPTION")
 
-         if ${pkgs.gh}/bin/gh repo create $gh_args 2>/tmp/gh-error-$$.log; then
+         if ${pkgs.gh}/bin/gh repo create "''${gh_args[@]}" 2>/tmp/gh-error-$$.log; then
            ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
          else
            ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create GitHub repository"
