@@ -82,4 +82,10 @@ in
   "herald-dkim.age".publicKeys = [
     kierank
   ];
+  "canvas-mcp.age".publicKeys = [
+    kierank
+  ];
+  "canvas-mcp-dkim.age".publicKeys = [
+    kierank
+  ];
 }

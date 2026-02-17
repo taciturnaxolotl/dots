@@ -156,6 +156,15 @@
       owner = "herald";
       mode = "0400";
     };
+    canvas-mcp = {
+      file = ../../secrets/canvas-mcp.age;
+      owner = "canvas-mcp";
+    };
+    canvas-mcp-dkim = {
+      file = ../../secrets/canvas-mcp-dkim.age;
+      owner = "canvas-mcp";
+      mode = "0400";
+    };
 
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
@@ -527,6 +536,16 @@
       };
     };
     secretsFile = config.age.secrets.herald.path;
+  };
+
+  atelier.services.canvas-mcp = {
+    enable = true;
+    domain = "canvas.dunkirk.sh";
+    secretsFile = config.age.secrets.canvas-mcp.path;
+    environment = {
+      DKIM_PRIVATE_KEY_FILE = "${config.age.secrets.canvas-mcp-dkim.path}";
+    };
+    repository = "https://github.com/taciturnaxolotl/emojibot";
   };
 
   services.caddy.virtualHosts."terebithia.dunkirk.sh" = {
