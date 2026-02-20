@@ -88,4 +88,7 @@ in
   "canvas-mcp-dkim.age".publicKeys = [
     kierank
   ];
+  "cedarlogic.age".publicKeys = [
+    kierank
+  ];
 }
