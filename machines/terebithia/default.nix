@@ -165,6 +165,10 @@
       owner = "canvas-mcp";
       mode = "0400";
     };
+    cedarlogic = {
+      file = ../../secrets/cedarlogic.age;
+      owner = "cedarlogic";
+    };
 
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
@@ -551,6 +555,12 @@
     environment = {
       DKIM_PRIVATE_KEY_FILE = "${config.age.secrets.canvas-mcp-dkim.path}";
     };
+  };
+
+  atelier.services.cedarlogic = {
+    enable = true;
+    domain = "cedarlogic.dunkirk.sh";
+    secretsFile = config.age.secrets.cedarlogic.path;
   };
 
   services.caddy.virtualHosts."terebithia.dunkirk.sh" = {
