@@ -997,7 +997,7 @@ in
 
       domain = lib.mkOption {
         type = lib.types.str;
-        default = "knot.dunkirk.sh";
+        default = "dunkirk.sh";
         description = "Tangled domain for repo creation";
       };
 
