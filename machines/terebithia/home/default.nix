@@ -7,7 +7,7 @@
   home = {
     username = "kierank";
     homeDirectory = "/home/kierank";
-  };
+   };
 
   atelier = {
     shell = {

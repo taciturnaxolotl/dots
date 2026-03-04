@@ -15,7 +15,10 @@
     packages = [
       inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
     ];
-  };
+    sessionPath = [
+      "$HOME/.embedder/bin"
+    ];
+   };
 
   atelier = {
     shell = {
