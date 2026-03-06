@@ -382,14 +382,14 @@
   atelier.services.cachet = {
     enable = true;
     domain = "cachet.dunkirk.sh";
-    deploy.repository = "https://github.com/taciturnaxolotl/cachet";
+    repository = "https://github.com/taciturnaxolotl/cachet";
     secretsFile = config.age.secrets.cachet.path;
   };
 
   atelier.services.hn-alerts = {
     enable = true;
     domain = "hn.dunkirk.sh";
-    deploy.repository = "https://github.com/taciturnaxolotl/hn-alerts";
+    repository = "https://github.com/taciturnaxolotl/hn-alerts";
     secretsFile = config.age.secrets.hn-alerts.path;
   };
 
@@ -485,23 +485,21 @@
   atelier.services.indiko = {
     enable = true;
     domain = "indiko.dunkirk.sh";
-    deploy.repository = "https://github.com/taciturnaxolotl/indiko";
+    repository = "https://github.com/taciturnaxolotl/indiko";
   };
 
   atelier.services.l4 = {
     enable = true;
     domain = "l4.dunkirk.sh";
     port = 3004;
-    deploy.repository = "https://github.com/taciturnaxolotl/l4";
-    deploy.autoUpdate = false;
+    repository = "https://github.com/taciturnaxolotl/l4";
     secretsFile = config.age.secrets.l4.path;
   };
 
   atelier.services.control = {
     enable = true;
     domain = "control.dunkirk.sh";
-    deploy.repository = "https://github.com/taciturnaxolotl/control";
-    deploy.autoUpdate = false;
+    repository = "https://github.com/taciturnaxolotl/control";
     secretsFile = config.age.secrets.control.path;
 
     flags."map.dunkirk.sh" = {
@@ -524,7 +522,7 @@
   atelier.services.traverse = {
     enable = true;
     domain = "traverse.dunkirk.sh";
-    deploy.repository = "https://github.com/taciturnaxolotl/traverse";
+    repository = "https://github.com/taciturnaxolotl/traverse";
   };
 
   atelier.services.herald = {
@@ -550,7 +548,7 @@
   atelier.services.canvas-mcp = {
     enable = true;
     domain = "canvas.dunkirk.sh";
-    deploy.repository = "https://github.com/taciturnaxolotl/canvas-mcp";
+    repository = "https://github.com/taciturnaxolotl/canvas-mcp";
     secretsFile = config.age.secrets.canvas-mcp.path;
     environment = {
       DKIM_PRIVATE_KEY_FILE = "${config.age.secrets.canvas-mcp-dkim.path}";
@@ -560,6 +558,7 @@
   atelier.services.cedarlogic = {
     enable = true;
     domain = "cedarlogic.dunkirk.sh";
+    repository = "https://github.com/taciturnaxolotl/CedarLogic";
     secretsFile = config.age.secrets.cedarlogic.path;
   };
 

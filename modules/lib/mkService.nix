@@ -2,9 +2,12 @@
 #
 # Creates a standardized NixOS service module with:
 # - Common options (domain, port, dataDir, secrets, etc.)
-# - Systemd service with git-based deployment
+# - Systemd service with initial git clone for scaffolding
 # - Caddy reverse proxy configuration
 # - Automatic backup integration via data declarations
+#
+# Subsequent deployments are handled by per-repo GitHub Actions
+# workflows that SSH in as the service user, git pull, and restart.
 #
 # Usage in a service module:
 #   let
@@ -23,15 +26,15 @@
   name,
   description ? "${name} service",
   defaultPort ? 3000,
-  
+
   # Runtime configuration
   runtime ? "bun",  # "bun" | "node" | "custom"
   entryPoint ? "src/index.ts",
   startCommand ? null,  # Override the start command entirely
-  
+
   # Additional options specific to this service
   extraOptions ? {},
-  
+
   # Additional config when service is enabled
   # Receives cfg (the service config) as argument
   extraConfig ? cfg: {},
@@ -78,23 +81,12 @@ in {
       description = "Path to agenix secrets file";
     };
 
-    # Git-based deployment
-    deploy = {
-      enable = lib.mkEnableOption "Git-based deployment" // { default = true; };
-      
-      repository = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-        description = "Git repository URL for auto-deployment";
-      };
-
-      autoUpdate = lib.mkEnableOption "Automatically git pull on service restart";
-      
-      branch = lib.mkOption {
-        type = lib.types.str;
-        default = "main";
-        description = "Git branch to deploy";
-      };
+    # Git repository for initial scaffolding (clone on first start)
+    # Subsequent deploys are handled by GitHub Actions workflows
+    repository = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Git repository URL — cloned once on first start for scaffolding";
     };
 
     # Data declarations for automatic backup
@@ -225,34 +217,27 @@ in {
         after = [ "network.target" ];
         path = [ pkgs.git pkgs.openssh ];
 
-        preStart = lib.optionalString (cfg.deploy.enable && cfg.deploy.repository != null) ''
+        preStart = lib.optionalString (cfg.repository != null) ''
           set -e
-          # Clone repository if not present
+          # Clone repository on first start (scaffolding only)
           if [ ! -d ${cfg.dataDir}/app/.git ]; then
-            ${pkgs.git}/bin/git clone -b ${cfg.deploy.branch} ${cfg.deploy.repository} ${cfg.dataDir}/app
+            ${pkgs.git}/bin/git clone ${cfg.repository} ${cfg.dataDir}/app
           fi
-          
-          cd ${cfg.dataDir}/app
-        '' + lib.optionalString (cfg.deploy.enable && cfg.deploy.autoUpdate) ''
-          ${pkgs.git}/bin/git fetch origin || true
-          ${pkgs.git}/bin/git reset --hard origin/${cfg.deploy.branch} || true
         '' + lib.optionalString (runtime == "bun") ''
-          
-          if [ -f package.json ]; then
-            echo "Installing dependencies..."
-            ${pkgs.unstable.bun}/bin/bun install || {
-              echo "Failed to install dependencies, trying again..."
-              ${pkgs.unstable.bun}/bin/bun install
-            }
+
+          # Install deps only on first clone (no node_modules yet)
+          if [ -f ${cfg.dataDir}/app/package.json ] && [ ! -d ${cfg.dataDir}/app/node_modules ]; then
+            cd ${cfg.dataDir}/app
+            echo "First start: installing dependencies..."
+            ${pkgs.unstable.bun}/bin/bun install
           fi
         '' + lib.optionalString (runtime == "node") ''
-          
-          if [ -f package.json ]; then
-            echo "Installing dependencies..."
-            ${pkgs.nodejs_20}/bin/npm ci --production || {
-              echo "Failed to install dependencies, trying again..."
-              ${pkgs.nodejs_20}/bin/npm ci --production
-            }
+
+          # Install deps only on first clone (no node_modules yet)
+          if [ -f ${cfg.dataDir}/app/package.json ] && [ ! -d ${cfg.dataDir}/app/node_modules ]; then
+            cd ${cfg.dataDir}/app
+            echo "First start: installing dependencies..."
+            ${pkgs.nodejs_20}/bin/npm ci --production
           fi
         '';
 
@@ -271,34 +256,23 @@ in {
           RestartSec = "10s";
           TimeoutStartSec = "60s";
 
-          # Automatic state directory management
-          # Creates /var/lib/${name} with proper ownership before namespace setup
-          StateDirectory = name;
-          StateDirectoryMode = "0755";
-
           # Security hardening
           NoNewPrivileges = true;
           ProtectSystem = "strict";
           ProtectHome = true;
           PrivateTmp = true;
+
+          # ExecStartPre with ! runs as root before namespace setup,
+          # guaranteeing dirs exist before WorkingDirectory is checked
+          ExecStartPre = [
+            "!${pkgs.writeShellScript "${name}-setup" ''
+              mkdir -p ${cfg.dataDir}/app ${cfg.dataDir}/data
+              chown -R ${name}:services ${cfg.dataDir}
+              chmod -R g+rwX ${cfg.dataDir}
+            ''}"
+          ];
         };
-
-        serviceConfig.ExecStartPre = [
-          # Run before preStart, creates directories so WorkingDirectory exists
-          "!${pkgs.writeShellScript "${name}-setup" ''
-            mkdir -p ${cfg.dataDir}/app/data
-            mkdir -p ${cfg.dataDir}/data
-            chown -R ${name}:services ${cfg.dataDir}
-            chmod -R g+rwX ${cfg.dataDir}
-          ''}"
-        ];
       };
-
-      # StateDirectory handles base dir, tmpfiles creates subdirectories
-      systemd.tmpfiles.rules = [
-        "d ${cfg.dataDir}/app 0755 ${name} services -"
-        "d ${cfg.dataDir}/data 0755 ${name} services -"
-      ];
 
       # Caddy reverse proxy
       services.caddy.virtualHosts.${cfg.domain} = lib.mkIf cfg.caddy.enable {
