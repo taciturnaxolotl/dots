@@ -384,6 +384,7 @@
     domain = "cachet.dunkirk.sh";
     repository = "https://github.com/taciturnaxolotl/cachet";
     secretsFile = config.age.secrets.cachet.path;
+    healthUrl = "https://cachet.dunkirk.sh/health?detailed=true";
   };
 
   atelier.services.hn-alerts = {
@@ -391,6 +392,7 @@
     domain = "hn.dunkirk.sh";
     repository = "https://github.com/taciturnaxolotl/hn-alerts";
     secretsFile = config.age.secrets.hn-alerts.path;
+    healthUrl = "https://hn.dunkirk.sh/health";
   };
 
   atelier.services.emojibot.instances = {
@@ -486,6 +488,7 @@
     enable = true;
     domain = "indiko.dunkirk.sh";
     repository = "https://github.com/taciturnaxolotl/indiko";
+    healthUrl = "https://indiko.dunkirk.sh/health";
   };
 
   atelier.services.l4 = {
@@ -494,6 +497,7 @@
     port = 3004;
     repository = "https://github.com/taciturnaxolotl/l4";
     secretsFile = config.age.secrets.l4.path;
+    healthUrl = "https://l4.dunkirk.sh/health";
   };
 
   atelier.services.control = {
@@ -501,6 +505,7 @@
     domain = "control.dunkirk.sh";
     repository = "https://github.com/taciturnaxolotl/control";
     secretsFile = config.age.secrets.control.path;
+    healthUrl = "https://control.dunkirk.sh/health";
 
     flags."map.dunkirk.sh" = {
       name = "Map";
@@ -523,6 +528,7 @@
     enable = true;
     domain = "traverse.dunkirk.sh";
     repository = "https://github.com/taciturnaxolotl/traverse";
+    healthUrl = "https://traverse.dunkirk.sh";
   };
 
   atelier.services.herald = {
@@ -550,6 +556,7 @@
     domain = "canvas.dunkirk.sh";
     repository = "https://github.com/taciturnaxolotl/canvas-mcp";
     secretsFile = config.age.secrets.canvas-mcp.path;
+    healthUrl = "https://canvas.dunkirk.sh/health?detailed=true";
     environment = {
       DKIM_PRIVATE_KEY_FILE = "${config.age.secrets.canvas-mcp-dkim.path}";
     };
@@ -560,6 +567,7 @@
     domain = "cedarlogic.dunkirk.sh";
     repository = "https://github.com/taciturnaxolotl/CedarLogic";
     secretsFile = config.age.secrets.cedarlogic.path;
+    healthUrl = "https://cedarlogic.dunkirk.sh/health";
   };
 
   services.caddy.virtualHosts."terebithia.dunkirk.sh" = {

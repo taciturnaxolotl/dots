@@ -89,6 +89,27 @@ in {
       description = "Git repository URL — cloned once on first start for scaffolding";
     };
 
+    healthUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Health check URL for monitoring";
+    };
+
+    # Internal metadata set by mkService factory — used by services-manifest
+    _description = lib.mkOption {
+      type = lib.types.str;
+      default = description;
+      internal = true;
+      readOnly = true;
+    };
+
+    _runtime = lib.mkOption {
+      type = lib.types.str;
+      default = runtime;
+      internal = true;
+      readOnly = true;
+    };
+
     # Data declarations for automatic backup
     data = {
       sqlite = lib.mkOption {

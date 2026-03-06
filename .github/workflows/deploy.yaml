@@ -36,6 +36,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
       
+      - name: Build docs
+        run: nix build .#packages.x86_64-linux.docs -L
+
+      - name: Publish to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy result --project-name=infra-dunkirk
+
       - name: Deploy all configurations
         run: |
           nix run 'github:serokell/deploy-rs' -- \

@@ -1,0 +1,14 @@
+[book]
+title = "dunkirk.sh"
+authors = ["Kieran Klukas"]
+src = "src"
+
+[build]
+build-dir = "./dist"
+create-missing = false
+
+[output.html]
+default-theme = "latte"
+preferred-dark-theme = "mocha"
+git-repository-url = "https://github.com/taciturnaxolotl/dots"
+additional-css = ["./theme/catppuccin.css"]

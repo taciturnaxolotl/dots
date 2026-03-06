@@ -66,10 +66,6 @@ in
   "restic/password.age".publicKeys = [
     kierank
   ];
-  "tranquil-pds.age".publicKeys = [
-    kierank
-  ];
-
   "pbnj.age".publicKeys = [
     kierank
   ];

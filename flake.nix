@@ -119,10 +119,6 @@
       url = "github:neurosnap/zmx";
     };
 
-    tranquil-pds = {
-      url = "git+https://tangled.org/tranquil.farm/tranquil-pds";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
@@ -274,6 +270,33 @@
           ];
         };
       };
+
+      # Service manifest for infra dashboard
+      # Evaluate with: nix eval --json .#services-manifest
+      services-manifest = import ./lib/services-manifest.nix {
+        config = self.nixosConfigurations.terebithia.config;
+        lib = nixpkgs.lib;
+      };
+
+      # Documentation site (mdBook + nixdoc + atelier options)
+      # Build with: nix build .#docs
+      # Serve with: nix run .#docs.serve
+      packages =
+        let
+          mkDocs = system:
+            let
+              pkgs = nixpkgs.legacyPackages.${system};
+            in
+            pkgs.callPackage ./packages/docs.nix {
+              servicesManifest = self.services-manifest;
+              inherit self;
+            };
+        in
+        {
+          x86_64-linux.docs = mkDocs "x86_64-linux";
+          aarch64-linux.docs = mkDocs "aarch64-linux";
+          aarch64-darwin.docs = mkDocs "aarch64-darwin";
+        };
 
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
       formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
