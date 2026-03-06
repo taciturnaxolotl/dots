@@ -1,0 +1,144 @@
+name: Deploy Service (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        required: true
+        type: string
+        description: "Service name (matches atelier.services.<name>)"
+      host:
+        required: false
+        type: string
+        default: terebithia
+        description: "Tailscale hostname to deploy to"
+      health_url:
+        required: false
+        type: string
+        description: "URL to check after deploy (omit to skip health check)"
+      branch:
+        required: false
+        type: string
+        default: main
+      db_path:
+        required: false
+        type: string
+        description: "SQLite DB path for pre-deploy snapshot (e.g. /var/lib/cachet/data/cachet.db)"
+    secrets:
+      TS_OAUTH_CLIENT_ID:
+        required: true
+      TS_OAUTH_SECRET:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: ${{ inputs.health_url }}
+
+    concurrency:
+      group: deploy-${{ inputs.service }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:deploy
+          use-cache: "true"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
+
+      - name: Deploy
+        run: |
+          ssh ${{ inputs.service }}@${{ inputs.host }} << 'EOF'
+            set -e
+            cd ~/app
+
+            git fetch --all
+            git rev-parse HEAD > /tmp/${{ inputs.service }}-prev-commit
+
+            # snapshot SQLite DB before any changes
+            DB_PATH="${{ inputs.db_path }}"
+            if [ -n "$DB_PATH" ] && [ -f "$DB_PATH" ]; then
+              echo ":: snapshotting $DB_PATH"
+              cp "$DB_PATH" "$DB_PATH.pre-deploy"
+            fi
+
+            git reset --hard origin/${{ inputs.branch }}
+            bun install --frozen-lockfile
+            sudo /run/current-system/sw/bin/systemctl restart ${{ inputs.service }}.service
+          EOF
+
+      - name: Health check
+        if: inputs.health_url != ''
+        run: |
+          for i in $(seq 1 12); do
+            echo ":: attempt $i/12"
+            HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" "${{ inputs.health_url }}" 2>/dev/null || echo "000")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo ":: ${{ inputs.service }} is healthy"
+              exit 0
+            fi
+
+            echo ":: HTTP $HTTP_CODE — retrying in 5s"
+            [ $i -lt 12 ] && sleep 5
+          done
+          echo ":: health check failed after 60s"
+          exit 1
+
+      - name: Check systemd status
+        if: inputs.health_url == ''
+        run: |
+          for i in $(seq 1 6); do
+            echo ":: attempt $i/6"
+            STATUS=$(ssh ${{ inputs.service }}@${{ inputs.host }} \
+              "systemctl is-active ${{ inputs.service }}.service" 2>/dev/null || echo "unknown")
+
+            if [ "$STATUS" = "active" ]; then
+              echo ":: ${{ inputs.service }} is active"
+              exit 0
+            fi
+
+            echo ":: status: $STATUS — retrying in 5s"
+            [ $i -lt 6 ] && sleep 5
+          done
+          echo ":: service not active after 30s"
+          exit 1
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          ssh ${{ inputs.service }}@${{ inputs.host }} << 'EOF'
+            set -e
+            cd ~/app
+
+            PREV=$(cat /tmp/${{ inputs.service }}-prev-commit 2>/dev/null || echo "")
+            if [ -z "$PREV" ]; then
+              echo ":: no previous commit recorded, cannot rollback"
+              exit 1
+            fi
+
+            echo ":: rolling back to $PREV"
+
+            # restore DB snapshot if one exists
+            DB_PATH="${{ inputs.db_path }}"
+            if [ -n "$DB_PATH" ] && [ -f "$DB_PATH.pre-deploy" ]; then
+              echo ":: restoring DB snapshot"
+              sudo /run/current-system/sw/bin/systemctl stop ${{ inputs.service }}.service || true
+              cp "$DB_PATH.pre-deploy" "$DB_PATH"
+            fi
+
+            git reset --hard "$PREV"
+            bun install --frozen-lockfile
+            sudo /run/current-system/sw/bin/systemctl restart ${{ inputs.service }}.service
+
+            echo ":: rolled back ${{ inputs.service }} to $PREV"
+          EOF

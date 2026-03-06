@@ -197,16 +197,14 @@ in {
 
       users.groups.${name} = {};
 
-      # Allow service user to restart their own service
+      # Allow service user to manage their own service (for CI/CD deploys)
       security.sudo.extraRules = [
         {
           users = [ name ];
-          commands = [
-            {
-              command = "/run/current-system/sw/bin/systemctl restart ${name}.service";
-              options = [ "NOPASSWD" ];
-            }
-          ];
+          commands = map (cmd: {
+            command = "/run/current-system/sw/bin/systemctl ${cmd} ${name}.service";
+            options = [ "NOPASSWD" ];
+          }) [ "restart" "stop" "start" "status" ];
         }
       ];
 
