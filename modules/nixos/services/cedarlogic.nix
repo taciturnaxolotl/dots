@@ -66,15 +66,15 @@ let
       systemd.services.cedarlogic.preStart = lib.mkAfter ''
         cd ${webDir}
 
-        if [ -f package.json ]; then
+        # First start: install deps, parse gates, and build client
+        if [ -f package.json ] && [ ! -d node_modules ]; then
           ${pkgs.unstable.bun}/bin/bun install
+          ${pkgs.unstable.bun}/bin/bun run parse-gates
+          ${pkgs.unstable.bun}/bin/bun run build
         fi
 
-        # Generate gate definitions from XML
-        ${pkgs.unstable.bun}/bin/bun run parse-gates
-
-        # Build client (Vite)
-        ${pkgs.unstable.bun}/bin/bun run build
+        # Ensure Caddy can read static files
+        chmod -R g+rX ${webDir}/dist 2>/dev/null || true
       '';
 
       # Caddy - path-based routing to 3 backends + static file serving
