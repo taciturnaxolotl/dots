@@ -404,6 +404,7 @@
       channel = "C02T3CU03T3";
       repository = "https://github.com/taciturnaxolotl/emojibot";
       secretsFile = config.age.secrets."emojibot/hackclub".path;
+      healthUrl = "https://hc.emojibot.dunkirk.sh/health";
     };
 
     df1317 = {
@@ -414,6 +415,7 @@
       channel = "C06SBHMQU8G";
       repository = "https://github.com/taciturnaxolotl/emojibot";
       secretsFile = config.age.secrets."emojibot/df1317".path;
+      healthUrl = "https://df.emojibot.dunkirk.sh/health";
     };
   };
 

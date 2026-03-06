@@ -53,6 +53,12 @@ in {
             default = null;
             description = "Slack channel ID (non-sensitive, can be public)";
           };
+
+          healthUrl = mkOption {
+            type = types.nullOr types.str;
+            default = null;
+            description = "Health check URL for monitoring";
+          };
         };
       });
       default = {};

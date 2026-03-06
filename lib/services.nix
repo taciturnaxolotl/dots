@@ -132,7 +132,7 @@
           port = inst.port;
           runtime = "bun";
           repository = inst.repository or null;
-          health_url = null;
+          health_url = inst.healthUrl or null;
           data = { sqlite = null; postgres = null; files = []; };
         }) enabled;
 
