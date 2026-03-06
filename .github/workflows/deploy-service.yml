@@ -69,42 +69,49 @@ jobs:
         id: deploy
         run: |
           C="\033[36m" G="\033[32m" Y="\033[33m" D="\033[2m" R="\033[0m"
+          START=$(date +%s)
 
           RESULT=$(ssh ${{ inputs.service }}@${{ inputs.host }} << 'DEPLOY'
             set -e
             cd ~/app
 
             git fetch --all --quiet
-            git rev-parse HEAD > /tmp/${{ inputs.service }}-prev-commit
-            PREV=$(git rev-parse --short HEAD)
+            PREV_FULL=$(git rev-parse HEAD)
+            echo "$PREV_FULL" > /tmp/${{ inputs.service }}-prev-commit
+            PREV_SHORT=$(git rev-parse --short HEAD)
 
             DB_PATH="${{ inputs.db_path }}"
             if [ -n "$DB_PATH" ] && [ -f "$DB_PATH" ]; then
               cp "$DB_PATH" "$DB_PATH.pre-deploy"
-              echo "DB_SNAPSHOT=true" >&2
             fi
 
             git reset --hard origin/${{ inputs.branch }} --quiet
-            NEW=$(git rev-parse --short HEAD)
+            NEW_FULL=$(git rev-parse HEAD)
+            NEW_SHORT=$(git rev-parse --short HEAD)
 
-            # output for step summary
-            echo "PREV=$PREV"
-            echo "NEW=$NEW"
+            echo "PREV_SHORT=$PREV_SHORT"
+            echo "PREV_FULL=$PREV_FULL"
+            echo "NEW_SHORT=$NEW_SHORT"
+            echo "NEW_FULL=$NEW_FULL"
             echo "LOG<<GITLOG"
-            git log --oneline ${PREV}..${NEW} 2>/dev/null || echo "(initial deploy)"
+            git log --oneline ${PREV_FULL}..${NEW_FULL} 2>/dev/null || echo "(initial deploy)"
             echo "GITLOG"
           DEPLOY
           )
 
           # parse outputs
-          PREV=$(echo "$RESULT" | grep "^PREV=" | cut -d= -f2)
-          NEW=$(echo "$RESULT" | grep "^NEW=" | cut -d= -f2)
+          PREV_SHORT=$(echo "$RESULT" | grep "^PREV_SHORT=" | cut -d= -f2)
+          PREV_FULL=$(echo "$RESULT" | grep "^PREV_FULL=" | cut -d= -f2)
+          NEW_SHORT=$(echo "$RESULT" | grep "^NEW_SHORT=" | cut -d= -f2)
+          NEW_FULL=$(echo "$RESULT" | grep "^NEW_FULL=" | cut -d= -f2)
           LOG=$(echo "$RESULT" | sed -n '/^LOG<<GITLOG$/,/^GITLOG$/p' | sed '1d;$d')
 
-          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
-          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+          echo "prev_short=$PREV_SHORT" >> "$GITHUB_OUTPUT"
+          echo "prev_full=$PREV_FULL" >> "$GITHUB_OUTPUT"
+          echo "new_short=$NEW_SHORT" >> "$GITHUB_OUTPUT"
+          echo "new_full=$NEW_FULL" >> "$GITHUB_OUTPUT"
 
-          echo -e "${C}:: ${{ inputs.service }}${R} ${D}${PREV} → ${NEW}${R}"
+          echo -e "${C}:: ${{ inputs.service }}${R} ${D}${PREV_SHORT} → ${NEW_SHORT}${R}"
 
           if [ -n "$LOG" ] && [ "$LOG" != "(initial deploy)" ]; then
             echo "::group::commits"
@@ -121,6 +128,9 @@ jobs:
             sudo /run/current-system/sw/bin/systemctl restart ${{ inputs.service }}.service
           INSTALL
           echo "::endgroup::"
+
+          END=$(date +%s)
+          echo "duration=$((END - START))s" >> "$GITHUB_OUTPUT"
 
           echo -e "${G}:: deployed ${{ inputs.service }}${R}"
 
@@ -172,29 +182,25 @@ jobs:
       - name: Summary
         if: always()
         run: |
-          PREV="${{ steps.deploy.outputs.prev }}"
-          NEW="${{ steps.deploy.outputs.new }}"
+          PREV_SHORT="${{ steps.deploy.outputs.prev_short }}"
+          PREV_FULL="${{ steps.deploy.outputs.prev_full }}"
+          NEW_SHORT="${{ steps.deploy.outputs.new_short }}"
+          NEW_FULL="${{ steps.deploy.outputs.new_full }}"
+          DURATION="${{ steps.deploy.outputs.duration }}"
           HEALTH="${{ steps.health.outputs.status || steps.systemd.outputs.status }}"
-          SERVICE="${{ inputs.service }}"
           HOST="${{ inputs.host }}"
+          REPO="https://github.com/${{ github.repository }}"
 
           if [ "${{ job.status }}" = "success" ]; then
-            ICON="✅"
             STATUS="Deployed"
           else
-            ICON="❌"
             STATUS="Failed"
           fi
 
           cat >> "$GITHUB_STEP_SUMMARY" << EOF
-          ### ${ICON} ${SERVICE}
-
-          | | |
-          |---|---|
-          | **Status** | ${STATUS} |
-          | **Host** | \`${HOST}\` |
-          | **Commits** | \`${PREV}\` → \`${NEW}\` |
-          | **Health** | ${HEALTH:-skipped} |
+          | status | host | commits | health |
+          |---|---|---|---|
+          | \`${STATUS}\` in \`${DURATION}\` | \`${HOST}\` | [\`${PREV_SHORT}\`](${REPO}/commit/${PREV_FULL}) → [\`${NEW_SHORT}\`](${REPO}/commit/${NEW_FULL}) | \`${HEALTH:-skipped}\` |
           EOF
 
       - name: Rollback on failure
