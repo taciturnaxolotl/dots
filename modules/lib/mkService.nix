@@ -265,8 +265,8 @@ in {
           ExecStartPre = [
             "!${pkgs.writeShellScript "${name}-setup" ''
               mkdir -p ${cfg.dataDir}/app ${cfg.dataDir}/data
-              chown -R ${name}:services ${cfg.dataDir}
-              chmod -R g+rwX ${cfg.dataDir}
+              chown ${name}:services ${cfg.dataDir} ${cfg.dataDir}/app ${cfg.dataDir}/data
+              chmod g+rwX ${cfg.dataDir} ${cfg.dataDir}/app ${cfg.dataDir}/data
             ''}"
           ];
         };
