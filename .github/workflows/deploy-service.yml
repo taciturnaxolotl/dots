@@ -30,6 +30,9 @@ on:
       TS_OAUTH_SECRET:
         required: true
 
+permissions:
+  deployments: write
+
 jobs:
   deploy:
     name: ${{ inputs.service }} → ${{ inputs.host }}
@@ -57,89 +60,165 @@ jobs:
           echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
 
       - name: Deploy
+        id: deploy
         run: |
-          ssh ${{ inputs.service }}@${{ inputs.host }} << 'EOF'
+          C="\033[36m" G="\033[32m" Y="\033[33m" D="\033[2m" R="\033[0m"
+
+          RESULT=$(ssh ${{ inputs.service }}@${{ inputs.host }} << 'DEPLOY'
             set -e
             cd ~/app
 
-            git fetch --all
+            git fetch --all --quiet
             git rev-parse HEAD > /tmp/${{ inputs.service }}-prev-commit
+            PREV=$(git rev-parse --short HEAD)
 
-            # snapshot SQLite DB before any changes
             DB_PATH="${{ inputs.db_path }}"
             if [ -n "$DB_PATH" ] && [ -f "$DB_PATH" ]; then
-              echo ":: snapshotting $DB_PATH"
               cp "$DB_PATH" "$DB_PATH.pre-deploy"
+              echo "DB_SNAPSHOT=true" >&2
             fi
 
-            git reset --hard origin/${{ inputs.branch }}
+            git reset --hard origin/${{ inputs.branch }} --quiet
+            NEW=$(git rev-parse --short HEAD)
+
+            # output for step summary
+            echo "PREV=$PREV"
+            echo "NEW=$NEW"
+            echo "LOG<<GITLOG"
+            git log --oneline ${PREV}..${NEW} 2>/dev/null || echo "(initial deploy)"
+            echo "GITLOG"
+          DEPLOY
+          )
+
+          # parse outputs
+          PREV=$(echo "$RESULT" | grep "^PREV=" | cut -d= -f2)
+          NEW=$(echo "$RESULT" | grep "^NEW=" | cut -d= -f2)
+          LOG=$(echo "$RESULT" | sed -n '/^LOG<<GITLOG$/,/^GITLOG$/p' | sed '1d;$d')
+
+          echo "prev=$PREV" >> "$GITHUB_OUTPUT"
+          echo "new=$NEW" >> "$GITHUB_OUTPUT"
+
+          echo -e "${C}:: ${{ inputs.service }}${R} ${D}${PREV} → ${NEW}${R}"
+
+          if [ -n "$LOG" ] && [ "$LOG" != "(initial deploy)" ]; then
+            echo "::group::commits"
+            echo "$LOG"
+            echo "::endgroup::"
+          fi
+
+          echo "::group::install & restart"
+          ssh ${{ inputs.service }}@${{ inputs.host }} << 'INSTALL'
+            set -e
+            cd ~/app
             bun install --frozen-lockfile
             sudo /run/current-system/sw/bin/systemctl restart ${{ inputs.service }}.service
-          EOF
+          INSTALL
+          echo "::endgroup::"
+
+          echo -e "${G}:: deployed ${{ inputs.service }}${R}"
 
       - name: Health check
+        id: health
         if: inputs.health_url != ''
         run: |
+          G="\033[32m" Y="\033[33m" RED="\033[31m" D="\033[2m" R="\033[0m"
+
           for i in $(seq 1 12); do
-            echo ":: attempt $i/12"
             HTTP_CODE=$(curl -sf -o /dev/null -w "%{http_code}" "${{ inputs.health_url }}" 2>/dev/null || echo "000")
 
             if [ "$HTTP_CODE" = "200" ]; then
-              echo ":: ${{ inputs.service }} is healthy"
+              echo -e "${G}:: healthy${R} ${D}${{ inputs.health_url }}${R}"
+              echo "status=healthy" >> "$GITHUB_OUTPUT"
               exit 0
             fi
 
-            echo ":: HTTP $HTTP_CODE — retrying in 5s"
+            echo -e "${Y}:: attempt ${i}/12${R} ${D}HTTP ${HTTP_CODE}${R}"
             [ $i -lt 12 ] && sleep 5
           done
-          echo ":: health check failed after 60s"
+          echo -e "${RED}:: health check failed after 60s${R}"
+          echo "status=failed" >> "$GITHUB_OUTPUT"
           exit 1
 
       - name: Check systemd status
+        id: systemd
         if: inputs.health_url == ''
         run: |
+          G="\033[32m" Y="\033[33m" RED="\033[31m" D="\033[2m" R="\033[0m"
+
           for i in $(seq 1 6); do
-            echo ":: attempt $i/6"
             STATUS=$(ssh ${{ inputs.service }}@${{ inputs.host }} \
               "systemctl is-active ${{ inputs.service }}.service" 2>/dev/null || echo "unknown")
 
             if [ "$STATUS" = "active" ]; then
-              echo ":: ${{ inputs.service }} is active"
+              echo -e "${G}:: service active${R}"
+              echo "status=healthy" >> "$GITHUB_OUTPUT"
               exit 0
             fi
 
-            echo ":: status: $STATUS — retrying in 5s"
+            echo -e "${Y}:: attempt ${i}/6${R} ${D}${STATUS}${R}"
             [ $i -lt 6 ] && sleep 5
           done
-          echo ":: service not active after 30s"
+          echo -e "${RED}:: service not active after 30s${R}"
+          echo "status=failed" >> "$GITHUB_OUTPUT"
           exit 1
+
+      - name: Summary
+        if: always()
+        run: |
+          PREV="${{ steps.deploy.outputs.prev }}"
+          NEW="${{ steps.deploy.outputs.new }}"
+          HEALTH="${{ steps.health.outputs.status || steps.systemd.outputs.status }}"
+          SERVICE="${{ inputs.service }}"
+          HOST="${{ inputs.host }}"
+
+          if [ "${{ job.status }}" = "success" ]; then
+            ICON="✅"
+            STATUS="Deployed"
+          else
+            ICON="❌"
+            STATUS="Failed"
+          fi
+
+          cat >> "$GITHUB_STEP_SUMMARY" << EOF
+          ### ${ICON} ${SERVICE}
+
+          | | |
+          |---|---|
+          | **Status** | ${STATUS} |
+          | **Host** | \`${HOST}\` |
+          | **Commits** | \`${PREV}\` → \`${NEW}\` |
+          | **Health** | ${HEALTH:-skipped} |
+          EOF
 
       - name: Rollback on failure
         if: failure()
         run: |
-          ssh ${{ inputs.service }}@${{ inputs.host }} << 'EOF'
+          ::warning::Deploy failed — rolling back ${{ inputs.service }}
+
+          ssh ${{ inputs.service }}@${{ inputs.host }} << 'ROLLBACK'
             set -e
+            RED="\033[31m" Y="\033[33m" G="\033[32m" D="\033[2m" R="\033[0m"
             cd ~/app
 
             PREV=$(cat /tmp/${{ inputs.service }}-prev-commit 2>/dev/null || echo "")
             if [ -z "$PREV" ]; then
-              echo ":: no previous commit recorded, cannot rollback"
+              echo -e "${RED}:: no previous commit recorded, cannot rollback${R}"
               exit 1
             fi
 
-            echo ":: rolling back to $PREV"
+            SHORT=$(echo "$PREV" | cut -c1-7)
+            echo -e "${Y}:: rolling back to ${SHORT}${R}"
 
-            # restore DB snapshot if one exists
             DB_PATH="${{ inputs.db_path }}"
             if [ -n "$DB_PATH" ] && [ -f "$DB_PATH.pre-deploy" ]; then
-              echo ":: restoring DB snapshot"
+              echo -e "${Y}:: restoring database snapshot${R}"
               sudo /run/current-system/sw/bin/systemctl stop ${{ inputs.service }}.service || true
               cp "$DB_PATH.pre-deploy" "$DB_PATH"
             fi
 
-            git reset --hard "$PREV"
-            bun install --frozen-lockfile
+            git reset --hard "$PREV" --quiet
+            bun install --frozen-lockfile 2>&1 | tail -1
             sudo /run/current-system/sw/bin/systemctl restart ${{ inputs.service }}.service
 
-            echo ":: rolled back ${{ inputs.service }} to $PREV"
-          EOF
+            echo -e "${G}:: rolled back to ${SHORT}${R}"
+          ROLLBACK
