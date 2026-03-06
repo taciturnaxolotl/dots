@@ -257,6 +257,7 @@ in {
           # Security hardening
           NoNewPrivileges = true;
           ProtectSystem = "strict";
+          ReadWritePaths = [ cfg.dataDir ];
           ProtectHome = true;
           PrivateTmp = true;
 
