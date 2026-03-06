@@ -200,7 +200,7 @@ jobs:
           cat >> "$GITHUB_STEP_SUMMARY" << EOF
           | status | host | commits | health |
           |---|---|---|---|
-          | \`${STATUS}\` in \`${DURATION}\` | \`${HOST}\` | [\`${PREV_SHORT}\`](${REPO}/commit/${PREV_FULL}) → [\`${NEW_SHORT}\`](${REPO}/commit/${NEW_FULL}) | \`${HEALTH:-skipped}\` |
+          | \`${STATUS}\` in \`${DURATION}\` | \`${HOST}\` | [\`${PREV_SHORT}\`](${REPO}/commit/${PREV_FULL}) → [\`${NEW_SHORT}\`](${REPO}/commit/${NEW_FULL}) ([diff](${REPO}/compare/${PREV_FULL}...${NEW_FULL})) | \`${HEALTH:-skipped}\` |
           EOF
 
       - name: Rollback on failure
