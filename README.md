@@ -5,42 +5,41 @@
 > [!CAUTION]
 > These dots are highly prone to change / breakage.
 >
-> ~I am not a nix os expert (this is my first time touching nix), so I'm not sure if this will work or not. I'm just trying to get my dots up on github.~
+> ~~I am not a nix os expert (this is my first time touching nix), so I'm not sure if this will work or not. I'm just trying to get my dots up on github.~~
 >
-> After `284` successful days of these dots being in constant operation, many many rebuilds, and `364` commits these dots have been rock solid and I have no complaints.
+> After `591` days of these dots being in constant operation, many many rebuilds, and `776` commits these dots have been rock solid and I have no complaints.
 
 ## The layout
 
-```bash
-~/dots # symlinked to /etc/nixos
-├── dots # any config files that need to be symlinked go here, e.g. my hyprland config
+```
+~/dots
+├── .github/workflows  # CI/CD (deploy-rs + per-service reusable workflow)
+├── dots               # config files symlinked by home-manager
 │   └── wallpapers
 ├── machines
-│   ├── atalanta # my macOS M4 machine
-│   ├── ember # my dell r210 server (in my basement)
-│   ├── moonlark # my framework 13 <dead>
-│   ├── nest # shared tilde server through hc
-│   ├── prattle # oracle cloud x86_64 server
-│   ├── tacyon # rpi 5
-│   └── terebithia # oracle cloud aarch64 server
+│   ├── atalanta       # macOS M4 (nix-darwin)
+│   ├── ember          # dell r210 server (basement)
+│   ├── moonlark       # framework 13 (dead)
+│   ├── nest           # shared tilde server (home-manager only)
+│   ├── prattle        # oracle cloud x86_64
+│   ├── tacyon         # rpi 5
+│   └── terebithia     # oracle cloud aarch64 (main server)
 ├── modules
-│   ├── lib # shared nix utilities
-│   │   └── mkService.nix # base service factory
-│   ├── home # home-manager modules
+│   ├── lib
+│   │   └── mkService.nix  # service factory (see Deployment section)
+│   ├── home           # home-manager modules
 │   │   ├── aesthetics # theming and wallpapers
-│   │   ├── apps # any app specific config
-│   │   │   └── crush # vendored for now
-│   │   ├── system # home-manager system configs
-│   │   └── wm # window managers; just hyprland for now
-│   │       └── hyprland
-│   └── nixos # nixos modules
-│       ├── apps # also app specific configs
-│       ├── services # self-hosted services with automatic backup
-│       │   └── restic # backup system (see modules/nixos/services/restic/README.md)
-│       └── system # pam and my fancy wifi module for now
-└── secrets # keep your grubby hands (or paws) off my data
-
-16 directories
+│   │   ├── apps       # app configs (ghostty, helix, git, ssh, etc.)
+│   │   ├── system     # shell, environment
+│   │   └── wm/hyprland
+│   └── nixos          # nixos modules
+│       ├── apps       # system-level app configs
+│       ├── services   # self-hosted services (mkService-based + custom)
+│       │   ├── restic # backup system with CLI
+│       │   └── bore   # tunnel proxy
+│       └── system     # pam, wifi
+├── packages           # custom nix packages
+└── secrets            # agenix-encrypted secrets
 ```
 
 ## Installation
@@ -48,7 +47,7 @@
 > [!WARNING]
 > Also to note that this configuration will **not** work if you do not change any of the [secrets](./secrets) since they are encrypted.
 
-You could either install a NixOS machine (rn there is just `moonlark`), use the home-manager instructions, or use nix-darwin for macOS.
+You could install a NixOS machine, use the home-manager instructions, or use nix-darwin for macOS.
 
 ### macOS with nix-darwin
 
@@ -115,7 +114,7 @@ atuin import
 
 #### Using nixos-anywhere (Recommended for remote installations)
 
-> [!WARN]
+> [!WARNING]
 > This only currently works with `prattle` and `terebithia` as they have the proper disko configs setup.
 
 For remote installations (like Oracle Cloud), use [nixos-anywhere](https://github.com/nix-community/nixos-anywhere):
@@ -141,105 +140,23 @@ chmod +x install.sh
 ./install.sh
 ```
 
-#### The manual way
+#### Post-install
 
-Install NixOS via the [official guide](https://nixos.org/download.html)
-
-Connect to wifi
-
-```bash
-wpa_passphrase your-ESSID your-passphrase | sudo tee /etc/wpa_supplicant.conf
-sudo systemctl restart wpa_supplicant
-```
-
-Check with `ping 1.1.1.1` if that doesn't work then use `wpa_cli`
-
-```bash
-sudo systemctl start wpa_supplicant
-wpa_cli
-
-add_network 0
-
-set_network 0 ssid "put your ssid here"
-
-set_network 0 psk "put your password here"
-
-enable network 0
-
-exit
-```
-
-Aquire root permissions while keeping your current context with
-
-```bash
-sudo -i
-```
-
-Enable git and rebuild your flake with the following
-
-```bash
-sed -i 's/^{$/{\n  programs.git.enable = true;/' /etc/nixos/configuration.nix
-nixos-rebuild switch
-```
-
-Download the disk configuration and run it
-
-```bash
-curl -L https://github.com/taciturnaxolotl/dots/raw/main/moonlark/disk-config.nix -o /tmp/disk-config.nix
-nix --experimental-features "nix-command flakes" run github:nix-community/disko -- --mode destroy,format,mount /tmp/disk-config.nix
-```
-
-Run nixos generate config and cd into it
-
-```bash
-nixos-generate-config --root /mnt
-cd /mnt/etc/nixos
-```
-
-Clone this repo to your `/mnt/etc/nixos` folder
-
-```bash
-rm *
-git clone https://github.com/taciturnaxolotl/dots.git .
-```
-
-Add your ssh private key to `/mnt/etc/ssh/id_rsa`
-
-install the flake, and umount the filesystem, and then reboot
-
-```bash
-nixos-install --flake .#moonlark --no-root-passwd
-reboot
-```
-
-Pray to the nix gods that it works 🙏
-
-If it worked then you should be able to login with the user `kierank` and the password `lolzthisaintsecure!`
-
-You should immediately change the password
+After first boot, log in with user `kierank` and the default password, then change it immediately:
 
 ```bash
 passwd kierank
 ```
 
-Move the config to your local directory, link to `/etc/nixos`, and change permissions
+Move the config to your home directory and symlink:
 
 ```bash
 sudo mv /etc/nixos ~/dots
 sudo ln -s ~/dots /etc/nixos
 sudo chown -R $(id -un):users ~/dots
-sudo chown kierank -R ~/dots
-sudo chown kierank -R ~/dots/.*
 ```
 
-17. Setup the fingerprint reader and verify it works (you may need to swipe your finger across the fingerprint sensor instead of simply laying it there)
-
-```bash
-sudo fprintd-enroll -f right-index-finger kierank
-sudo fprintd-verify kierank
-```
-
-Finally enable [atuin](https://atuin.sh/)
+Set up [atuin](https://atuin.sh/) for shell history sync:
 
 ```bash
 atuin login
