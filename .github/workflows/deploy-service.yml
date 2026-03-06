@@ -32,6 +32,7 @@ on:
 
 jobs:
   deploy:
+    name: ${{ inputs.service }} → ${{ inputs.host }}
     runs-on: ubuntu-latest
     environment:
       name: production
