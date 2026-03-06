@@ -24,14 +24,20 @@ on:
         required: false
         type: string
         description: "SQLite DB path for pre-deploy snapshot (e.g. /var/lib/cachet/data/cachet.db)"
+      work_dir:
+        required: false
+        type: string
+        default: "."
+        description: "Subdirectory to run install/build from (relative to ~/app)"
+      build_command:
+        required: false
+        type: string
+        description: "Build command to run after install (e.g. 'bun run build')"
     secrets:
       TS_OAUTH_CLIENT_ID:
         required: true
       TS_OAUTH_SECRET:
         required: true
-
-permissions:
-  deployments: write
 
 jobs:
   deploy:
@@ -107,10 +113,11 @@ jobs:
           fi
 
           echo "::group::install & restart"
-          ssh ${{ inputs.service }}@${{ inputs.host }} << 'INSTALL'
+          ssh ${{ inputs.service }}@${{ inputs.host }} << INSTALL
             set -e
-            cd ~/app
+            cd ~/app/${{ inputs.work_dir }}
             bun install --frozen-lockfile
+            ${{ inputs.build_command }}
             sudo /run/current-system/sw/bin/systemctl restart ${{ inputs.service }}.service
           INSTALL
           echo "::endgroup::"
@@ -217,7 +224,9 @@ jobs:
             fi
 
             git reset --hard "$PREV" --quiet
+            cd ~/app/${{ inputs.work_dir }}
             bun install --frozen-lockfile 2>&1 | tail -1
+            ${{ inputs.build_command }}
             sudo /run/current-system/sw/bin/systemctl restart ${{ inputs.service }}.service
 
             echo -e "${G}:: rolled back to ${SHORT}${R}"
