@@ -1,17 +1,26 @@
-# Generate a JSON-serialisable manifest of all atelier services.
+# Generate a JSON-serialisable manifest of all machines and their services.
 #
 # Called from flake.nix:
 #   services-manifest = import ./lib/services-manifest.nix {
-#     config = self.nixosConfigurations.terebithia.config;
+#     configSets = [ ... ];
+#     extraMachines = { everseen = { type = "client"; tailscaleHost = "everseen"; }; };
 #     inherit lib;
 #   };
 #
 # Evaluate with:
 #   nix eval --json .#services-manifest
 
-{ config, lib }:
+{ configSets, extraMachines ? {}, lib }:
 
 let
   services = import ./services.nix { inherit lib; };
+
+  # Convert simple extraMachines entries into manifest shape
+  extras = lib.mapAttrs (name: cfg: {
+    hostname = cfg.hostname or name;
+    type = cfg.type or "server";
+    tailscale_host = cfg.tailscaleHost or null;
+    services = [];
+  }) extraMachines;
 in
-services.mkManifest config
+(services.mkMachinesManifest configSets) // extras

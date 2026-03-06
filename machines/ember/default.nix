@@ -33,6 +33,11 @@
   };
 
   atelier = {
+    machine = {
+      enable = true;
+      type = "server";
+      tailscaleHost = "ember";
+    };
     shell.enable = true;
     apps = {
       helix.enable = true;

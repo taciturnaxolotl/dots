@@ -1,8 +1,20 @@
 # Services
 
-All services run on **terebithia** (Oracle Cloud aarch64) behind Caddy with Cloudflare DNS TLS.
+Services are grouped by machine in the services manifest. Machines with Tailscale enabled automatically expose their hostname for reachability checks via `atelier.machine.tailscaleHost`.
 
-## mkService-based
+## Machines
+
+| Machine | Platform | Tailscale |
+|---------|----------|-----------|
+| terebithia | Oracle Cloud aarch64 | `terebithia` |
+| moonlark | — | — |
+| prattle | — | — |
+
+## terebithia
+
+All services run behind Caddy with Cloudflare DNS TLS.
+
+### mkService-based
 
 | Service | Domain | Port | Runtime | Description |
 |---------|--------|------|---------|-------------|
@@ -15,14 +27,14 @@ All services run on **terebithia** (Oracle Cloud aarch64) behind Caddy with Clou
 | traverse | traverse.dunkirk.sh | 4173 | bun | Code walkthrough diagram server |
 | cedarlogic | cedarlogic.dunkirk.sh | 3100 | custom | Circuit simulator |
 
-## Multi-instance
+### Multi-instance
 
 | Service | Domain | Port | Description |
 |---------|--------|------|-------------|
 | emojibot-hackclub | hc.emojibot.dunkirk.sh | 3002 | Emojibot for Hack Club |
 | emojibot-df1317 | df.emojibot.dunkirk.sh | 3005 | Emojibot for df1317 |
 
-## Custom / external
+### Custom / external
 
 | Service | Domain | Description |
 |---------|--------|-------------|
@@ -32,6 +44,26 @@ All services run on **terebithia** (Oracle Cloud aarch64) behind Caddy with Clou
 | spindle | spindle.dunkirk.sh | Tangled CI |
 | battleship-arena | battleship.dunkirk.sh | Battleship game server |
 | n8n | n8n.dunkirk.sh | Workflow automation |
+
+## Services manifest
+
+The manifest is now grouped by machine. Evaluate with:
+
+```sh
+nix eval --json .#services-manifest
+```
+
+Output shape:
+
+```json
+{
+  "terebithia": {
+    "hostname": "terebithia",
+    "tailscale_host": "terebithia",
+    "services": [{ "name": "cachet", "health_url": "https://cachet.dunkirk.sh/health", ... }]
+  }
+}
+```
 
 ## Architecture
 

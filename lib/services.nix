@@ -70,7 +70,7 @@
   };
 
   /**
-    Build the full services manifest from an evaluated NixOS config.
+    Build a services manifest from an evaluated NixOS config.
 
     Discovers all enabled mkService-based services plus emojibot
     instances. Returns a sorted list of service entries suitable
@@ -139,4 +139,49 @@
       serviceList = (lib.mapAttrsToList mkEntry standardServices) ++ emojibotInstances;
     in
     lib.sort (a: b: a.name < b.name) serviceList;
+
+  /**
+    Build a manifest of all machines and their services.
+
+    Takes one or more attrsets of system configurations (NixOS, Darwin,
+    or home-manager) and returns an attrset keyed by machine name.
+    Only machines with `atelier.machine.enable = true` are included.
+
+    # Arguments
+
+    - `configSets` — list of attrsets of system configurations
+
+    # Type
+
+    ```
+    [ AttrSet ] -> AttrSet
+    ```
+
+    # Example
+
+    ```nix
+    mkMachinesManifest [ self.nixosConfigurations self.darwinConfigurations ]
+    => { terebithia = { hostname = "terebithia"; services = [ ... ]; }; }
+    ```
+  */
+  mkMachinesManifest = configSets:
+    let
+      self = import ./services.nix { inherit lib; };
+      merged = lib.foldl (acc: cs: acc // cs) {} configSets;
+      enabled = lib.filterAttrs (_: sys:
+        sys.config.atelier.machine.enable or false
+      ) merged;
+      mkMachineEntry = name: sys:
+        let
+          config = sys.config;
+          hasAtelierServices = config ? atelier && config.atelier ? services;
+          services = if hasAtelierServices then self.mkManifest config else [];
+        in {
+          hostname = config.networking.hostName or name;
+          type = config.atelier.machine.type or "server";
+          tailscale_host = config.atelier.machine.tailscaleHost or null;
+          services = services;
+        };
+    in
+    lib.mapAttrs mkMachineEntry enabled;
 }

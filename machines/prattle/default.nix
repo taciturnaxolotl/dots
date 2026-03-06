@@ -85,6 +85,7 @@
   };
 
   atelier = {
+    machine.enable = false;
     authentication.enable = true;
   };
 

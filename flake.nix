@@ -243,18 +243,6 @@
           ];
 
         };
-        "john" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.x86_64-linux;
-          extraSpecialArgs = {
-            inherit inputs outputs;
-            nixpkgs-unstable = nixpkgs-unstable;
-            system = "x86_64-linux";
-          };
-          modules = [
-            ./machines/john
-            unstable-overlays
-          ];
-        };
       };
 
       # Darwin configurations
@@ -274,7 +262,14 @@
       # Service manifest for infra dashboard
       # Evaluate with: nix eval --json .#services-manifest
       services-manifest = import ./lib/services-manifest.nix {
-        config = self.nixosConfigurations.terebithia.config;
+        configSets = [
+          self.nixosConfigurations
+          self.darwinConfigurations
+          self.homeConfigurations
+        ];
+        extraMachines = {
+          everseen = { type = "client"; tailscaleHost = "everseen"; };
+        };
         lib = nixpkgs.lib;
       };
 

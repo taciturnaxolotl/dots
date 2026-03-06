@@ -25,10 +25,10 @@ Cedarlogic disables the default mkService Caddy config and uses path-based routi
 
 ## Build step
 
-Unlike other services, cedarlogic runs a build during deploy:
+On initial scaffold, cedarlogic installs deps and builds:
 
 ```
 bun install → parse-gates → bun run build (Vite)
 ```
 
-The build has a 120s timeout to accommodate Vite compilation.
+Subsequent deploys handle their own build via the deploy workflow. The build has a 120s timeout to accommodate Vite compilation.

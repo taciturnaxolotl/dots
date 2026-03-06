@@ -61,3 +61,7 @@ Omit `health_url` to fall back to `systemctl is-active`. Omit `db_path` for stat
 3. Add a deploy workflow to the app repo
 
 See `modules/nixos/services/cachet.nix` for a minimal example.
+
+## Machine health checks
+
+Machines with Tailscale enabled automatically expose their hostname for reachability checks in the services manifest via `atelier.machine.tailscaleHost`. This defaults to `networking.hostName` when `services.tailscale.enable` is true.

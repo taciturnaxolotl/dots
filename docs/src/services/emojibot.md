@@ -20,6 +20,7 @@ atelier.services.emojibot.instances = {
     channel = "C02T3CU03T3";
     repository = "https://github.com/taciturnaxolotl/emojibot";
     secretsFile = config.age.secrets."emojibot/hackclub".path;
+    healthUrl = "https://hc.emojibot.dunkirk.sh/health";
   };
 };
 ```
@@ -33,6 +34,7 @@ atelier.services.emojibot.instances = {
 | `repository` | string | `"https://github.com/taciturnaxolotl/emojibot"` | Git repo URL |
 | `workspace` | string or null | `null` | Slack workspace name (for identification) |
 | `channel` | string or null | `null` | Slack channel ID |
+| `healthUrl` | string or null | `null` | Health check URL for monitoring |
 
 ## Current instances
 

@@ -6,6 +6,7 @@
 {
   imports = [
     ./home-manager.nix
+    ../../modules/shared/machine.nix
   ];
 
   # Set host platform for Apple Silicon
@@ -38,6 +39,12 @@
 
   # Set hostname
   networking.hostName = "atalanta";
+
+  atelier.machine = {
+    enable = true;
+    type = "client";
+    tailscaleHost = "atalanta";
+  };
 
   # Define user
   users.users.kierank = {
