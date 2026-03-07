@@ -69,7 +69,7 @@ jobs:
         id: deploy
         run: |
           C="\033[36m" G="\033[32m" Y="\033[33m" D="\033[2m" R="\033[0m"
-          START=$(date +%s)
+          echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
 
           RESULT=$(ssh ${{ inputs.service }}@${{ inputs.host }} << 'DEPLOY'
             set -e
@@ -129,9 +129,6 @@ jobs:
           INSTALL
           echo "::endgroup::"
 
-          END=$(date +%s)
-          echo "duration=$((END - START))s" >> "$GITHUB_OUTPUT"
-
           echo -e "${G}:: deployed ${{ inputs.service }}${R}"
 
       - name: Health check
@@ -186,7 +183,7 @@ jobs:
           PREV_FULL="${{ steps.deploy.outputs.prev_full }}"
           NEW_SHORT="${{ steps.deploy.outputs.new_short }}"
           NEW_FULL="${{ steps.deploy.outputs.new_full }}"
-          DURATION="${{ steps.deploy.outputs.duration }}"
+          DURATION="$(($(date +%s) - ${{ steps.deploy.outputs.start }}))s"
           HEALTH="${{ steps.health.outputs.status || steps.systemd.outputs.status }}"
           HOST="${{ inputs.host }}"
           REPO="https://github.com/${{ github.repository }}"
