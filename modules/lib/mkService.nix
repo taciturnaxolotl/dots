@@ -288,7 +288,8 @@ in {
             "!${pkgs.writeShellScript "${name}-setup" ''
               mkdir -p ${cfg.dataDir}/app ${cfg.dataDir}/data
               chown ${name}:services ${cfg.dataDir} ${cfg.dataDir}/app ${cfg.dataDir}/data
-              chmod g+rwX ${cfg.dataDir} ${cfg.dataDir}/app ${cfg.dataDir}/data
+              chmod 0750 ${cfg.dataDir}
+              chmod g+rwX ${cfg.dataDir}/app ${cfg.dataDir}/data
             ''}"
           ];
         };
