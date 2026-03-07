@@ -305,5 +305,6 @@ The code is licensed under `MIT`! That means MIT allows for free use, modificati
 </p>
 
 <p align="center">
+        <a href="https://infra.dunkirk.sh"><img src="https://infra.dunkirk.sh/badge?style=for-the-badge&colorA=363a4f&colorB=b7bdf8"/></a>
         <a href="https://github.com/taciturnaxolotl/dots/blob/master/LICENSE.md"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=MIT&logoColor=d9e0ee&colorA=363a4f&colorB=b7bdf8"/></a>
 </p>
