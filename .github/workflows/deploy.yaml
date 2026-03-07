@@ -11,18 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@main
         with:
           extra-conf: |
             extra-platforms = aarch64-linux
-      
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
-      
+
       - name: Setup Tailscale
         uses: tailscale/github-action@v3
         with:
@@ -30,12 +30,12 @@ jobs:
           oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
           tags: tag:deploy
           use-cache: "true"
-      
+
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
           echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
-      
+
       - name: Build docs
         run: nix build .#packages.x86_64-linux.docs -L
 
@@ -44,7 +44,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy result --project-name=infra-dunkirk
+          command: pages deploy result --project-name=dots-docs
 
       - name: Deploy all configurations
         run: |
