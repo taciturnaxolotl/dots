@@ -170,6 +170,11 @@
       owner = "cedarlogic";
     };
 
+    triage-agent = {
+      file = ../../secrets/triage-agent.age;
+      owner = "triage-agent";
+    };
+
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
     "restic/password".file = ../../secrets/restic/password.age;
@@ -188,6 +193,11 @@
   atelier = {
     authentication.enable = true;
     backup.enable = true;
+    machine = {
+      enable = true;
+      tailscaleHost = "terebithia";
+      triageUrl = "https://triage.dunkirk.sh";
+    };
   };
 
   networking = {
@@ -570,6 +580,11 @@
     repository = "https://github.com/taciturnaxolotl/CedarLogic";
     secretsFile = config.age.secrets.cedarlogic.path;
     healthUrl = "https://cedarlogic.dunkirk.sh/health";
+  };
+
+  atelier.services.triage-agent = {
+    enable = true;
+    secretsFile = config.age.secrets.triage-agent.path;
   };
 
   services.caddy.virtualHosts."terebithia.dunkirk.sh" = {

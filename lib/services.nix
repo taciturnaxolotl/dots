@@ -180,6 +180,7 @@
           hostname = config.networking.hostName or name;
           type = config.atelier.machine.type or "server";
           tailscale_host = config.atelier.machine.tailscaleHost or null;
+          triage_url = config.atelier.machine.triageUrl or null;
           services = services;
         };
     in
