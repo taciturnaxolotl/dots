@@ -32,6 +32,8 @@ let
     INCIDENT_ID="$2"
     CALLBACK_URL="$3"
 
+    echo "[triage] Starting triage for service=$SERVICE_NAME incident=$INCIDENT_ID"
+
     # Collect filtered logs
     FILTERED_LOGS=$(${triageFilterScript}/bin/triage-filter "$SERVICE_NAME" 2>&1 || true)
 
@@ -39,26 +41,56 @@ let
       FILTERED_LOGS="No relevant log lines found in the last 10 minutes."
     fi
 
+    LOG_LINES=$(echo "$FILTERED_LOGS" | ${pkgs.coreutils}/bin/wc -l)
+    echo "[triage] Log collection done: $LOG_LINES lines"
+
     # Run Claude headless for triage
     export HOME="/var/lib/triage-agent"
-    REPORT=$(${cfg.claudePath} -p \
+    echo "[triage] Invoking Claude for analysis..."
+    RAW_OUTPUT=$(${cfg.claudePath} -p \
       --model sonnet \
       --max-turns 10 \
       --allowedTools "Bash(journalctl:*) Bash(systemctl:*) Bash(curl:*) Bash(ss:*) Bash(df:*) Bash(free:*) Bash(ps:*) Bash(cat:/etc/*) Bash(ls:*) Bash(stat:*)" \
-      "You are a service triage agent investigating why a service is down. You have access to tools for deeper investigation. Write a concise triage report (max 500 words) in markdown with: 1) What failed 2) Likely root cause 3) Suggested fix. Do not speculate beyond what the evidence shows.
+      "You are a service triage agent investigating why a service is down. You have access to tools for deeper investigation.
+
+Your output MUST follow this exact format:
+SUMMARY: <one sentence describing the root cause>
+---
+<full triage report in markdown, max 500 words, with: 1) What failed 2) Likely root cause 3) Suggested fix>
+
+The SUMMARY line must be a single sentence. Do not speculate beyond what the evidence shows.
 
 Service '$SERVICE_NAME' is down. Here are the filtered logs from the last 10 minutes:
 
 $FILTERED_LOGS
 
-Investigate further if the logs aren't conclusive — check disk space, memory, open ports, config files, or related service logs. Then write a triage report." 2>&1 || echo "Triage agent failed to produce a report.")
+Investigate further if the logs aren't conclusive — check disk space, memory, open ports, config files, or related service logs. Then write your response in the format above." 2>&1 || echo "SUMMARY: Triage agent failed to produce a report.
+---
+Triage agent failed to produce a report.")
+
+    echo "[triage] Report generated: ''${#RAW_OUTPUT} chars"
+
+    # Split output into summary and full report
+    SUMMARY=$(echo "$RAW_OUTPUT" | ${pkgs.gnused}/bin/sed -n 's/^SUMMARY: //p' | ${pkgs.coreutils}/bin/head -1)
+    REPORT=$(echo "$RAW_OUTPUT" | ${pkgs.gnused}/bin/sed '1,/^---$/d')
+
+    # Fallback if parsing fails
+    if [ -z "$SUMMARY" ]; then
+      SUMMARY="Triage completed for $SERVICE_NAME"
+    fi
+    if [ -z "$REPORT" ]; then
+      REPORT="$RAW_OUTPUT"
+    fi
 
     # Callback to status worker
-    ${pkgs.curl}/bin/curl -sf -X PATCH "$CALLBACK_URL" \
+    echo "[triage] Posting report to $CALLBACK_URL"
+    CALLBACK_RESULT=$(${pkgs.curl}/bin/curl -sf -X PATCH "$CALLBACK_URL" \
       -H "Authorization: Bearer $TRIAGE_AUTH_TOKEN" \
       -H "Content-Type: application/json" \
-      -d "$(${pkgs.jq}/bin/jq -n --arg report "$REPORT" '{triage_report: $report, status: "identified"}')" \
-      || echo "Failed to post triage report to $CALLBACK_URL"
+      -d "$(${pkgs.jq}/bin/jq -n --arg report "$REPORT" --arg summary "$SUMMARY" '{triage_report: $report, status: "identified", summary: $summary}')" \
+      -w "%{http_code}" -o /dev/null \
+      || echo "FAILED")
+    echo "[triage] Callback result: $CALLBACK_RESULT"
   '';
 
   webhookServer = pkgs.writeText "triage-webhook.ts" ''
@@ -89,11 +121,13 @@ Investigate further if the logs aren't conclusive — check disk space, memory, 
           return new Response("missing fields", { status: 400 });
         }
 
+        console.log(`[webhook] Received triage request: service=''${body.service_name} incident=''${body.incident_id}`);
+
         // Spawn triage in background and respond immediately
         Bun.spawn(["${triageRunScript}/bin/run-triage", body.service_name, String(body.incident_id), body.callback_url], {
           env: { ...process.env },
-          stdout: "ignore",
-          stderr: "ignore",
+          stdout: "inherit",
+          stderr: "inherit",
         });
 
         return new Response(JSON.stringify({ ok: true, incident_id: body.incident_id }), {
@@ -166,6 +200,7 @@ in
         pkgs.systemd
         pkgs.coreutils
         pkgs.gnugrep
+        pkgs.gnused
         pkgs.curl
         pkgs.jq
         pkgs.nodejs_22
@@ -185,7 +220,7 @@ in
         ExecStart = "${pkgs.unstable.bun}/bin/bun run ${webhookServer}";
         EnvironmentFile = cfg.secretsFile;
         Environment = [
-          "PATH=/var/lib/triage-agent/.npm-global/bin:${lib.makeBinPath [ pkgs.systemd pkgs.coreutils pkgs.gnugrep pkgs.curl pkgs.jq pkgs.nodejs_22 ]}"
+          "PATH=/var/lib/triage-agent/.npm-global/bin:${lib.makeBinPath [ pkgs.systemd pkgs.coreutils pkgs.gnugrep pkgs.gnused pkgs.curl pkgs.jq pkgs.nodejs_22 ]}"
         ];
         Restart = "on-failure";
         RestartSec = "10s";
