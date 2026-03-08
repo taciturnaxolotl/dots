@@ -212,11 +212,18 @@ in {
         group = name;
         extraGroups = [ "services" ];
         home = cfg.dataDir;
-        createHome = true;
+        createHome = false;
         shell = pkgs.bash;
       };
 
       users.groups.${name} = {};
+
+      # Ensure data directories exist with correct permissions on every activation
+      systemd.tmpfiles.rules = [
+        "d ${cfg.dataDir} 0755 ${name} services -"
+        "d ${cfg.dataDir}/app 0750 ${name} services -"
+        "d ${cfg.dataDir}/data 0750 ${name} services -"
+      ];
 
       # Allow service user to manage their own service (for CI/CD deploys)
       security.sudo.extraRules = [
@@ -287,9 +294,9 @@ in {
           ExecStartPre = [
             "!${pkgs.writeShellScript "${name}-setup" ''
               mkdir -p ${cfg.dataDir}/app ${cfg.dataDir}/data
-              chown ${name}:${name} ${cfg.dataDir}
+              chown ${name}:services ${cfg.dataDir}
               chown ${name}:services ${cfg.dataDir}/app ${cfg.dataDir}/data
-              chmod 0750 ${cfg.dataDir}
+              chmod 0755 ${cfg.dataDir}
               chmod g+rwX ${cfg.dataDir}/app ${cfg.dataDir}/data
             ''}"
           ];
