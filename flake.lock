@@ -37,26 +37,6 @@
         "type": "github"
       }
     },
-    "battleship-arena": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1766107966,
-        "narHash": "sha256-YU9BqcBBz+BM2oaTLe+2HVgc6P3gztL/CSu19mQyIwE=",
-        "owner": "taciturnaxolotl",
-        "repo": "battleship-arena",
-        "rev": "2127e4348f9ac09e3bc89175d1165cf97d1731ad",
-        "type": "github"
-      },
-      "original": {
-        "owner": "taciturnaxolotl",
-        "repo": "battleship-arena",
-        "type": "github"
-      }
-    },
     "catppuccin": {
       "inputs": {
         "nixpkgs": [
@@ -1110,7 +1090,6 @@
     "root": {
       "inputs": {
         "agenix": "agenix",
-        "battleship-arena": "battleship-arena",
         "catppuccin": "catppuccin",
         "catppuccin-vsc": "catppuccin-vsc",
         "cedarlogic": "cedarlogic",

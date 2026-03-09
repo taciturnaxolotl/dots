@@ -36,9 +36,6 @@ in
   "emojibot/df1317.age".publicKeys = [
     kierank
   ];
-  "battleship-arena.age".publicKeys = [
-    kierank
-  ];
   "bore/auth-token.age".publicKeys = [
     kierank
   ];

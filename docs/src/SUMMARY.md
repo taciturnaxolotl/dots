@@ -10,7 +10,6 @@
   - [emojibot](./services/emojibot.md)
   - [herald](./services/herald.md)
   - [knot-sync](./services/knot-sync.md)
-  - [battleship-arena](./services/battleship-arena.md)
   - [bore](./services/bore.md)
 - [Backups](./backups.md)
 - [Secrets](./secrets.md)

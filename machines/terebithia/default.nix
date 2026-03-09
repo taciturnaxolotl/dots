@@ -131,10 +131,6 @@
       file = ../../secrets/github-knot-sync.age;
       owner = "git";
     };
-    battleship-arena = {
-      file = ../../secrets/battleship-arena.age;
-      owner = "battleship-arena";
-    };
     "bore/auth-token".file = ../../secrets/bore/auth-token.age;
     "bore/cookie-hash-key".file = ../../secrets/bore/cookie-hash-key.age;
     "bore/cookie-block-key".file = ../../secrets/bore/cookie-block-key.age;
@@ -320,20 +316,6 @@
         }
       '';
     };
-    virtualHosts."battleship.dunkirk.sh" = {
-      extraConfig = ''
-        tls {
-          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-        }
-        header {
-          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        }
-        reverse_proxy localhost:8081 {
-          header_up X-Forwarded-Proto {scheme}
-          header_up X-Forwarded-For {remote}
-        }
-      '';
-    };
     virtualHosts."map.dunkirk.sh" = {
       extraConfig = ''
         tls {
@@ -427,14 +409,6 @@
       secretsFile = config.age.secrets."emojibot/df1317".path;
       healthUrl = "https://df.emojibot.dunkirk.sh/health";
     };
-  };
-
-  atelier.services.battleship-arena = {
-    enable = true;
-    domain = "battleship.dunkirk.sh";
-    sshPort = 2222;
-    package = inputs.battleship-arena.packages.aarch64-linux.default;
-    secretsFile = config.age.secrets.battleship-arena.path;
   };
 
   services.tangled.knot = {
