@@ -42,6 +42,7 @@ All services run behind Caddy with Cloudflare DNS TLS.
 | herald | herald.dunkirk.sh | Git SSH hosting + email |
 | knot | knot.dunkirk.sh | Tangled git hosting |
 | spindle | spindle.dunkirk.sh | Tangled CI |
+| triage-agent | triage.dunkirk.sh | AI-powered service triage webhook |
 | n8n | n8n.dunkirk.sh | Workflow automation |
 
 ## Services manifest

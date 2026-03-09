@@ -136,7 +136,62 @@
           data = { sqlite = null; postgres = null; files = []; };
         }) enabled;
 
-      serviceList = (lib.mapAttrsToList mkEntry standardServices) ++ emojibotInstances;
+      # Custom services that don't use mkService but should appear in the manifest
+      customServices = let
+        noData = { sqlite = null; postgres = null; files = []; };
+        mkCustom = name: attrs: { inherit name; data = noData; } // attrs;
+      in lib.concatLists [
+        (lib.optional ((allServices.herald.enable or false) && (allServices.herald ? domain)) (mkCustom "herald" {
+          description = "RSS-to-Email via SSH";
+          domain = allServices.herald.domain;
+          port = allServices.herald.httpPort or 8085;
+          runtime = "go";
+          repository = null;
+          health_url = "https://${allServices.herald.domain}";
+        }))
+        (lib.optional ((allServices.triage-agent.enable or false) && (allServices.triage-agent ? domain)) (mkCustom "triage-agent" {
+          description = "AI-powered service triage webhook";
+          domain = allServices.triage-agent.domain;
+          port = allServices.triage-agent.port or 3200;
+          runtime = "bun";
+          repository = null;
+          health_url = "https://${allServices.triage-agent.domain}/health";
+        }))
+        (lib.optional ((allServices.frps.enable or false) && (allServices.frps ? domain)) (mkCustom "bore" {
+          description = "HTTP/TCP/UDP tunnel proxy";
+          domain = allServices.frps.domain;
+          port = allServices.frps.vhostHTTPPort or 7080;
+          runtime = "go";
+          repository = null;
+          health_url = "https://${allServices.frps.domain}";
+        }))
+        (lib.optional (config.services.tangled.knot.enable or false) (mkCustom "knot" {
+          description = "Tangled git hosting";
+          domain = config.services.tangled.knot.server.hostname or "knot.dunkirk.sh";
+          port = 5555;
+          runtime = "go";
+          repository = null;
+          health_url = "https://${config.services.tangled.knot.server.hostname or "knot.dunkirk.sh"}";
+        }))
+        (lib.optional (config.services.tangled.spindle.enable or false) (mkCustom "spindle" {
+          description = "Tangled CI";
+          domain = config.services.tangled.spindle.server.hostname or "spindle.dunkirk.sh";
+          port = 6555;
+          runtime = "go";
+          repository = null;
+          health_url = "https://${config.services.tangled.spindle.server.hostname or "spindle.dunkirk.sh"}";
+        }))
+        (lib.optional (config.services.n8n.enable or false) (mkCustom "n8n" {
+          description = "Workflow automation";
+          domain = config.services.n8n.environment.N8N_HOST or "n8n.dunkirk.sh";
+          port = 5678;
+          runtime = "node";
+          repository = null;
+          health_url = "https://${config.services.n8n.environment.N8N_HOST or "n8n.dunkirk.sh"}/healthz";
+        }))
+      ];
+
+      serviceList = (lib.mapAttrsToList mkEntry standardServices) ++ emojibotInstances ++ customServices;
     in
     lib.sort (a: b: a.name < b.name) serviceList;
 

@@ -100,6 +100,12 @@ Triage agent failed to produce a report.")
     Bun.serve({
       port: PORT,
       async fetch(req) {
+        const url = new URL(req.url);
+
+        if (req.method === "GET" && url.pathname === "/health") {
+          return Response.json({ status: "ok" });
+        }
+
         if (req.method !== "POST") {
           return new Response("method not allowed", { status: 405 });
         }
