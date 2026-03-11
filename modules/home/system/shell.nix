@@ -727,8 +727,12 @@ EOF
            fi
          fi
 
-         # Set default push remote
-         ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
+         # Set default push remote (origin→knot when tangled, github when github-only)
+         if [[ "$TANGLED" == true ]]; then
+           ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
+         elif [[ "$GITHUB" == true ]]; then
+           ${pkgs.git}/bin/git config branch.$BRANCH.remote github 2>/dev/null || true
+         fi
 
          echo
          ${pkgs.gum}/bin/gum style --foreground 117 "Configured remotes:"
