@@ -281,7 +281,7 @@
         "github.com/caddy-dns/cloudflare@v0.2.2"
         "github.com/mholt/caddy-ratelimit@v0.1.0"
       ];
-      hash = "sha256-bK1967g9KQfW4QcMnlAt+ZjKdOvpaUtTFwvlas7CjSA=";
+      hash = "sha256-wh+cKj0rVl9va3tGBpiLaVK1e9Te0Do9/NEifCQZCfo=";
     };
     email = "me@dunkirk.sh";
     globalConfig = ''
