@@ -713,26 +713,28 @@ EOF
 
          # Configure github remote
          if [[ "$GITHUB" == true ]]; then
-           if ${pkgs.git}/bin/git remote get-url github &>/dev/null; then
-             current_github=$(${pkgs.git}/bin/git remote get-url github)
+           # When tangled is also enabled, use "github" remote name; otherwise use "origin"
+           github_remote_name="github"
+           if [[ "$TANGLED" == false ]]; then
+             github_remote_name="origin"
+           fi
+
+           if ${pkgs.git}/bin/git remote get-url "$github_remote_name" &>/dev/null; then
+             current_github=$(${pkgs.git}/bin/git remote get-url "$github_remote_name")
              if [[ "$current_github" != "$github_url" ]]; then
-               ${pkgs.git}/bin/git remote set-url github "$github_url"
-               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Updated github → $github_url"
+               ${pkgs.git}/bin/git remote set-url "$github_remote_name" "$github_url"
+               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Updated $github_remote_name → $github_url"
              else
-               ${pkgs.gum}/bin/gum style --foreground 117 "  github → $github_url (unchanged)"
+               ${pkgs.gum}/bin/gum style --foreground 117 "  $github_remote_name → $github_url (unchanged)"
              fi
            else
-             ${pkgs.git}/bin/git remote add github "$github_url"
-             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Added github → $github_url"
+             ${pkgs.git}/bin/git remote add "$github_remote_name" "$github_url"
+             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Added $github_remote_name → $github_url"
            fi
          fi
 
-         # Set default push remote (origin→knot when tangled, github when github-only)
-         if [[ "$TANGLED" == true ]]; then
-           ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
-         elif [[ "$GITHUB" == true ]]; then
-           ${pkgs.git}/bin/git config branch.$BRANCH.remote github 2>/dev/null || true
-         fi
+         # Always set default push remote to origin
+         ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
 
          echo
          ${pkgs.gum}/bin/gum style --foreground 117 "Configured remotes:"
@@ -973,6 +975,9 @@ LICENSEEOF
        echo "  Visibility: $VISIBILITY"
        [[ "$TANGLED" == true ]] && echo "  Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
        [[ "$GITHUB" == true ]] && echo "  GitHub: https://github.com/$GITHUB_USER/$NAME"
+
+      # Write final directory to fd 3 if open (used by shell wrapper to cd)
+      { echo "$(pwd)" >&3; } 2>/dev/null || true
          '';
 
 in
@@ -1185,6 +1190,15 @@ in
                 alias -g NO='>/dev/null'
                 alias -g NUL='>/dev/null 2>&1'
                 alias -g J='| jq'
+
+                # ghrpc wrapper: cd into the created repo after setup
+                function ghrpc() {
+                  local _dir _status
+                  _dir=$(command ghrpc "$@" 3>&1 >/dev/tty 2>/dev/tty)
+                  _status=$?
+                  [[ -n "$_dir" ]] && cd "$_dir"
+                  return $_status
+                }
 
                 # Override source to handle .env files safely
                 function source() {
