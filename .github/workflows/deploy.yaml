@@ -7,8 +7,54 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  pre-deploy:
     runs-on: ubuntu-latest
+    outputs:
+      generations: ${{ steps.capture.outputs.generations }}
+
+    steps:
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:deploy
+          use-cache: "true"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
+
+      - name: Capture generations
+        id: capture
+        run: |
+          GENERATIONS='{}'
+          for NODE in terebithia; do
+            GEN=$(ssh kierank@${NODE} \
+              "readlink /nix/var/nix/profiles/system | grep -oP 'system-\K[0-9]+'")
+            GENERATIONS=$(echo "$GENERATIONS" | jq -c --arg node "$NODE" --arg gen "$GEN" '. + {($node): $gen}')
+          done
+          echo "generations=$GENERATIONS" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: pre-deploy
+    strategy:
+      fail-fast: false
+      matrix:
+        node:
+          - name: terebithia
+            arch: aarch64-linux
+
+    name: ${{ matrix.node.name }}
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ matrix.node.name }}
+
+    concurrency:
+      group: deploy-${{ matrix.node.name }}
+      cancel-in-progress: false
+
     steps:
       - uses: actions/checkout@v4
 
@@ -19,6 +65,7 @@ jobs:
             extra-platforms = aarch64-linux
 
       - name: Set up QEMU
+        if: matrix.node.arch == 'aarch64-linux'
         uses: docker/setup-qemu-action@v3
         with:
           platforms: arm64
@@ -36,6 +83,58 @@ jobs:
           mkdir -p ~/.ssh
           echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
 
+      - name: Deploy ${{ matrix.node.name }}
+        run: |
+          nix run 'github:serokell/deploy-rs' -- \
+            --skip-checks \
+            --remote-build \
+            --ssh-user kierank \
+            --ssh-opts="-o StrictHostKeyChecking=accept-new" \
+            .#${{ matrix.node.name }}
+
+  rollback:
+    needs: [pre-deploy, deploy]
+    if: failure()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v3
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:deploy
+          use-cache: "true"
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
+
+      - name: Rollback all nodes
+        env:
+          GENERATIONS: ${{ needs.pre-deploy.outputs.generations }}
+        run: |
+          echo "$GENERATIONS" | jq -r 'to_entries[] | "\(.key) \(.value)"' | \
+          while read -r NODE GEN; do
+            echo "::group::rollback $NODE → generation $GEN"
+            ssh kierank@${NODE} "
+              sudo nix-env -p /nix/var/nix/profiles/system --switch-generation ${GEN}
+              sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
+            "
+            echo "::endgroup::"
+          done
+
+  docs:
+    needs: deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@main
+
       - name: Build docs
         run: nix build .#packages.x86_64-linux.docs -L
 
@@ -45,12 +144,3 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: pages deploy result --project-name=dots-docs
-
-      - name: Deploy all configurations
-        run: |
-          nix run 'github:serokell/deploy-rs' -- \
-            --skip-checks \
-            --remote-build \
-            --ssh-user kierank \
-            --ssh-opts="-o StrictHostKeyChecking=accept-new" \
-            .
