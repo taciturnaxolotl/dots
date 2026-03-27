@@ -572,16 +572,15 @@
       "locked": {
         "lastModified": 1773845916,
         "narHash": "sha256-bwUEU2g+caz9ppLwiZILbzinTSBYTK1El00Rg3lftUA=",
-        "ref": "main",
+        "owner": "taciturnaxolotl",
+        "repo": "herald",
         "rev": "78bad9b2fe549abe149b297624704330bae6e9b2",
-        "revCount": 63,
-        "type": "git",
-        "url": "https://tangled.org/dunkirk.sh/herald"
+        "type": "github"
       },
       "original": {
-        "ref": "main",
-        "type": "git",
-        "url": "https://tangled.org/dunkirk.sh/herald"
+        "owner": "taciturnaxolotl",
+        "repo": "herald",
+        "type": "github"
       }
     },
     "home-manager": {

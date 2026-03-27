@@ -74,7 +74,7 @@
     };
 
     herald = {
-      url = "git+https://tangled.org/dunkirk.sh/herald?ref=main";
+      url = "github:taciturnaxolotl/herald";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
