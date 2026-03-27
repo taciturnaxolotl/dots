@@ -52,35 +52,11 @@ jobs:
 
     name: ${{ matrix.node.name }}
     runs-on: ubuntu-latest
-    permissions:
-      deployments: write
+    environment:
+      name: ${{ matrix.node.name }}
 
     steps:
-      - name: Get pre-deploy generation
-        id: pre-gen
-        run: |
-          GEN=$(echo '${{ needs.pre-deploy.outputs.generations }}' | jq -r '.${{ matrix.node.name }}')
-          echo "gen=$GEN" >> "$GITHUB_OUTPUT"
-
-      - name: Create deployment
-        id: deployment
-        uses: chrnorm/deployment-action@v2
-        with:
-          token: ${{ github.token }}
-          environment: ${{ matrix.node.name }}
-          description: "gen ${{ steps.pre-gen.outputs.gen }} → ?"
-          initial-status: in_progress
-          auto-inactive: true
-
       - uses: actions/checkout@v6
-
-      - name: Count commits
-        id: commits
-        run: |
-          BEFORE="${{ github.event.before }}"
-          COUNT=$(git rev-list --count "${BEFORE}..${{ github.sha }}" 2>/dev/null || echo 1)
-          [ -z "$BEFORE" ] && COUNT=1
-          echo "count=$COUNT" >> "$GITHUB_OUTPUT"
 
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
@@ -115,44 +91,6 @@ jobs:
             --ssh-user kierank \
             --ssh-opts="-o StrictHostKeyChecking=accept-new" \
             .#${{ matrix.node.name }}
-
-      - name: Capture new generation
-        id: post-gen
-        if: success()
-        run: |
-          GEN=$(ssh kierank@${{ matrix.node.name }} \
-            "readlink /nix/var/nix/profiles/system | grep -oP 'system-\K[0-9]+'")
-          echo "gen=$GEN" >> "$GITHUB_OUTPUT"
-
-      - name: Update deployment (success)
-        if: success()
-        uses: chrnorm/deployment-status@v2
-        with:
-          token: ${{ github.token }}
-          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
-          state: success
-          log-url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          description: "gen ${{ steps.pre-gen.outputs.gen }} → ${{ steps.post-gen.outputs.gen }} (+${{ steps.commits.outputs.count }} commits)"
-
-      - name: Update deployment (failure)
-        if: failure()
-        uses: chrnorm/deployment-status@v2
-        with:
-          token: ${{ github.token }}
-          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
-          state: failure
-          log-url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          description: "gen ${{ steps.pre-gen.outputs.gen }} → failed (+${{ steps.commits.outputs.count }} commits)"
-
-      - name: Update deployment (cancelled)
-        if: cancelled()
-        uses: chrnorm/deployment-status@v2
-        with:
-          token: ${{ github.token }}
-          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
-          state: error
-          log-url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          description: "gen ${{ steps.pre-gen.outputs.gen }} → cancelled"
 
   rollback:
     needs: [pre-deploy, deploy]
