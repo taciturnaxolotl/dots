@@ -87,4 +87,7 @@ in
   "triage-agent.age".publicKeys = [
     kierank
   ];
+  "gastrack.age".publicKeys = [
+    kierank
+  ];
 }

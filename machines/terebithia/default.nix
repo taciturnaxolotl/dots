@@ -170,6 +170,10 @@
       file = ../../secrets/triage-agent.age;
       owner = "triage-agent";
     };
+    gastrack = {
+      file = ../../secrets/gastrack.age;
+      owner = "gastrack";
+    };
 
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
@@ -559,6 +563,24 @@
   atelier.services.triage-agent = {
     enable = true;
     secretsFile = config.age.secrets.triage-agent.path;
+  };
+
+  atelier.services.gastrack = {
+    enable = true;
+    domain = "gastrack.dunkirk.sh";
+    repository = "https://github.com/taciturnaxolotl/gastrack";
+    secretsFile = config.age.secrets.gastrack.path;
+    healthUrl = "https://gastrack.dunkirk.sh/health";
+    environment.FLARESOLVERR_URL = "http://localhost:8191";
+  };
+
+  # FlareSolverr — Cloudflare bypass proxy for GasBuddy scraping
+  virtualisation.docker.enable = true;
+  virtualisation.oci-containers.backend = "docker";
+  virtualisation.oci-containers.containers.flaresolverr = {
+    image = "ghcr.io/flaresolverr/flaresolverr:latest";
+    ports = [ "127.0.0.1:8191:8191" ];
+    environment.LOG_LEVEL = "info";
   };
 
   services.caddy.virtualHosts."terebithia.dunkirk.sh" = {
