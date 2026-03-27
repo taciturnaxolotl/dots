@@ -43,15 +43,25 @@ jobs:
   deploy:
     name: ${{ inputs.service }} → ${{ inputs.host }}
     runs-on: ubuntu-latest
-    environment:
-      name: production
-      url: ${{ inputs.health_url }}
+
+    permissions:
+      deployments: write
 
     concurrency:
       group: deploy-${{ inputs.service }}
       cancel-in-progress: false
 
     steps:
+      - name: Create deployment
+        id: deployment
+        uses: chrnorm/deployment-action@v2
+        with:
+          token: ${{ github.token }}
+          environment: production
+          description: "deploying ${{ inputs.service }}"
+          initial-status: in_progress
+          auto-inactive: true
+
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
         with:
@@ -106,10 +116,17 @@ jobs:
           NEW_FULL=$(echo "$RESULT" | grep "^NEW_FULL=" | cut -d= -f2)
           LOG=$(echo "$RESULT" | sed -n '/^LOG<<GITLOG$/,/^GITLOG$/p' | sed '1d;$d')
 
+          if [ -z "$LOG" ] || [ "$LOG" = "(initial deploy)" ]; then
+            COUNT=1
+          else
+            COUNT=$(echo "$LOG" | wc -l | tr -d ' ')
+          fi
+
           echo "prev_short=$PREV_SHORT" >> "$GITHUB_OUTPUT"
           echo "prev_full=$PREV_FULL" >> "$GITHUB_OUTPUT"
           echo "new_short=$NEW_SHORT" >> "$GITHUB_OUTPUT"
           echo "new_full=$NEW_FULL" >> "$GITHUB_OUTPUT"
+          echo "commit_count=$COUNT" >> "$GITHUB_OUTPUT"
 
           echo -e "${C}:: ${{ inputs.service }}${R} ${D}${PREV_SHORT} → ${NEW_SHORT}${R}"
 
@@ -175,6 +192,37 @@ jobs:
           echo -e "${RED}:: service not active after 30s${R}"
           echo "status=failed" >> "$GITHUB_OUTPUT"
           exit 1
+
+      - name: Update deployment (success)
+        if: success()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ github.token }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: success
+          environment-url: ${{ inputs.health_url }}
+          log-url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          description: "${{ steps.deploy.outputs.prev_short }} → ${{ steps.deploy.outputs.new_short }} (+${{ steps.deploy.outputs.commit_count }} commits)"
+
+      - name: Update deployment (failure)
+        if: failure()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ github.token }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: failure
+          log-url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          description: "failed at ${{ steps.deploy.outputs.new_short || 'unknown' }} (+${{ steps.deploy.outputs.commit_count || '?' }} commits)"
+
+      - name: Update deployment (cancelled)
+        if: cancelled()
+        uses: chrnorm/deployment-status@v2
+        with:
+          token: ${{ github.token }}
+          deployment-id: ${{ steps.deployment.outputs.deployment_id }}
+          state: error
+          log-url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          description: "cancelled"
 
       - name: Summary
         if: always()
