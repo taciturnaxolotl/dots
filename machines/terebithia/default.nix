@@ -170,9 +170,9 @@
       file = ../../secrets/triage-agent.age;
       owner = "triage-agent";
     };
-    gastrack = {
-      file = ../../secrets/gastrack.age;
-      owner = "gastrack";
+    overpass = {
+      file = ../../secrets/overpass.age;
+      owner = "overpass";
     };
 
     "restic/env".file = ../../secrets/restic/env.age;
@@ -565,12 +565,12 @@
     secretsFile = config.age.secrets.triage-agent.path;
   };
 
-  atelier.services.gastrack = {
+  atelier.services.overpass = {
     enable = true;
-    domain = "gastrack.dunkirk.sh";
-    repository = "https://github.com/taciturnaxolotl/gastrack";
-    secretsFile = config.age.secrets.gastrack.path;
-    healthUrl = "https://gastrack.dunkirk.sh/health";
+    domain = "overpass.dunkirk.sh";
+    repository = "https://github.com/taciturnaxolotl/overpass";
+    secretsFile = config.age.secrets.overpass.path;
+    healthUrl = "https://overpass.dunkirk.sh/health";
     environment.FLARESOLVERR_URL = "http://localhost:8191";
   };
 
