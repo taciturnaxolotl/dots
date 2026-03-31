@@ -115,6 +115,7 @@
     eval "$(/usr/libexec/path_helper)"
     export PATH="$HOME/.cargo/bin:$PATH"
     export PATH="$PATH:$(python3 -m site --user-base)/bin"
+    export PATH="$PATH:/opt/homebrew/share/android-commandlinetools/platform-tools:/opt/homebrew/share/android-commandlinetools/emulator"
 
     # MITM proxy management functions
     MITM_SERVICE="Wi-Fi"  # Change to "Ethernet" if needed
