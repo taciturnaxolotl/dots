@@ -114,6 +114,7 @@
   programs.zsh.initContent = ''
     eval "$(/usr/libexec/path_helper)"
     export PATH="$HOME/.cargo/bin:$PATH"
+    export PATH="$PATH:$(python3 -m site --user-base)/bin"
 
     # MITM proxy management functions
     MITM_SERVICE="Wi-Fi"  # Change to "Ethernet" if needed
