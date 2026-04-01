@@ -106,7 +106,7 @@
     };
 
     tangled = {
-      url = "git+https://tangled.org/tangled.org/core";
+      url = "git+https://tangled.org/tangled.org/core?ref=v1.12.0-alpha";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -263,7 +263,10 @@
           self.homeConfigurations
         ];
         extraMachines = {
-          everseen = { type = "client"; tailscaleHost = "everseen"; };
+          everseen = {
+            type = "client";
+            tailscaleHost = "everseen";
+          };
         };
         lib = nixpkgs.lib;
       };
@@ -273,7 +276,8 @@
       # Serve with: nix run .#docs.serve
       packages =
         let
-          mkDocs = system:
+          mkDocs =
+            system:
             let
               pkgs = nixpkgs.legacyPackages.${system};
             in
