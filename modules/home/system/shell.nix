@@ -1193,9 +1193,12 @@ in
 
                 # ghrpc wrapper: cd into the created repo after setup
                 function ghrpc() {
-                  local _dir _status
-                  _dir=$(command ghrpc "$@" 3>&1 >/dev/tty 2>/dev/tty)
+                  local _dir _status _tmpfile
+                  _tmpfile=$(mktemp)
+                  command ghrpc "$@" 3>"$_tmpfile"
                   _status=$?
+                  _dir=$(<"$_tmpfile")
+                  rm -f "$_tmpfile"
                   [[ -n "$_dir" ]] && cd "$_dir"
                   return $_status
                 }
