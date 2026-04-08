@@ -1,5 +1,8 @@
-{lib, config, ...}:
 {
+  lib,
+  config,
+  ...
+}: {
   options.atelier.apps.halloy.enable = lib.mkEnableOption "Enable halloy config";
   config = lib.mkIf config.atelier.apps.halloy.enable {
     programs.halloy = {
@@ -38,6 +41,15 @@
             channel-keys = {
               fraud-land = "fraudpheus";
             };
+          };
+          ychn = {
+            nickname = "tacy";
+            nick_password = "your_password_here";
+            realname = "kieran klukas";
+            username = "tacy";
+            server = "i.yc.hn";
+            port = 6697;
+            use_tls = true;
           };
         };
       };
