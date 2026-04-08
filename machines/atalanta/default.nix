@@ -24,6 +24,13 @@
         };
 
         zmx-binary = prev.callPackage ../../packages/zmx.nix { };
+
+        # direnv fish tests are killed (SIGKILL) in the Nix sandbox on Darwin
+        # since the libarchive 3.8.4->3.8.6 bump; skip until upstream fixes it.
+        # https://github.com/NixOS/nixpkgs/issues/507531
+        direnv = prev.direnv.overrideAttrs (_: {
+          doCheck = false;
+        });
       })
     ];
   };
