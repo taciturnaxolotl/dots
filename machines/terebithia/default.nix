@@ -220,6 +220,7 @@
         "wheel"
         "networkmanager"
         "services"
+        "pumpkin"
       ];
     };
     duncan = {
@@ -234,6 +235,7 @@
       extraGroups = [
         "wheel"
         "networkmanager"
+        "pumpkin"
       ];
     };
     caddy.extraGroups = [ "duncan" ];
@@ -572,6 +574,12 @@
     secretsFile = config.age.secrets.overpass.path;
     healthUrl = "https://overpass.dunkirk.sh/health";
     environment.FLARESOLVERR_URL = "http://localhost:8191";
+  };
+
+  services.pumpkin = {
+    enable = true;
+    port = 28868;
+    package = pkgs.pumpkin;
   };
 
   # FlareSolverr — Cloudflare bypass proxy for GasBuddy scraping
