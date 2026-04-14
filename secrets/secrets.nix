@@ -5,9 +5,6 @@ in
   "wifi.age".publicKeys = [
     kierank
   ];
-  "resend.age".publicKeys = [
-    kierank
-  ];
   "wakatime.age".publicKeys = [
     kierank
   ];

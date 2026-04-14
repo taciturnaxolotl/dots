@@ -195,7 +195,6 @@
     inputs.frc-nix.packages.${pkgs.stdenv.hostPlatform.system}.advantagescope
     # misc
     pkgs.invoice
-    pkgs.pop
     pkgs.vhs
     pkgs.torrential
     inputs.flare.packages.x86_64-linux.default
@@ -236,10 +235,6 @@
       file = ../../secrets/wifi.age;
       owner = "kierank";
     };
-    resend = {
-      file = ../../secrets/resend.age;
-      owner = "kierank";
-    };
     wakatime = {
       file = ../../secrets/wakatime.age;
       path = "/home/kierank/.wakatime.cfg";
@@ -264,8 +259,6 @@
     PRISMA_QUERY_ENGINE_LIBRARY = "${pkgs.prisma-engines}/lib/libquery_engine.node";
     PRISMA_QUERY_ENGINE_BINARY = "${pkgs.prisma-engines}/bin/query-engine";
     PRISMA_SCHEMA_ENGINE_BINARY = "${pkgs.prisma-engines}/bin/schema-engine";
-    RESEND_API_KEY = "$(${pkgs.coreutils}/bin/cat ${config.age.secrets.resend.path})";
-    POP_FROM = "kieran@dunkirk.sh";
     EDITOR = "nvim";
     SYSTEMD_EDITOR = "nvim";
     VISUAL = "nvim";
