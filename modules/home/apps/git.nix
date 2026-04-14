@@ -14,7 +14,7 @@
       settings = {
         user = {
           name = "Kieran Klukas";
-          email = "me@dunkirk.sh";
+          email = "kieran@dunkirk.sh";
           signingKey = "~/.ssh/id_rsa.pub";
         };
         alias = {

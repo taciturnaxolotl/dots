@@ -1075,7 +1075,16 @@ in
                   commit_icon = "@";
                   fetch_status = true;
                   fetch_upstream_icon = false;
+                  disable_with_jj = true;
                 };
+              }
+              {
+                type = "jj";
+                style = "plain";
+                foreground = "p:grey";
+                background = "transparent";
+                template = " ◬ {{if .ClosestBookmarks}}{{.ClosestBookmarks}} {{end}}<cyan>@{{.ChangeId}}</>{{if .Working.Changed}}*{{end}}";
+                properties = { };
               }
             ];
           }
@@ -1406,6 +1415,7 @@ in
     ];
 
     atelier.shell.git.enable = lib.mkDefault true;
+    atelier.shell.jj.enable = lib.mkDefault true;
     atelier.shell.wut.enable = lib.mkDefault true;
   };
 }
