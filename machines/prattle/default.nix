@@ -148,7 +148,7 @@
       plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
       hash = "sha256-dnhEjopeA0UiI+XVYHYpsjcEI6Y1Hacbi28hVKYQURg=";
     };
-    email = "me@dunkirk.sh";
+    email = "kieran@dunkirk.sh";
     globalConfig = ''
       acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
     '';

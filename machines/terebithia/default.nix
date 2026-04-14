@@ -289,7 +289,7 @@
       ];
       hash = "sha256-Wlg9hNRYY7PaNH5N8pn0XguuR8Bf3XKK/n4er81T0Ho=";
     };
-    email = "me@dunkirk.sh";
+    email = "kieran@dunkirk.sh";
     globalConfig = ''
       acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       order rate_limit before basicauth

@@ -265,7 +265,7 @@
     PRISMA_QUERY_ENGINE_BINARY = "${pkgs.prisma-engines}/bin/query-engine";
     PRISMA_SCHEMA_ENGINE_BINARY = "${pkgs.prisma-engines}/bin/schema-engine";
     RESEND_API_KEY = "$(${pkgs.coreutils}/bin/cat ${config.age.secrets.resend.path})";
-    POP_FROM = "me@dunkirk.sh";
+    POP_FROM = "kieran@dunkirk.sh";
     EDITOR = "nvim";
     SYSTEMD_EDITOR = "nvim";
     VISUAL = "nvim";
