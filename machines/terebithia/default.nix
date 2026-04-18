@@ -268,6 +268,7 @@
     allowedUDPPorts = [
       28869 # Minecraft voice chat
       19132 # mc geyser
+      4242 # Nebula/DNClient
     ];
     logRefusedConnections = false;
     rejectPackets = true;
@@ -277,6 +278,8 @@
     enable = true;
     useRoutingFeatures = "client";
   };
+
+  atelier.services.dnclient.enable = true;
 
   # Clawdbot - AI assistant in isolated container
 
