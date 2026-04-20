@@ -576,6 +576,11 @@
     environment.FLARESOLVERR_URL = "http://localhost:8191";
   };
 
+  atelier.services.curl-doom = {
+    enable = true;
+    domain = "doom.dunkirk.sh";
+  };
+
   services.pumpkin = {
     enable = true;
     port = 28868;
