@@ -38,7 +38,10 @@ buildNpmPackage rec {
     runHook preInstall
     
     mkdir -p $out/lib/curl-doom
-    cp -r index.js doom.sh doom1.wad doomgeneric/doomgeneric_server package.json node_modules $out/lib/curl-doom/
+    cp -r index.js doom.sh play.sh doom1.wad package.json node_modules $out/lib/curl-doom/
+    
+    mkdir -p $out/lib/curl-doom/doomgeneric
+    cp doomgeneric/doomgeneric_server $out/lib/curl-doom/doomgeneric/
     
     mkdir -p $out/bin
     cat << EOF > $out/bin/curl-doom
