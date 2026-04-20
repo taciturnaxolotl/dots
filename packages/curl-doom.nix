@@ -1,4 +1,4 @@
-{ lib, buildNpmPackage, fetchFromGitHub, fetchurl }:
+{ pkgs, lib, buildNpmPackage, fetchFromGitHub, fetchurl }:
 
 buildNpmPackage rec {
   pname = "curl-doom";
@@ -41,10 +41,10 @@ buildNpmPackage rec {
     cp -r index.js doom.sh doom1.wad doomgeneric/doomgeneric_server package.json node_modules $out/lib/curl-doom/
     
     mkdir -p $out/bin
-    cat << 'EOF' > $out/bin/curl-doom
-    #!/usr/bin/env bash
+    cat << EOF > $out/bin/curl-doom
+    #!${pkgs.bash}/bin/bash
     cd $out/lib/curl-doom
-    exec node index.js "$@"
+    exec node index.js "\$@"
     EOF
     chmod +x $out/bin/curl-doom
     

@@ -27,6 +27,8 @@ in {
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
       
+      path = [ pkgs.bash ];
+
       serviceConfig = {
         ExecStart = "${pkgs.curl-doom}/bin/curl-doom";
         Environment = [
