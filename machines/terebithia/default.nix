@@ -533,6 +533,19 @@
     environment.LOG_LEVEL = "info";
   };
 
+  services.caddy.virtualHosts."flaresolver.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
+      
+      reverse_proxy localhost:8191
+    '';
+  };
+
   services.caddy.virtualHosts."terebithia.dunkirk.sh" = {
     extraConfig = ''
       tls {
