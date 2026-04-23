@@ -513,7 +513,9 @@
     enable = true;
     owner = "did:plc:krxbvxvis5skq7jj6eot23ul";
     knot = {
-      motd = "🧶 welcome to kieran's knot!\n\n";
+      motd = ''
+        🧶 welcome to kieran's knot!
+      '';
       hostname = "knot.dunkirk.sh";
       syncSecretsFile = config.age.secrets.github-knot-sync.path;
     };

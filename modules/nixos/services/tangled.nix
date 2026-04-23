@@ -116,6 +116,7 @@ in
 
     atelier.services.knot-sync = {
       enable = cfg.knot.enable;
+      ownerDid = cfg.owner;
       secretsFile = cfg.knot.syncSecretsFile;
     };
 
