@@ -12,8 +12,6 @@
 
     (inputs.import-tree ../../modules/nixos)
     ../../modules/nixos/services/herald.nix
-    inputs.tangled.nixosModules.knot
-    inputs.tangled.nixosModules.spindle
   ];
 
   nixpkgs = {
@@ -278,8 +276,6 @@
     useRoutingFeatures = "client";
   };
 
-  # Clawdbot - AI assistant in isolated container
-
   services.caddy = {
     enable = true;
     package = pkgs.caddy.withPlugins {
@@ -294,34 +290,6 @@
       acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       order rate_limit before basicauth
     '';
-    virtualHosts."knot.dunkirk.sh" = {
-      extraConfig = ''
-        tls {
-          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-        }
-        header {
-          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        }
-        reverse_proxy localhost:5555 {
-          header_up X-Forwarded-Proto {scheme}
-          header_up X-Forwarded-For {remote}
-        }
-      '';
-    };
-    virtualHosts."spindle.dunkirk.sh" = {
-      extraConfig = ''
-        tls {
-          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-        }
-        header {
-          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        }
-        reverse_proxy localhost:6555 {
-          header_up X-Forwarded-Proto {scheme}
-          header_up X-Forwarded-For {remote}
-        }
-      '';
-    };
     virtualHosts."map.dunkirk.sh" = {
       extraConfig = ''
         tls {
@@ -415,52 +383,6 @@
       secretsFile = config.age.secrets."emojibot/df1317".path;
       healthUrl = "https://df.emojibot.dunkirk.sh/health";
     };
-  };
-
-  services.tangled.knot = {
-    enable = true;
-    package = inputs.tangled.packages.aarch64-linux.knot;
-    appviewEndpoint = "https://tangled.org";
-    server = {
-      owner = "did:plc:krxbvxvis5skq7jj6eot23ul";
-      hostname = "knot.dunkirk.sh";
-      listenAddr = "127.0.0.1:5555";
-    };
-  };
-
-  services.tangled.spindle = {
-    enable = true;
-    package = inputs.tangled.packages.aarch64-linux.spindle;
-    server = {
-      owner = "did:plc:krxbvxvis5skq7jj6eot23ul";
-      hostname = "spindle.dunkirk.sh";
-      listenAddr = "127.0.0.1:6555";
-    };
-  };
-
-  # Backup configuration for tangled services
-  atelier.backup.services.knot = {
-    paths = [ "/home/git" ]; # Git repositories managed by knot
-    exclude = [ "*.log" ];
-    # Uses SQLite, stop before backup
-    preBackup = "systemctl stop knot";
-    postBackup = "systemctl start knot";
-  };
-
-  atelier.backup.services.spindle = {
-    paths = [ "/var/lib/spindle" ];
-    exclude = [
-      "*.log"
-      "cache/*"
-    ];
-    # Uses SQLite, stop before backup
-    preBackup = "systemctl stop spindle";
-    postBackup = "systemctl start spindle";
-  };
-
-  atelier.services.knot-sync = {
-    enable = true;
-    secretsFile = config.age.secrets.github-knot-sync.path;
   };
 
   atelier.services.frps = {
@@ -587,6 +509,19 @@
     package = pkgs.pumpkin;
   };
 
+  atelier.services.tangled = {
+    enable = true;
+    owner = "did:plc:krxbvxvis5skq7jj6eot23ul";
+    knot = {
+      motd = "🧶 welcome to kieran's knot!\n\n";
+      hostname = "knot.dunkirk.sh";
+      syncSecretsFile = config.age.secrets.github-knot-sync.path;
+    };
+    spindle = {
+      hostname = "spindle.dunkirk.sh";
+    };
+  };
+
   # FlareSolverr — Cloudflare bypass proxy for GasBuddy scraping
   virtualisation.docker.enable = true;
   virtualisation.oci-containers.backend = "docker";
@@ -607,42 +542,6 @@
       root * ${./static}
       file_server
     '';
-  };
-
-  services.n8n = {
-    enable = true;
-    environment = {
-      N8N_HOST = "n8n.dunkirk.sh";
-      N8N_PROTOCOL = "https";
-      WEBHOOK_URL = "https://n8n.dunkirk.sh";
-    };
-  };
-
-  services.caddy.virtualHosts."n8n.dunkirk.sh" = {
-    extraConfig = ''
-      tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-      }
-      header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-      }
-      reverse_proxy localhost:5678 {
-        header_up X-Forwarded-Proto {scheme}
-        header_up X-Forwarded-For {remote}
-      }
-    '';
-  };
-
-  # Backup configuration for n8n
-  atelier.backup.services.n8n = {
-    paths = [ "/var/lib/private/n8n/.n8n" ];
-    exclude = [
-      "*.log"
-      "cache/*"
-    ];
-    # n8n uses SQLite, stop before backup
-    preBackup = "systemctl stop n8n";
-    postBackup = "systemctl start n8n";
   };
 
   boot.loader.systemd-boot.enable = true;
