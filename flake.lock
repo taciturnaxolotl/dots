@@ -648,11 +648,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1773845916,
-        "narHash": "sha256-bwUEU2g+caz9ppLwiZILbzinTSBYTK1El00Rg3lftUA=",
+        "lastModified": 1777037407,
+        "narHash": "sha256-eAycdXo7AmsiuISuxq5kjtUYmY5r2gszBa1gX98KAEI=",
         "owner": "taciturnaxolotl",
         "repo": "herald",
-        "rev": "78bad9b2fe549abe149b297624704330bae6e9b2",
+        "rev": "d37b7423318e6733b295090c31d7b5de572dbfd7",
         "type": "github"
       },
       "original": {
@@ -1222,11 +1222,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777011920,
-        "narHash": "sha256-+KRZXY3ety/TgMyzadGEwJdv1A+R+pojPV6X5r29SWg=",
+        "lastModified": 1777061067,
+        "narHash": "sha256-bobOMNL3j/mhLG6s+l+Oh+wODuSRb37uw5Ae/15h7dw=",
         "owner": "taciturnaxolotl",
         "repo": "pear",
-        "rev": "49a3849faae9ba7f9dc7a9dbe5fd46f0323e7d64",
+        "rev": "5a29da21b1c976ef6c9536cdf794e0f78b9e0f11",
         "type": "github"
       },
       "original": {
