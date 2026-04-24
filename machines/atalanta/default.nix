@@ -143,6 +143,16 @@
 
     tilesize = 47;
     show-recents = false;
+    autohide = true;
+    showhidden = true;
+    autohide-delay = 0.0;
+    autohide-time-modifier = 0.0;
+  };
+
+  power.sleep = {
+    computer = 1;
+    display = 1;
+    harddisk = 10;
   };
 
   # allow using apple watch or touch id for sudo
@@ -152,6 +162,9 @@
   system.defaults = {
     finder.FXPreferredViewStyle = "Nlsv";
     finder.AppleShowAllExtensions = true;
+    finder.ShowPathbar = true;
+    finder.ShowStatusBar = false;
+    finder.FXDefaultSearchScope = "SCcf";
     # expand the save dialogs
     NSGlobalDomain.NSNavPanelExpandedStateForSaveMode = true;
     NSGlobalDomain.NSNavPanelExpandedStateForSaveMode2 = true;
@@ -159,6 +172,13 @@
     loginwindow.GuestEnabled = false;
 
     NSGlobalDomain."com.apple.trackpad.scaling" = 0.875;
+    NSGlobalDomain.AppleInterfaceStyle = "Dark";
+    NSGlobalDomain.NSAutomaticCapitalizationEnabled = false;
+    NSGlobalDomain.NSAutomaticDashSubstitutionEnabled = false;
+    NSGlobalDomain.NSAutomaticPeriodSubstitutionEnabled = false;
+    NSGlobalDomain.NSAutomaticQuoteSubstitutionEnabled = false;
+    NSGlobalDomain.NSAutomaticSpellingCorrectionEnabled = false;
+    NSGlobalDomain.ApplePressAndHoldEnabled = false;
 
     CustomSystemPreferences = {
       "com.apple.DiskArbitration.diskarbitrationd" = {
@@ -167,6 +187,23 @@
     };
 
     CustomUserPreferences = {
+      "com.apple.ImageCapture" = {
+        disableHotPlug = true;
+      };
+      "NSGlobalDomain" = {
+        # old imac purple tint
+        AppleIconAppearanceCustomTintColor = "0.358236 0.479976 0.941252 0.780139";
+        AppleIconAppearanceTintColor = "Other";
+        NSColorSimulateHardwareAccent = 1;
+        NSColorSimulatedHardwareEnclosureNumber = 7;
+        NSStatusItemSpacing = 12;
+        NSStatusItemSelectionPadding = 12;
+      };
+      "com.apple.screencapture" = {
+        disable-shadow = true;
+        location = "~/Downloads";
+        type = "png";
+      };
       "com.apple.driver.AppleBluetoothMultitouch.mouse" = {
         MouseButtonMode = "TwoButton";
       };
