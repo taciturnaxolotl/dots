@@ -503,6 +503,12 @@
     domain = "doom.dunkirk.sh";
   };
 
+  atelier.services.pear = {
+    enable = true;
+    domain = "pear.dunkirk.sh";
+    healthUrl = "https://pear.dunkirk.sh";
+  };
+
   services.pumpkin = {
     enable = true;
     port = 28868;

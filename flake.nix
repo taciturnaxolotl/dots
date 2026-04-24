@@ -164,6 +164,7 @@
             zmx-binary = prev.callPackage ./packages/zmx.nix { };
             bore-auth = prev.callPackage ./packages/bore-auth.nix { };
             curl-doom = prev.callPackage ./packages/curl-doom.nix { };
+            pear = prev.callPackage ./packages/pear.nix { };
             herald = inputs.herald.packages.${prev.stdenv.hostPlatform.system}.default;
             pumpkin =
               let
