@@ -68,6 +68,11 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    pear = {
+      url = "github:taciturnaxolotl/pear";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     flare = {
       url = "github:ByteAtATime/flare/feat/nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -164,7 +169,7 @@
             zmx-binary = prev.callPackage ./packages/zmx.nix { };
             bore-auth = prev.callPackage ./packages/bore-auth.nix { };
             curl-doom = prev.callPackage ./packages/curl-doom.nix { };
-            pear = prev.callPackage ./packages/pear.nix { };
+            pear = inputs.pear.packages.${prev.stdenv.hostPlatform.system}.default;
             herald = inputs.herald.packages.${prev.stdenv.hostPlatform.system}.default;
             pumpkin =
               let

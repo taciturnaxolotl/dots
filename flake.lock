@@ -1178,11 +1178,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777009078,
-        "narHash": "sha256-h+E6nlWvZvw7iLqVyMgbPXhWQqXigk0iuL3t/bwEXIY=",
+        "lastModified": 1777011111,
+        "narHash": "sha256-tuf778lVy3YNmkTqK1hoW0slPDYgd6xYpqEvQ52ZAVw=",
         "owner": "nix-community",
         "repo": "NUR",
-        "rev": "b6a9fe0c1794d3b06afd1af897d73cec078e47d4",
+        "rev": "4f6a593cae2a69d8033684a19fd6827ec22474a5",
         "type": "github"
       },
       "original": {
@@ -1212,6 +1212,26 @@
       "original": {
         "owner": "NuschtOS",
         "repo": "search",
+        "type": "github"
+      }
+    },
+    "pear": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1777011920,
+        "narHash": "sha256-+KRZXY3ety/TgMyzadGEwJdv1A+R+pojPV6X5r29SWg=",
+        "owner": "taciturnaxolotl",
+        "repo": "pear",
+        "rev": "49a3849faae9ba7f9dc7a9dbe5fd46f0323e7d64",
+        "type": "github"
+      },
+      "original": {
+        "owner": "taciturnaxolotl",
+        "repo": "pear",
         "type": "github"
       }
     },
@@ -1283,6 +1303,7 @@
         "nixpkgs-unstable": "nixpkgs-unstable",
         "nixvim": "nixvim",
         "nur": "nur",
+        "pear": "pear",
         "pumpkin": "pumpkin",
         "soapdump": "soapdump",
         "spicetify-nix": "spicetify-nix",
