@@ -145,6 +145,8 @@
     showhidden = true;
     autohide-delay = 0.0;
     autohide-time-modifier = 0.0;
+    magnification = true;
+    largesize = 52;
   };
 
   power.sleep = {
@@ -163,6 +165,10 @@
     finder.ShowPathbar = true;
     finder.ShowStatusBar = false;
     finder.FXDefaultSearchScope = "SCcf";
+    finder._FXShowPosixPathInTitle = true;
+    finder.FXEnableExtensionChangeWarning = false;
+    trackpad.Clicking = true;
+    trackpad.TrackpadRightClick = true;
     # expand the save dialogs
     NSGlobalDomain.NSNavPanelExpandedStateForSaveMode = true;
     NSGlobalDomain.NSNavPanelExpandedStateForSaveMode2 = true;
@@ -188,6 +194,11 @@
       "com.apple.ImageCapture" = {
         disableHotPlug = true;
       };
+      "com.apple.menuextra.clock" = {
+        FlashDateSeparators = false;
+        ShowDate = 0;
+        ShowDayOfWeek = true;
+      };
       "NSGlobalDomain" = {
         # old imac purple tint
         AppleIconAppearanceCustomTintColor = "0.358236 0.479976 0.941252 0.780139";
@@ -201,6 +212,14 @@
         disable-shadow = true;
         location = "~/Downloads";
         type = "png";
+      };
+      "com.apple.finder" = {
+        SidebarShowingiCloudDesktop = false;
+        ShowRecentTags = false;
+        ShowExternalHardDrivesOnDesktop = true;
+        ShowHardDrivesOnDesktop = false;
+        ShowRemovableMediaOnDesktop = true;
+        NewWindowTarget = "PfHm";
       };
       "com.apple.driver.AppleBluetoothMultitouch.mouse" = {
         MouseButtonMode = "TwoButton";
