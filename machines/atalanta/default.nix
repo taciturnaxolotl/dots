@@ -79,7 +79,6 @@
     pkgs.gotools
     pkgs.go-tools
     pkgs.gcc
-    pkgs.rustc
     pkgs.cargo
     pkgs.jdk
     pkgs.ruby
@@ -95,7 +94,6 @@
     # tools
     pkgs.calc
     pkgs.nh
-    pkgs.rustscan
     pkgs.vhs
     inputs.soapdump.packages.${pkgs.stdenv.hostPlatform.system}.default
   ];
