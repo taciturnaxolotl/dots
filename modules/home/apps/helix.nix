@@ -290,6 +290,14 @@
               "wakatime"
             ];
           }
+          {
+            name = "markdown";
+            text-width = 120;
+            soft-wrap = {
+              enable = true;
+              wrap-at-text-width = true;
+            };
+          }
         ] ++ lib.optionals config.atelier.apps.helix.swift [
           {
             name = "swift";
