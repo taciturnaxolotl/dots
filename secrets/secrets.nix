@@ -87,4 +87,10 @@ in
   "overpass.age".publicKeys = [
     kierank
   ];
+  "paperless.age".publicKeys = [
+    kierank
+  ];
+  "paperless-oidc.age".publicKeys = [
+    kierank
+  ];
 }

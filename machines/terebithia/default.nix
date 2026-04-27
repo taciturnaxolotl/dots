@@ -12,6 +12,7 @@
 
     (inputs.import-tree ../../modules/nixos)
     ../../modules/nixos/services/herald.nix
+    ../../modules/nixos/services/paperless.nix
   ];
 
   nixpkgs = {
@@ -171,6 +172,14 @@
     overpass = {
       file = ../../secrets/overpass.age;
       owner = "overpass";
+    };
+    paperless = {
+      file = ../../secrets/paperless.age;
+      owner = "paperless";
+    };
+    paperless-oidc = {
+      file = ../../secrets/paperless-oidc.age;
+      owner = "paperless";
     };
 
     "restic/env".file = ../../secrets/restic/env.age;
@@ -502,6 +511,19 @@
     enable = true;
     domain = "doom.dunkirk.sh";
   };
+
+  atelier.services.paperless = {
+    enable = true;
+    domain = "paperless.dunkirk.sh";
+    oidc = {
+      enable = true;
+      clientId = "ikc_W1wkoHyC8Szw99faIaiGj";
+      clientSecretFile = config.age.secrets.paperless-oidc.path;
+      issuer = "https://indiko.dunkirk.sh";
+    };
+  };
+
+  services.paperless.passwordFile = config.age.secrets.paperless.path;
 
   atelier.services.pear = {
     enable = true;
