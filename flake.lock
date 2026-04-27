@@ -1222,11 +1222,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1777088139,
-        "narHash": "sha256-T+7fU2Mob+x6nR3Y7booXjv8xEoAuFGeG5oK+vcfXuc=",
+        "lastModified": 1777254439,
+        "narHash": "sha256-JW6lbidf5mufoGltEYvgvG8DKbymdMeFT2Aqf2UnKAo=",
         "owner": "taciturnaxolotl",
         "repo": "pear",
-        "rev": "006744a17c245d873713e9c3f96d7c96e95e9e79",
+        "rev": "44594a2a8182b31dc9484bdb1d827435d11737af",
         "type": "github"
       },
       "original": {
