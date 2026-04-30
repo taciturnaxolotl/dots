@@ -164,11 +164,6 @@
       file = ../../secrets/cedarlogic.age;
       owner = "cedarlogic";
     };
-
-    triage-agent = {
-      file = ../../secrets/triage-agent.age;
-      owner = "triage-agent";
-    };
     overpass = {
       file = ../../secrets/overpass.age;
       owner = "overpass";
@@ -203,7 +198,6 @@
     machine = {
       enable = true;
       tailscaleHost = "terebithia";
-      triageUrl = "https://triage.dunkirk.sh";
     };
   };
 
@@ -492,12 +486,6 @@
     secretsFile = config.age.secrets.cedarlogic.path;
     healthUrl = "https://cedarlogic.dunkirk.sh/health";
   };
-
-  atelier.services.triage-agent = {
-    enable = true;
-    secretsFile = config.age.secrets.triage-agent.path;
-  };
-
   atelier.services.overpass = {
     enable = true;
     domain = "overpass.dunkirk.sh";

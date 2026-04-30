@@ -149,14 +149,6 @@
           repository = null;
           health_url = "https://${allServices.herald.domain}";
         }))
-        (lib.optional ((allServices.triage-agent.enable or false) && (allServices.triage-agent ? domain)) (mkCustom "triage-agent" {
-          description = "AI-powered service triage webhook";
-          domain = allServices.triage-agent.domain;
-          port = allServices.triage-agent.port or 3200;
-          runtime = "bun";
-          repository = null;
-          health_url = "https://${allServices.triage-agent.domain}/health";
-        }))
         (lib.optional ((allServices.frps.enable or false) && (allServices.frps ? domain)) (mkCustom "bore" {
           description = "HTTP/TCP/UDP tunnel proxy";
           domain = allServices.frps.domain;
@@ -235,7 +227,6 @@
           hostname = config.networking.hostName or name;
           type = config.atelier.machine.type or "server";
           tailscale_host = config.atelier.machine.tailscaleHost or null;
-          triage_url = config.atelier.machine.triageUrl or null;
           services = services;
         };
     in

@@ -20,10 +20,5 @@
       description = "Tailscale hostname for reachability checks";
     };
 
-    triageUrl = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "URL of the triage agent webhook for this machine's services";
-    };
   };
 }

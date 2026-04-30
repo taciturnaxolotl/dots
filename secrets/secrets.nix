@@ -81,9 +81,6 @@ in
   "cedarlogic.age".publicKeys = [
     kierank
   ];
-  "triage-agent.age".publicKeys = [
-    kierank
-  ];
   "overpass.age".publicKeys = [
     kierank
   ];
