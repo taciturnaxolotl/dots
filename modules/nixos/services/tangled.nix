@@ -120,6 +120,27 @@ in
       MemoryHigh = "6G";
     };
 
+    # Fix race condition: chown -R fails if SQLite WAL temp files (-wal, -shm)
+    # vanish during the pre-start script, causing the service to fail to start
+    systemd.services.knot.preStart = lib.mkForce ''
+      mkdir -p "/home/git"
+      chown -R git:git "/home/git" || true
+
+      mkdir -p "/home/git/.config/git"
+      cat > "/home/git/.config/git/config" << EOF
+      [user]
+          name = Tangled
+          email = noreply@tangled.org
+      [receive]
+          advertisePushOptions = true
+      [uploadpack]
+          allowFilter = true
+          allowReachableSHA1InWant = true
+      EOF
+      printf "🧶 welcome to kieran's knot!\n" > /home/git/motd
+      chown -R git:git "/home/git" || true
+    '';
+
     atelier.services.knot-sync = {
       enable = cfg.knot.enable;
       ownerDid = cfg.owner;
