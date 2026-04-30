@@ -985,6 +985,12 @@ in
   options.atelier.shell = {
     enable = lib.mkEnableOption "Custom shell config";
 
+    ephemeral = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
+      description = "Mark this as an ephemeral environment (red prompt)";
+    };
+
     tangled = {
       plcId = lib.mkOption {
         type = lib.types.str;
@@ -1054,7 +1060,7 @@ in
                 type = "path";
                 style = "plain";
                 background = "transparent";
-                foreground = "blue";
+                foreground = if cfg.ephemeral then "red" else "blue";
                 template = "{{ .Path }} ";
                 properties = {
                   style = "full";

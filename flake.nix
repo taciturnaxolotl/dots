@@ -204,6 +204,24 @@
             ./machines/terebithia
           ];
         };
+
+        iso-x86_64 = nixpkgs.lib.nixosSystem {
+          system = "x86_64-linux";
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            unstable-overlays
+            ./machines/iso
+          ];
+        };
+
+        iso-aarch64 = nixpkgs.lib.nixosSystem {
+          system = "aarch64-linux";
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            unstable-overlays
+            ./machines/iso
+          ];
+        };
       };
 
       # Standalone home-manager configurations
@@ -298,6 +316,9 @@
           x86_64-linux.docs = mkDocs "x86_64-linux";
           aarch64-linux.docs = mkDocs "aarch64-linux";
           aarch64-darwin.docs = mkDocs "aarch64-darwin";
+
+          x86_64-linux.iso = self.nixosConfigurations.iso-x86_64.config.system.build.isoImage;
+          aarch64-linux.iso = self.nixosConfigurations.iso-aarch64.config.system.build.isoImage;
         };
 
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
