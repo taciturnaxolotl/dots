@@ -221,7 +221,6 @@
         "wheel"
         "networkmanager"
         "services"
-        "pumpkin"
       ];
     };
     duncan = {
@@ -236,7 +235,6 @@
       extraGroups = [
         "wheel"
         "networkmanager"
-        "pumpkin"
       ];
     };
     caddy.extraGroups = [ "duncan" ];
@@ -268,7 +266,6 @@
     ];
     allowedUDPPorts = [
       28869 # Minecraft voice chat
-      19132 # mc geyser
     ];
     logRefusedConnections = false;
     rejectPackets = true;
@@ -519,11 +516,6 @@
     healthUrl = "https://pear.dunkirk.sh";
   };
 
-  services.pumpkin = {
-    enable = true;
-    port = 28868;
-    package = pkgs.pumpkin;
-  };
 
   atelier.services.tangled = {
     enable = true;

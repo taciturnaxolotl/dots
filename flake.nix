@@ -119,15 +119,6 @@
       url = "github:neurosnap/zmx";
     };
 
-    pumpkin = {
-      url = "github:Pumpkin-MC/Pumpkin";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
-
-    fenix = {
-      url = "github:nix-community/fenix";
-      inputs.nixpkgs.follows = "nixpkgs-unstable";
-    };
 
   };
 
@@ -171,19 +162,6 @@
             curl-doom = prev.callPackage ./packages/curl-doom.nix { };
             pear = inputs.pear.packages.${prev.stdenv.hostPlatform.system}.default;
             herald = inputs.herald.packages.${prev.stdenv.hostPlatform.system}.default;
-            pumpkin =
-              let
-                system = prev.stdenv.hostPlatform.system;
-                toolchain = inputs.fenix.packages.${system}.stable;
-                naersk' = prev.callPackage inputs.pumpkin.inputs.naersk {
-                  cargo = toolchain.cargo;
-                  rustc = toolchain.rustc;
-                };
-              in
-              naersk'.buildPackage {
-                pname = "pumpkin";
-                src = inputs.pumpkin;
-              };
           })
         ];
       };
