@@ -114,6 +114,12 @@ in
       postBackup = "systemctl start spindle";
     };
 
+    # Prevent knot's memory leak from triggering system-wide OOM
+    systemd.services.knot.serviceConfig = {
+      MemoryMax = "8G";
+      MemoryHigh = "6G";
+    };
+
     atelier.services.knot-sync = {
       enable = cfg.knot.enable;
       ownerDid = cfg.owner;
