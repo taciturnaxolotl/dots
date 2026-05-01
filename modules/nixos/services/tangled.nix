@@ -118,6 +118,7 @@ in
     systemd.services.knot.serviceConfig = {
       MemoryMax = "8G";
       MemoryHigh = "6G";
+      MemorySwapMax = "0";
     };
 
     # Fix race condition: chown -R fails if SQLite WAL temp files (-wal, -shm)
