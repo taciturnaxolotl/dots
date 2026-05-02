@@ -119,6 +119,10 @@
       url = "github:neurosnap/zmx";
     };
 
+    tangle-of-trust = {
+      url = "github:taciturnaxolotl/tangle-of-trust";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
   };
 
@@ -162,6 +166,7 @@
             curl-doom = prev.callPackage ./packages/curl-doom.nix { };
             pear = inputs.pear.packages.${prev.stdenv.hostPlatform.system}.default;
             herald = inputs.herald.packages.${prev.stdenv.hostPlatform.system}.default;
+            tangle-of-trust = inputs.tangle-of-trust.packages.${prev.stdenv.hostPlatform.system}.default;
           })
         ];
       };

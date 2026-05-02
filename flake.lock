@@ -1167,6 +1167,7 @@
         "pear": "pear",
         "soapdump": "soapdump",
         "spicetify-nix": "spicetify-nix",
+        "tangle-of-trust": "tangle-of-trust",
         "tangled": "tangled",
         "terminal-wakatime": "terminal-wakatime",
         "wakatime-ls": "wakatime-ls",
@@ -1397,6 +1398,26 @@
       "original": {
         "owner": "nix-systems",
         "repo": "default",
+        "type": "github"
+      }
+    },
+    "tangle-of-trust": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1777745502,
+        "narHash": "sha256-KslVlLIqG1+6aOs47QKa02oWbJIXwoQBPpODZWnM71c=",
+        "owner": "taciturnaxolotl",
+        "repo": "tangle-of-trust",
+        "rev": "01f6310912e7f61832ddf6485904faf3ce39b18a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "taciturnaxolotl",
+        "repo": "tangle-of-trust",
         "type": "github"
       }
     },

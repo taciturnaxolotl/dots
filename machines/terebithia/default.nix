@@ -532,6 +532,12 @@
     };
   };
 
+  atelier.services.tangle-of-trust = {
+    enable = true;
+    domain = "tangle-of-trust.dunkirk.sh";
+    port = 9090;
+  };
+
   # FlareSolverr — Cloudflare bypass proxy for GasBuddy scraping
   virtualisation.docker.enable = true;
   virtualisation.oci-containers.backend = "docker";
