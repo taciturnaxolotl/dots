@@ -119,8 +119,8 @@ in
     # MemoryHigh: throttle at 3G to slow growth
     # MemorySwapMax: prevent swap thrashing entirely
     systemd.services.knot.serviceConfig = {
-      MemoryMax = "4G";
-      MemoryHigh = "3G";
+      MemoryMax = "8G";
+      MemoryHigh = "6G";
       MemorySwapMax = "0";
     };
 
