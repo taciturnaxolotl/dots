@@ -533,7 +533,7 @@
   };
 
   atelier.services.tangle-of-trust = {
-    enable = true;
+    enable = false;
     domain = "tangle-of-trust.dunkirk.sh";
     port = 9090;
   };

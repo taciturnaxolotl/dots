@@ -343,7 +343,7 @@
       deploy.nodes = {
         # NixOS servers
         terebithia = {
-          hostname = "terebithia";
+          hostname = "100.105.182.50";
           profiles.system = {
             sshUser = "kierank";
             user = "root";

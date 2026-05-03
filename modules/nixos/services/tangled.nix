@@ -115,10 +115,28 @@ in
     };
 
     # Prevent knot's memory leak from triggering system-wide OOM
+    # MemoryMax: hard kill at 4G (process is unresponsive well before 8G)
+    # MemoryHigh: throttle at 3G to slow growth
+    # MemorySwapMax: prevent swap thrashing entirely
     systemd.services.knot.serviceConfig = {
-      MemoryMax = "8G";
-      MemoryHigh = "6G";
+      MemoryMax = "4G";
+      MemoryHigh = "3G";
       MemorySwapMax = "0";
+    };
+
+    # Proactively restart knot every 4 hours to prevent memory bloat
+    # from accumulating. The RepoCompare endpoint leaks ~1.5GB/hour under
+    # normal traffic, so 4h keeps it well under the 4G hard limit.
+    systemd.timers.knot-restart = {
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "*-*-* 00/4:00:00";
+        Persistent = true;
+      };
+    };
+    systemd.services.knot-restart = {
+      serviceConfig.Type = "oneshot";
+      script = "${config.systemd.package}/bin/systemctl restart knot";
     };
 
     # Fix race condition: chown -R fails if SQLite WAL temp files (-wal, -shm)
