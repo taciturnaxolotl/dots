@@ -1,4 +1,4 @@
-{ config, lib, pkgs, ... }:
+{ config, pkgs, ... }:
 
 let
   mkService = import ../../lib/mkService.nix;
@@ -11,7 +11,7 @@ let
     description = "Tangled trust graph visualizer";
     defaultPort = 8080;
     runtime = "custom";
-    startCommand = "${pkg}/bin/tangle-ingest --db ${cfg.dataDir}/data/tangle.db --web :${toString cfg.port}";
+    startCommand = "${pkg}/bin/ingest --db ${cfg.dataDir}/data/tangle.db --web :${toString cfg.port}";
 
     extraConfig = cfg: {
       systemd.services.tangle-of-trust.serviceConfig.Environment = [
