@@ -138,6 +138,7 @@
 
   programs.zsh.initContent = ''
     eval "$(/usr/libexec/path_helper)"
+    export HYPER_URL="https://hyper.charmcli.dev"
     export PATH="$HOME/.cargo/bin:$PATH"
     export PATH="$PATH:$(python3 -m site --user-base)/bin"
     export PATH="$PATH:/opt/homebrew/share/android-commandlinetools/platform-tools:/opt/homebrew/share/android-commandlinetools/emulator"
