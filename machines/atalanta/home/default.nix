@@ -18,7 +18,32 @@
     sessionPath = [
       "$HOME/.embedder/bin"
     ];
-   };
+  };
+
+  atelier.wm.yabai = {
+    enable = true;
+    config = {
+      global = {
+        mouse_follows_focus = true;
+        focus_follows_mouse = "autofocus";
+      };
+      rules = [
+        "app=\"^Dia$\" space=1"
+        "app=\"^Slack$\" space=8"
+        "app=\"^Vesktop$\" space=7"
+        "app=\"^Notion$\" space=9"
+        "app=\"^UTM$\" manage=off"
+        "app=\"^VMware Fusion$\" manage=off"
+        "app=\"^FaceTime$\" manage=off"
+        "app=\"^Screen Sharing$\" manage=off"
+        "app=\"^Antinote$\" manage=off"
+        "app=\"^hw05$\" manage=off"
+        "app=\"^Finder$\" subrole=\"AXDialog\" manage=off"
+        "app=\"^Finder$\" title=\"^Copy$\" manage=off"
+      ];
+    };
+    skhdConfig = builtins.readFile ../../../dots/skhdrc;
+  };
 
   atelier = {
     shell = {

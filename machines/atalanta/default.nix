@@ -140,6 +140,7 @@
     persistent-apps = [ ];
 
     tilesize = 47;
+    mru-spaces = false;
     show-recents = false;
     autohide = true;
     showhidden = true;
@@ -148,6 +149,14 @@
     magnification = true;
     largesize = 52;
   };
+
+  # Regenerate sudoers entry with correct hash after every rebuild
+  system.activationScripts.yabai-sudoers.text = ''
+    YABAI="${pkgs.yabai}/bin/yabai"
+    HASH=$(shasum -a 256 "$YABAI" | cut -d ' ' -f 1)
+    echo "kierank ALL=(root) NOPASSWD: sha256:$HASH $YABAI --load-sa" > /private/etc/sudoers.d/yabai
+    chmod 440 /private/etc/sudoers.d/yabai
+  '';
 
   power.sleep = {
     computer = 1;
