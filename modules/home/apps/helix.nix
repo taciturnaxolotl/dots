@@ -292,6 +292,7 @@
           }
           {
             name = "markdown";
+            file-types = [ ({ glob = "*.md.tpl"; }) ({ glob = "*.md"; }) ];
             text-width = 120;
             soft-wrap = {
               enable = true;
