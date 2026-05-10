@@ -500,6 +500,7 @@
   atelier.services.paperless = {
     enable = true;
     domain = "paperless.dunkirk.sh";
+    healthUrl = "https://paperless.dunkirk.sh/health/";
     oidc = {
       enable = true;
       clientId = "ikc_W1wkoHyC8Szw99faIaiGj";

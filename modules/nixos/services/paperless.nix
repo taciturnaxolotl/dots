@@ -73,6 +73,12 @@ in
       description = "Allow consumption directory to be publicly accessible";
     };
 
+    healthUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = null;
+      description = "Health check URL for monitoring";
+    };
+
     oidc = {
       enable = lib.mkEnableOption "OIDC authentication via Indiko";
 
