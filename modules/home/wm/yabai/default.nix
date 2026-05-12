@@ -192,11 +192,10 @@ in
     home.file.".yabairc" = {
       executable = true;
       text = scriptContent;
+      onChange = ''
+        ${config.home.homeDirectory}/.yabairc
+      '';
     };
-
-    home.activation.restartYabai = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-      $DRY_RUN_CMD /bin/launchctl kickstart -k gui/$UID/org.nix-community.home.yabai
-    '';
 
     launchd.agents.yabai = {
       enable = true;
