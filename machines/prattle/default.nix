@@ -37,9 +37,8 @@
       optimise.automatic = true;
       registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
-      # Enable automatic GC to free up disk space
       gc = {
-        automatic = true;
+        automatic = false;
         dates = "weekly";
         options = "--delete-older-than 7d";
       };
@@ -188,7 +187,7 @@
     enable = true;
     package = pkgs.caddy.withPlugins {
       plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-      hash = "sha256-dnhEjopeA0UiI+XVYHYpsjcEI6Y1Hacbi28hVKYQURg=";
+      hash = "sha256-0qis+BN4of+DV0x4/XfpS7J2kANcm65EewN9v1VNlQs=";
     };
     email = "kieran@dunkirk.sh";
     globalConfig = ''

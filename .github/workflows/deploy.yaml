@@ -34,7 +34,7 @@ jobs:
         id: capture
         run: |
           GENERATIONS='{}'
-          for NODE in terebithia; do
+          for NODE in terebithia prattle; do
             GEN=$(ssh kierank@${NODE} \
               "readlink /nix/var/nix/profiles/system | grep -oP 'system-\K[0-9]+'")
             GENERATIONS=$(echo "$GENERATIONS" | jq -c --arg node "$NODE" --arg gen "$GEN" '. + {($node): $gen}')
@@ -49,6 +49,8 @@ jobs:
         node:
           - name: terebithia
             arch: aarch64-linux
+          - name: prattle
+            arch: x86_64-linux
 
     name: ${{ matrix.node.name }}
     runs-on: ubuntu-latest
