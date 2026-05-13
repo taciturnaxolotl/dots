@@ -10,6 +10,12 @@
   };
 
   atelier = {
+    shell = {
+      enable = true;
+    };
+    apps = {
+      helix.enable = true;
+    };
     ssh = {
       enable = true;
       zmx.enable = true;

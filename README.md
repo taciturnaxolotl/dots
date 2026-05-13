@@ -19,9 +19,10 @@
 ├── machines
 │   ├── atalanta       # macOS M4 (nix-darwin)
 │   ├── ember          # dell r210 server (basement)
+│   ├── iso            # NixOS installer ISO (x86_64 + aarch64)
 │   ├── moonlark       # framework 13 (dead)
 │   ├── nest           # shared tilde server (home-manager only)
-│   ├── prattle        # oracle cloud x86_64
+│   ├── prattle        # lenovo thinkstation p300 (xeon, 32GB, ZFS mirror)
 │   ├── tacyon         # rpi 5
 │   └── terebithia     # oracle cloud aarch64 (main server)
 ├── modules

@@ -32,13 +32,9 @@
         trusted-users = [
           "kierank"
         ];
-        # Limit resource usage
-        max-jobs = 1;
-        cores = 1;
       };
       channel.enable = false;
-      # Disable automatic optimization to save CPU/memory
-      optimise.automatic = false;
+      optimise.automatic = true;
       registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
       nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
       # Enable automatic GC to free up disk space
@@ -52,10 +48,48 @@
   time.timeZone = "America/New_York";
 
   environment.systemPackages = with pkgs; [
-    # core essentials only
+    # core
+    coreutils
+    screen
+    bc
+    jq
+    psmisc
+    # cli_utils
+    direnv
+    zsh
+    gum
     vim
+    zmx-binary
+    # networking
+    xh
     curl
+    wget
+    dogdns
+    inetutils
+    mosh
+    # nix_tools
+    inputs.nixvim.packages.x86_64-linux.default
+    nixd
+    nil
+    nixfmt-rfc-style
     inputs.agenix.packages.x86_64-linux.default
+    # security
+    openssl
+    gpgme
+    gnupg
+    # dev_langs
+    nodejs_22
+    unstable.bun
+    python3
+    go
+    gopls
+    gotools
+    go-tools
+    gcc
+    jre
+    # misc
+    neofetch
+    git
   ];
 
   age.identityPaths = [
@@ -74,36 +108,46 @@
     };
   };
 
+  programs.nh = {
+    enable = true;
+    clean.enable = true;
+    clean.extraArgs = "--keep-since 4d --keep 3";
+    flake = "/home/kierank/dots";
+  };
+
   environment.sessionVariables = {
     XDG_CACHE_HOME = "$HOME/.cache";
     XDG_CONFIG_HOME = "$HOME/.config";
     XDG_DATA_HOME = "$HOME/.local/share";
     XDG_STATE_HOME = "$HOME/.local/state";
-    EDITOR = "vim";
-    SYSTEMD_EDITOR = "vim";
-    VISUAL = "vim";
+    EDITOR = "nvim";
+    SYSTEMD_EDITOR = "nvim";
+    VISUAL = "nvim";
   };
 
   atelier = {
-    machine.enable = false;
     authentication.enable = true;
+    machine = {
+      enable = true;
+      tailscaleHost = "prattle";
+    };
   };
 
   networking = {
     hostName = "prattle";
-    # Use systemd-networkd instead of NetworkManager (lighter)
+    hostId = "4e4de3a2";
     useDHCP = true;
     networkmanager.enable = false;
   };
 
-  # Use bash instead of zsh to save memory
-  programs.bash.enableCompletion = true;
+  programs.zsh.enable = true;
+  programs.direnv.enable = true;
 
   users.users = {
     kierank = {
       initialPassword = "changeme";
       isNormalUser = true;
-      shell = pkgs.bashInteractive;
+      shell = pkgs.zsh;
       openssh.authorizedKeys.keys = [
         "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzEEjvbL/ttqmYoDjxYQmDIq36BabROJoXgQKeh9liBxApwp+2PmgxROzTg42UrRc9pyrkq5kVfxG5hvkqCinhL1fMiowCSEs2L2/Cwi40g5ZU+QwdcwI8a4969kkI46PyB19RHkxg54OUORiIiso/WHGmqQsP+5wbV0+4riSnxwn/JXN4pmnE//stnyAyoiEZkPvBtwJjKb3Ni9n3eNLNs6gnaXrCtaygEZdebikr9kS2g9mM696HvIFgM6cdR/wZ7DcLbG3IdTXuHN7PC3xxL+Y4ek5iMreQIPmuvs4qslbthPGYoYbYLUQiRa9XO5s/ksIj5Z14f7anHE6cuTQVpvNWdGDOigyIVS5qU+4ZF7j+rifzOXVL48gmcAvw/uV68m5Wl/p0qsC/d8vI3GYwEsWG/EzpAlc07l8BU2LxWgN+d7uwBFaJV9VtmUDs5dcslsh8IbzmtC9gq3OLGjklxTfIl6qPiL8U33oc/UwqzvZUrI2BlbagvIZYy6rP+q0= kierank@mockingjay"
       ];
@@ -133,8 +177,6 @@
     allowedTCPPorts = [ 22 80 443 ];
     logRefusedConnections = false;
     rejectPackets = true;
-    # Disable firewall logging to reduce overhead
-    logReversePathDrops = false;
   };
 
   services.tailscale = {
@@ -190,15 +232,11 @@
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
-  boot.kernelParams = [ "console=ttyS0" ];
-
-  # Memory and resource optimizations
   zramSwap = {
     enable = true;
-    memoryPercent = 50; # Use 50% of RAM for compressed swap
+    memoryPercent = 50;
   };
 
-  # Reduce system logging overhead
   services.journald.extraConfig = ''
     SystemMaxUse=100M
     MaxRetentionSec=7day
