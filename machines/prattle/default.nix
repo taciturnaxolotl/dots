@@ -49,6 +49,7 @@
   environment.systemPackages = with pkgs; [
     # core
     coreutils
+    ghostty.terminfo
     screen
     bc
     jq
@@ -101,9 +102,11 @@
       path = "/home/kierank/.wakatime.cfg";
       owner = "kierank";
     };
-    cloudflare = {
-      file = ../../secrets/cloudflare.age;
-      owner = "caddy";
+    nordvpn-wg = {
+      file = ../../secrets/nordvpn-wg.age;
+    };
+    minio = {
+      file = ../../secrets/minio.age;
     };
   };
 
@@ -152,6 +155,7 @@
       ];
       extraGroups = [
         "wheel"
+        "media"
       ];
     };
     root.openssh.authorizedKeys.keys = [
@@ -159,7 +163,6 @@
     ];
   };
 
-  # Allow passwordless sudo for wheel group (needed for deploy-rs)
   security.sudo.wheelNeedsPassword = false;
 
   services.openssh = {
@@ -173,7 +176,21 @@
 
   networking.firewall = {
     enable = true;
-    allowedTCPPorts = [ 22 80 443 ];
+    allowedTCPPorts = [
+      22
+      445   # Samba
+      5252  # qBittorrent
+      6767  # Bazarr
+      7878  # Radarr
+      8096  # Jellyfin
+      8989  # Sonarr
+      9000  # MinIO API
+      9001  # MinIO Console
+      9696  # Prowlarr
+    ];
+    allowedUDPPorts = [
+      137 138 # Samba NetBIOS
+    ];
     logRefusedConnections = false;
     rejectPackets = true;
   };
@@ -183,50 +200,111 @@
     useRoutingFeatures = "client";
   };
 
-  services.caddy = {
+  # ── NVIDIA (GT 1030 — Pascal GP108) ──────────────────────────────────
+  hardware.nvidia = {
+    open = false;
+    package = config.boot.kernelPackages.nvidiaPackages.production;
+  };
+  hardware.graphics.enable = true;
+  services.xserver.videoDrivers = [ "nvidia" ];
+
+  # ── Nixarr ───────────────────────────────────────────────────────────
+  nixarr = {
     enable = true;
-    package = pkgs.caddy.withPlugins {
-      plugins = [ "github.com/caddy-dns/cloudflare@v0.2.2" ];
-      hash = "sha256-0qis+BN4of+DV0x4/XfpS7J2kANcm65EewN9v1VNlQs=";
+    mediaDir = "/storage/media";
+    stateDir = "/storage/.state/nixarr";
+
+    vpn = {
+      enable = true;
+      wgConf = config.age.secrets.nordvpn-wg.path;
     };
-    email = "kieran@dunkirk.sh";
-    globalConfig = ''
-      acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-    '';
-    virtualHosts."status.dunkirk.sh" = {
-      extraConfig = ''
-        tls {
-          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-        }
-        header {
-          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        }
-        reverse_proxy localhost:3001 {
-          header_up X-Forwarded-Proto {scheme}
-          header_up X-Forwarded-For {remote}
-        }
-      '';
+
+    jellyfin = {
+      enable = true;
+      openFirewall = true;
     };
-    extraConfig = ''
-      # Default response for unhandled domains
-      :80 {
-        respond "404 - Looks like this pin is unobtainable" 404
-      }
-      :443 {
-        respond "404 - Looks like this pin is unobtainable" 404
-      }
-    '';
+
+    sonarr = {
+      enable = true;
+      openFirewall = true;
+      settings-sync.qbittorrent.enable = true;
+    };
+
+    radarr = {
+      enable = true;
+      openFirewall = true;
+      settings-sync.qbittorrent.enable = true;
+    };
+
+    prowlarr = {
+      enable = true;
+      openFirewall = true;
+      settings-sync = {
+        enable-nixarr-apps = true;
+        sonarr.enable = true;
+        radarr.enable = true;
+      };
+    };
+
+    bazarr = {
+      enable = true;
+      openFirewall = true;
+      settings-sync = {
+        sonarr.enable = true;
+        radarr.enable = true;
+      };
+    };
+
+    qbittorrent = {
+      enable = true;
+      vpn.enable = true;
+      openFirewall = true;
+    };
   };
 
-  systemd.services.caddy.serviceConfig = {
-    EnvironmentFile = config.age.secrets.cloudflare.path;
-  };
-
-  services.uptime-kuma = {
+  # ── Samba ─────────────────────────────────────────────────────────────
+  services.samba = {
     enable = true;
+    openFirewall = true;
     settings = {
-      PORT = "3001";
+      global = {
+        "workgroup" = "WORKGROUP";
+        "server string" = "prattle";
+        "server role" = "standalone server";
+        "map to guest" = "Bad User";
+        "hosts allow" = "192.168.0.0/16 100.64.0.0/10 127.0.0.1";
+        "hosts deny" = "0.0.0.0/0";
+      };
+      storage = {
+        path = "/storage";
+        browseable = "yes";
+        "read only" = "no";
+        "guest ok" = "no";
+        "valid users" = "kierank";
+        "create mask" = "0664";
+        "directory mask" = "0775";
+        "force group" = "media";
+      };
+      media = {
+        path = "/storage/media";
+        browseable = "yes";
+        "read only" = "yes";
+        "guest ok" = "yes";
+        "force group" = "media";
+      };
     };
+  };
+
+  services.samba-wsdd = {
+    enable = true;
+    openFirewall = true;
+  };
+
+  # ── MinIO (S3-compatible) ─────────────────────────────────────────────
+  services.minio = {
+    enable = true;
+    dataDir = [ "/storage/s3" ];
+    rootCredentialsFile = config.age.secrets.minio.path;
   };
 
   boot.loader.systemd-boot.enable = true;

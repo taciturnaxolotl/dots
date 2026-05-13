@@ -124,6 +124,11 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
+    nixarr = {
+      url = "github:nix-media-server/nixarr";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
   };
 
   outputs =
@@ -192,6 +197,7 @@
             inputs.disko.nixosModules.disko
             agenix.nixosModules.default
             inputs.nixos-facter-modules.nixosModules.facter
+            inputs.nixarr.nixosModules.default
             { config.facter.reportPath = ./machines/prattle/facter.json; }
             unstable-overlays
             ./machines/prattle

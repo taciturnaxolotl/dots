@@ -90,4 +90,10 @@ in
   "paperless-oidc.age".publicKeys = [
     kierank
   ];
+  "nordvpn-wg.age".publicKeys = [
+    kierank
+  ];
+  "minio.age".publicKeys = [
+    kierank
+  ];
 }

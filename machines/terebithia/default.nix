@@ -574,6 +574,31 @@
     '';
   };
 
+  # ── Prattle reverse proxies (over Tailscale) ─────────────────────────
+  services.caddy.virtualHosts."jellyfin.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
+      reverse_proxy prattle:8096
+    '';
+  };
+
+  services.caddy.virtualHosts."s3.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
+      reverse_proxy prattle:9001
+    '';
+  };
+
   swapDevices = [{ device = "/var/swapfile"; size = 4096; }];
 
   boot.loader.systemd-boot.enable = true;

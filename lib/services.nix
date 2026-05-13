@@ -181,6 +181,14 @@
           repository = null;
           health_url = "https://${config.services.n8n.environment.N8N_HOST or "n8n.dunkirk.sh"}/healthz";
         }))
+        (lib.optional (config.services.minio.enable or false) (mkCustom "minio" {
+          description = "S3-compatible object storage";
+          domain = "s3.dunkirk.sh";
+          port = 9001;
+          runtime = "go";
+          repository = null;
+          health_url = null;
+        }))
       ];
 
       serviceList = (lib.mapAttrsToList mkEntry standardServices) ++ emojibotInstances ++ customServices;
