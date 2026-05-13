@@ -1,0 +1,40 @@
+name: Build ISO
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        arch:
+          - x86_64-linux
+          - aarch64-linux
+
+    name: ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+        with:
+          extra-conf: |
+            extra-platforms = aarch64-linux
+
+      - name: Set up QEMU
+        if: matrix.arch == 'aarch64-linux'
+        uses: docker/setup-qemu-action@v4
+        with:
+          platforms: arm64
+
+      - name: Build ISO
+        run: nix build .#packages.${{ matrix.arch }}.iso -L
+
+      - name: Upload ISO
+        uses: actions/upload-artifact@v4
+        with:
+          name: dots-iso-${{ matrix.arch }}
+          path: result/iso/*.iso
