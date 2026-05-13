@@ -227,13 +227,33 @@
     sonarr = {
       enable = true;
       openFirewall = true;
-      settings-sync.qbittorrent.enable = true;
+      settings-sync.downloadClients = [
+        {
+          name = "qBittorrent";
+          implementation = "Qbittorrent";
+          fields = {
+            host = "localhost";
+            port = 5252;
+            category = "sonarr";
+          };
+        }
+      ];
     };
 
     radarr = {
       enable = true;
       openFirewall = true;
-      settings-sync.qbittorrent.enable = true;
+      settings-sync.downloadClients = [
+        {
+          name = "qBittorrent";
+          implementation = "Qbittorrent";
+          fields = {
+            host = "localhost";
+            port = 5252;
+            category = "radarr";
+          };
+        }
+      ];
     };
 
     prowlarr = {
@@ -261,6 +281,10 @@
       openFirewall = true;
     };
   };
+
+  services.prowlarr.settings.auth.required = "DisabledForLocalAddresses";
+  services.sonarr.settings.auth.required = "DisabledForLocalAddresses";
+  services.radarr.settings.auth.required = "DisabledForLocalAddresses";
 
   # ── Samba ─────────────────────────────────────────────────────────────
   services.samba = {
