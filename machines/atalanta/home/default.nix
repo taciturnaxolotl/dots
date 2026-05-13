@@ -94,6 +94,10 @@
           hostname = "ember"; # ember
         };
 
+        "p.*" = {
+          hostname = "100.105.247.54"; # prattle
+        };
+
         # Regular hosts
         john = {
           hostname = "john.cedarville.edu";
@@ -107,6 +111,11 @@
 
         terebithia = {
           hostname = "150.136.15.177";
+          zmx = true;
+        };
+
+        prattle = {
+          hostname = "100.105.247.54";
           zmx = true;
         };
 
