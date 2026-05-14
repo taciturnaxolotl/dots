@@ -1418,6 +1418,7 @@ in
 
     home.sessionPath = [
       "$HOME/go/bin"
+      "$HOME/.local/bin"
     ];
 
     atelier.shell.git.enable = lib.mkDefault true;
