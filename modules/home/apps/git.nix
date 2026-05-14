@@ -4,6 +4,25 @@
   pkgs,
   ...
 }:
+let
+  git-prunes = pkgs.writeShellScriptBin "git-prunes" ''
+    set -euo pipefail
+
+    ${pkgs.gum}/bin/gum spin --spinner=dot --title "Fetching origin..." -- \
+      git fetch --prune
+
+    remote=$(git remote get-url origin 2>/dev/null || echo "origin")
+    lines=$(git branch -vv | awk '/: gone]/{print $1}')
+    [ -z "$lines" ] && exit 0
+
+    echo "$(${pkgs.gum}/bin/gum style --foreground 35 "from ''${remote}")"
+    echo "$lines" | while IFS= read -r branch; do
+      hash=$(git rev-parse --short "$branch" 2>/dev/null || echo "?")
+      echo " $(${pkgs.gum}/bin/gum style --foreground 196 deleted) ''${branch} $(${pkgs.gum}/bin/gum style --foreground 220 "(was ''${hash})")"
+      git branch -D "$branch" >/dev/null 2>&1
+    done
+  '';
+in
 {
   options.atelier.shell.git.enable = lib.mkEnableOption {
     description = "Enable global Git configuration";
@@ -22,6 +41,7 @@
           p = "push";
           ch = "checkout";
           pushfwl = "push --force-with-lease --force-if-includes";
+          prunes = "!git-prunes";
         };
         branch.sort = "-committerdate";
         pager.branch = false;
@@ -39,6 +59,7 @@
       enableGitIntegration = true;
     };
     programs.gh.enable = true;
+    home.packages = [ git-prunes ];
     programs.lazygit = {
       enable = true;
       settings = {
