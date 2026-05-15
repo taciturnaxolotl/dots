@@ -574,6 +574,18 @@
     '';
   };
 
+  services.caddy.virtualHosts."kieran.westerville.oh.us" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
+      redir https://dunkirk.sh?from=westerville permanent
+    '';
+  };
+
   # ── Prattle reverse proxies (over Tailscale) ─────────────────────────
   services.caddy.virtualHosts."jellyfin.dunkirk.sh" = {
     extraConfig = ''
