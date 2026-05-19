@@ -34,7 +34,7 @@ in
         user = {
           name = "Kieran Klukas";
           email = "kieran@dunkirk.sh";
-          signingKey = "~/.ssh/id_rsa.pub";
+          signingKey = "~/.ssh/id_rsa";
         };
         alias = {
           c = "commit";
