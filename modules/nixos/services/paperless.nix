@@ -119,7 +119,7 @@ in
     };
 
     atelier.services.paperless.data = {
-      sqlite = "/var/lib/paperless/data/db.sqlite3";
+      sqlite = "/var/lib/paperless/db.sqlite3";
       files = [ "/var/lib/paperless/media" ];
     };
 
