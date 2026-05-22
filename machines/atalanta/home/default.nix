@@ -40,6 +40,7 @@
         "app=\"^hw05$\" manage=off"
         "app=\"^Finder$\" subrole=\"AXDialog\" manage=off"
         "app=\"^Finder$\" title=\"^Copy$\" manage=off"
+        "app=\"^Finder$\" title=\"^Trash$\" manage=off"
       ];
     };
     skhdConfig = builtins.readFile ../../../dots/skhdrc;

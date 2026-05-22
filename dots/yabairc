@@ -47,5 +47,6 @@ yabai -m rule --add app="^hw05$"            manage=off
 yabai -m rule --add app="^Dia$" title="^Bitwarden$" manage=off
 yabai -m rule --add app="^Finder$" subrole="AXDialog" manage=off
 yabai -m rule --add app="^Finder$" title="^Copy$" manage=off
+yabai -m rule --add app="^Finder$" title="^Trash$" manage=off
 
 echo "yabai config loaded"
