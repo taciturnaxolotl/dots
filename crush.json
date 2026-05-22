@@ -1,0 +1,11 @@
+{
+  "mcp": {
+    "ssh": {
+      "command": "ssh-mcp",
+      "args": [
+        "--allowed-hosts=terebithia,prattle"
+      ],
+      "type": "stdio"
+    }
+  }
+}
