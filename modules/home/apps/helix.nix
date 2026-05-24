@@ -32,6 +32,7 @@
           ruby-lsp
           rust-analyzer
           nodePackages.bash-language-server
+          nodePackages.svelte-language-server
           taplo
           vscode-langservers-extracted
           kotlin-language-server
@@ -55,7 +56,7 @@
             character = "╎";
             skip-levels = 0;
           };
-          soft-wrap.enable = false;
+          soft-wrap.enable = true;
           auto-save = {
             idle-timeout = 300000;
           };
@@ -292,12 +293,18 @@
           }
           {
             name = "markdown";
-            file-types = [ ({ glob = "*.md.tpl"; }) ({ glob = "*.md"; }) ];
+            file-types = [ { glob = "*.md.tpl"; } { glob = "*.md"; } ];
             text-width = 120;
-            soft-wrap = {
-              enable = true;
-              wrap-at-text-width = true;
-            };
+            soft-wrap.wrap-at-text-width = true;
+          }
+          {
+            name = "svelte";
+            language-servers = [
+              "svelte-language-server"
+              "harper-ls"
+              "wakatime"
+            ];
+            auto-format = true;
           }
         ] ++ lib.optionals config.atelier.apps.helix.swift [
           {
