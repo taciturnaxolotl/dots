@@ -13,6 +13,7 @@
     (inputs.import-tree ../../modules/nixos)
     ../../modules/nixos/services/herald.nix
     ../../modules/nixos/services/paperless.nix
+    ../../modules/nixos/services/potluck.nix
   ];
 
   nixpkgs = {
@@ -171,6 +172,10 @@
     paperless = {
       file = ../../secrets/paperless.age;
       owner = "paperless";
+    };
+    potluck = {
+      file = ../../secrets/potluck.age;
+      owner = "potluck";
     };
     paperless-oidc = {
       file = ../../secrets/paperless-oidc.age;
@@ -515,6 +520,13 @@
     enable = true;
     domain = "pear.dunkirk.sh";
     healthUrl = "https://pear.dunkirk.sh";
+  };
+
+  atelier.services.potluck = {
+    enable = true;
+    domain = "backend.potluck.dunkirk.sh";
+    secretsFile = config.age.secrets.potluck.path;
+    healthUrl = "https://backend.potluck.dunkirk.sh/healthz";
   };
 
 

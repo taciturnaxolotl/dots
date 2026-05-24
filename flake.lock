@@ -1143,6 +1143,26 @@
         "type": "github"
       }
     },
+    "potluck": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1779630233,
+        "narHash": "sha256-mLKVwUzPDbGcMeSHvLQgk6I/O56WF1Nzw9IJsfAl3ag=",
+        "owner": "taciturnaxolotl",
+        "repo": "potluck",
+        "rev": "6f6339584dc689c33569130d1035334f4752e7c8",
+        "type": "github"
+      },
+      "original": {
+        "owner": "taciturnaxolotl",
+        "repo": "potluck",
+        "type": "github"
+      }
+    },
     "pre-commit-hooks": {
       "inputs": {
         "flake-compat": "flake-compat_2",
@@ -1189,6 +1209,7 @@
         "nixvim": "nixvim",
         "nur": "nur",
         "pear": "pear",
+        "potluck": "potluck",
         "soapdump": "soapdump",
         "spicetify-nix": "spicetify-nix",
         "tangle-of-trust": "tangle-of-trust",
