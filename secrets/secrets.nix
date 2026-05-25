@@ -93,7 +93,7 @@ in
   "potluck.age".publicKeys = [
     kierank
   ];
-  "nordvpn-wg.age".publicKeys = [
+  "protonvpn-wg.age".publicKeys = [
     kierank
   ];
   "minio.age".publicKeys = [

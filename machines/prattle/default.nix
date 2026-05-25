@@ -102,8 +102,8 @@
       path = "/home/kierank/.wakatime.cfg";
       owner = "kierank";
     };
-    nordvpn-wg = {
-      file = ../../secrets/nordvpn-wg.age;
+    protonvpn-wg = {
+      file = ../../secrets/protonvpn-wg.age;
     };
     minio = {
       file = ../../secrets/minio.age;
@@ -179,14 +179,9 @@
     allowedTCPPorts = [
       22
       445   # Samba
-      6767  # Bazarr
-      7878  # Radarr
       8096  # Jellyfin
-      8989  # Sonarr
       9000  # MinIO API
       9001  # MinIO Console
-      9091  # Transmission
-      9696  # Prowlarr
     ];
     allowedUDPPorts = [
       137 138 # Samba NetBIOS
@@ -216,29 +211,38 @@
 
     vpn = {
       enable = true;
-      wgConf = config.age.secrets.nordvpn-wg.path;
+      wgConf = config.age.secrets.protonvpn-wg.path;
     };
 
-    jellyfin = {
-      enable = true;
-      openFirewall = true;
-    };
+    jellyfin.enable = true;
 
     sonarr = {
       enable = true;
-      openFirewall = true;
       settings-sync.transmission.enable = true;
     };
 
     radarr = {
       enable = true;
-      openFirewall = true;
       settings-sync.transmission.enable = true;
     };
+  };
+
+  # Root folders and hardlinks for Sonarr/Radarr
+  services.sonarr.settings.mediaManagement = {
+    useHardlinksInsteadOfCopy = true;
+    recycleBin = "/storage/.trash";
+    recycleBinCleanupDays = 7;
+  };
+  services.radarr.settings.mediaManagement = {
+    useHardlinksInsteadOfCopy = true;
+    recycleBin = "/storage/.trash";
+    recycleBinCleanupDays = 7;
+  };
+
+  nixarr = {
 
     prowlarr = {
       enable = true;
-      openFirewall = true;
       settings-sync = {
         enable-nixarr-apps = true;
         sonarr.enable = true;
@@ -248,7 +252,6 @@
 
     bazarr = {
       enable = true;
-      openFirewall = true;
       settings-sync = {
         sonarr.enable = true;
         radarr.enable = true;
@@ -258,14 +261,37 @@
     transmission = {
       enable = true;
       vpn.enable = true;
-      openFirewall = true;
       peerPort = 51413;
+      extraSettings = {
+        download-dir = "/storage/torrents";
+        incomplete-dir = "/storage/torrents/.incomplete";
+        incomplete-dir-enabled = true;
+      };
     };
   };
 
   services.prowlarr.settings.auth.required = "DisabledForLocalAddresses";
   services.sonarr.settings.auth.required = "DisabledForLocalAddresses";
   services.radarr.settings.auth.required = "DisabledForLocalAddresses";
+
+  # Media/torrent directory structure (hardlinks require same filesystem)
+  systemd.tmpfiles.rules = [
+    "d /storage/media/movies 2775 root media -"
+    "d /storage/media/tv 2775 root media -"
+    "d /storage/torrents 2775 root media -"
+    "d /storage/torrents/.incomplete 2775 root media -"
+    "d /storage/.trash 2775 root media -"
+    "d /storage/s3 0750 minio minio -"
+  ];
+
+  # Fix Transmission umask so Radarr/Sonarr can read downloaded files
+  systemd.services.transmission.serviceConfig.UMask = "0002";
+
+  # ── FlareSolverr (Cloudflare bypass for Prowlarr indexers) ───────────
+  services.flaresolverr = {
+    enable = true;
+    port = 8191;
+  };
 
   # ── Samba ─────────────────────────────────────────────────────────────
   services.samba = {
