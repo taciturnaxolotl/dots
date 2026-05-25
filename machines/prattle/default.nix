@@ -284,8 +284,33 @@
     "d /storage/s3 0750 minio minio -"
   ];
 
+  # ── Recyclarr (TRaSH Guides sync) ─────────────────────────────────────
+  services.recyclarr = {
+    enable = true;
+    configuration = {
+      radarr.movies = {
+        base_url = "http://localhost:7878";
+        api_key._secret = "/storage/.state/nixarr/secrets/radarr.api-key";
+        delete_old_custom_formats = true;
+        quality_definition.type = "movie";
+        quality_profiles = [
+          { trash_id = "d1d67249d3890e49bc12e275d989a7e9"; } # HD Bluray + WEB
+        ];
+      };
+      sonarr.tv = {
+        base_url = "http://localhost:8989";
+        api_key._secret = "/storage/.state/nixarr/secrets/sonarr.api-key";
+        delete_old_custom_formats = true;
+        quality_definition.type = "series";
+        quality_profiles = [
+          { trash_id = "72dae194fc92bf828f32cde7744e51a1"; } # WEB-1080p
+        ];
+      };
+    };
+  };
+
   # Fix Transmission umask so Radarr/Sonarr can read downloaded files
-  systemd.services.transmission.serviceConfig.UMask = "0002";
+  systemd.services.transmission.serviceConfig.UMask = lib.mkForce "0002";
 
   # ── FlareSolverr (Cloudflare bypass for Prowlarr indexers) ───────────
   services.flaresolverr = {
