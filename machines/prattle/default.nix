@@ -210,7 +210,7 @@
 
   # ── Nixarr ───────────────────────────────────────────────────────────
   nixarr = {
-    enable = false;
+    enable = true;
     mediaDir = "/storage/media";
     stateDir = "/storage/.state/nixarr";
 
