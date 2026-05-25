@@ -193,6 +193,18 @@
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "client";
+    serve = {
+      enable = true;
+      services = {
+        sonarr.endpoints."tcp:443" = "http://localhost:8989";
+        radarr.endpoints."tcp:443" = "http://localhost:7878";
+        prowlarr.endpoints."tcp:443" = "http://localhost:9696";
+        bazarr.endpoints."tcp:443" = "http://localhost:6767";
+        transmission.endpoints."tcp:443" = "http://localhost:9091";
+        jellyfin.endpoints."tcp:443" = "http://localhost:8096";
+        minio.endpoints."tcp:443" = "http://localhost:9001";
+      };
+    };
   };
 
   # ── NVIDIA (GT 1030 — Pascal GP108) ──────────────────────────────────
