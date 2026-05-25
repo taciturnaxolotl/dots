@@ -179,13 +179,13 @@
     allowedTCPPorts = [
       22
       445   # Samba
-      5252  # qBittorrent
       6767  # Bazarr
       7878  # Radarr
       8096  # Jellyfin
       8989  # Sonarr
       9000  # MinIO API
       9001  # MinIO Console
+      9091  # Transmission
       9696  # Prowlarr
     ];
     allowedUDPPorts = [
@@ -227,33 +227,13 @@
     sonarr = {
       enable = true;
       openFirewall = true;
-      settings-sync.downloadClients = [
-        {
-          name = "qBittorrent";
-          implementation = "Qbittorrent";
-          fields = {
-            host = "localhost";
-            port = 5252;
-            category = "sonarr";
-          };
-        }
-      ];
+      settings-sync.transmission.enable = true;
     };
 
     radarr = {
       enable = true;
       openFirewall = true;
-      settings-sync.downloadClients = [
-        {
-          name = "qBittorrent";
-          implementation = "Qbittorrent";
-          fields = {
-            host = "localhost";
-            port = 5252;
-            category = "radarr";
-          };
-        }
-      ];
+      settings-sync.transmission.enable = true;
     };
 
     prowlarr = {
@@ -275,10 +255,11 @@
       };
     };
 
-    qbittorrent = {
+    transmission = {
       enable = true;
       vpn.enable = true;
       openFirewall = true;
+      peerPort = 51413;
     };
   };
 
