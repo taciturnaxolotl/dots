@@ -274,6 +274,7 @@
       enable = true;
       vpn.enable = true;
       peerPort = 51413;
+      extraAllowedIps = [ "192.168.15.0/24" "100.64.0.0/10" ];
       extraSettings = {
         download-dir = "/storage/torrents";
         incomplete-dir = "/storage/torrents/.incomplete";
