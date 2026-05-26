@@ -258,6 +258,7 @@
         download-dir = "/storage/torrents";
         incomplete-dir = "/storage/torrents/.incomplete";
         incomplete-dir-enabled = true;
+        rpc-host-whitelist-enabled = false;
       };
     };
   };
@@ -315,6 +316,21 @@
 
   # Fix Transmission umask so Radarr/Sonarr can read downloaded files
   systemd.services.transmission.serviceConfig.UMask = lib.mkForce "0002";
+
+  # Fix Transmission RPC host whitelist — nixarr doesn't set rpc-host-whitelist-enabled,
+  # so Transmission defaults it to true with an empty host list, blocking Tailscale Serve.
+  # Append a second ExecStartPre that patches settings.json after nixarr's prestart creates it.
+  systemd.services.transmission.serviceConfig.ExecStartPre = [
+    "+${pkgs.writeShellScript "transmission-fix-whitelist" ''
+      SETTINGS="/storage/.state/nixarr/transmission/.config/transmission-daemon/settings.json"
+      if [ -f "$SETTINGS" ]; then
+        ${pkgs.jq}/bin/jq '."rpc-host-whitelist-enabled" = false' "$SETTINGS" > "$SETTINGS.tmp"
+        mv "$SETTINGS.tmp" "$SETTINGS"
+        chown transmission:media "$SETTINGS"
+        chmod 600 "$SETTINGS"
+      fi
+    ''}"
+  ];
 
   # ── Media dashboard + reverse proxy ───────────────────────────────────
   services.caddy = {
