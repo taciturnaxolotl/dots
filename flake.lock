@@ -1151,11 +1151,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779769296,
-        "narHash": "sha256-CjVXvemezkl8tarFmn9ya+ZIm6yuUEdnZEk3Rc3U7ik=",
+        "lastModified": 1779804129,
+        "narHash": "sha256-IQ0MM4LL3K2MCr+h/wKnwpJSYkDZ0cPooRM+d/4f9WA=",
         "owner": "taciturnaxolotl",
         "repo": "potluck",
-        "rev": "9ff2b6b34f6912428efaeea4b2fc62318c8bbf51",
+        "rev": "80eacef76910c84cc6b6b62e2fcc00d60a26184b",
         "type": "github"
       },
       "original": {
