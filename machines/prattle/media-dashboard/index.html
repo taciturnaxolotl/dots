@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>prattle</title>
+  <style>
+    :root {
+      --bg: #f5f5f7;
+      --surface: #ffffff;
+      --text: #1d1d1f;
+      --subtext: #86868b;
+      --accent: #0071e3;
+      --border: #d2d2d7;
+      --shadow: rgba(0, 0, 0, 0.04);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #000000;
+        --surface: #1c1c1e;
+        --text: #f5f5f7;
+        --subtext: #86868b;
+        --accent: #2997ff;
+        --border: #38383a;
+        --shadow: rgba(0, 0, 0, 0.2);
+      }
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+    .container { max-width: 720px; width: 100%; }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 1rem;
+    }
+    a {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 1.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+      box-shadow: 0 2px 8px var(--shadow);
+      aspect-ratio: 1;
+    }
+    a:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 24px var(--shadow);
+      border-color: var(--accent);
+    }
+    a img {
+      width: 44px;
+      height: 44px;
+      object-fit: contain;
+    }
+    .name { font-weight: 600; font-size: 0.85rem; }
+    @media (max-width: 600px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+      h1 { font-size: 1.5rem; }
+    }
+    @media (max-width: 400px) {
+      .grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>prattle</h1>
+    <div class="grid">
+      <a href="http://jellyfin.prattle">
+        <img src="https://raw.githubusercontent.com/jellyfin/jellyfin-ux/master/branding/SVG/icon-transparent.svg" alt="">
+        <span class="name">Jellyfin</span>
+      </a>
+      <a href="http://seerr.prattle">
+        <img src="https://raw.githubusercontent.com/Fallenbagel/jellyseerr/develop/public/os_icon.svg" alt="">
+        <span class="name">Seerr</span>
+      </a>
+      <a href="http://sonarr.prattle">
+        <img src="https://raw.githubusercontent.com/Sonarr/Sonarr/develop/Logo/Sonarr.svg" alt="">
+        <span class="name">Sonarr</span>
+      </a>
+      <a href="http://radarr.prattle">
+        <img src="https://raw.githubusercontent.com/Radarr/Radarr/develop/Logo/Radarr.svg" alt="">
+        <span class="name">Radarr</span>
+      </a>
+      <a href="http://prowlarr.prattle">
+        <img src="https://raw.githubusercontent.com/Prowlarr/Prowlarr/develop/Logo/Prowlarr.svg" alt="">
+        <span class="name">Prowlarr</span>
+      </a>
+      <a href="http://bazarr.prattle">
+        <img src="https://l4.dunkirk.sh/i/aXPzh2Psd5Cy.svg" alt="">
+        <span class="name">Bazarr</span>
+      </a>
+      <a href="http://transmission.prattle">
+        <img src="https://raw.githubusercontent.com/transmission/transmission/main/icons/hicolor_apps_scalable_transmission.svg" alt="">
+        <span class="name">Transmission</span>
+      </a>
+      <a href="http://minio.prattle">
+        <img src="https://raw.githubusercontent.com/minio/minio/master/.github/logo.svg" alt="">
+        <span class="name">MinIO</span>
+      </a>
+    </div>
+  </div>
+</body>
+</html>

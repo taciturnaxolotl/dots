@@ -178,6 +178,7 @@
     enable = true;
     allowedTCPPorts = [
       22
+      80    # Media dashboard
       445   # Samba
       8096  # Jellyfin
       9000  # MinIO API
@@ -196,12 +197,14 @@
     serve = {
       enable = true;
       services = {
+        media.endpoints."tcp:443" = "http://localhost:80";
         sonarr.endpoints."tcp:443" = "http://localhost:8989";
         radarr.endpoints."tcp:443" = "http://localhost:7878";
         prowlarr.endpoints."tcp:443" = "http://localhost:9696";
         bazarr.endpoints."tcp:443" = "http://localhost:6767";
         transmission.endpoints."tcp:443" = "http://localhost:9091";
         jellyfin.endpoints."tcp:443" = "http://localhost:8096";
+        seerr.endpoints."tcp:443" = "http://localhost:5055";
         minio.endpoints."tcp:443" = "http://localhost:9001";
       };
     };
@@ -228,6 +231,8 @@
 
     jellyfin.enable = true;
 
+    seerr.enable = true;
+
     sonarr = {
       enable = true;
       settings-sync.transmission.enable = true;
@@ -237,21 +242,6 @@
       enable = true;
       settings-sync.transmission.enable = true;
     };
-  };
-
-  # Root folders and hardlinks for Sonarr/Radarr
-  services.sonarr.settings.mediaManagement = {
-    useHardlinksInsteadOfCopy = true;
-    recycleBin = "/storage/.trash";
-    recycleBinCleanupDays = 7;
-  };
-  services.radarr.settings.mediaManagement = {
-    useHardlinksInsteadOfCopy = true;
-    recycleBin = "/storage/.trash";
-    recycleBinCleanupDays = 7;
-  };
-
-  nixarr = {
 
     prowlarr = {
       enable = true;
@@ -281,6 +271,18 @@
         incomplete-dir-enabled = true;
       };
     };
+  };
+
+  # Root folders and hardlinks for Sonarr/Radarr
+  services.sonarr.settings.mediaManagement = {
+    useHardlinksInsteadOfCopy = true;
+    recycleBin = "/storage/.trash";
+    recycleBinCleanupDays = 7;
+  };
+  services.radarr.settings.mediaManagement = {
+    useHardlinksInsteadOfCopy = true;
+    recycleBin = "/storage/.trash";
+    recycleBinCleanupDays = 7;
   };
 
   services.prowlarr.settings.auth.required = "DisabledForLocalAddresses";
@@ -324,6 +326,42 @@
 
   # Fix Transmission umask so Radarr/Sonarr can read downloaded files
   systemd.services.transmission.serviceConfig.UMask = lib.mkForce "0002";
+
+  # ── Media dashboard + reverse proxy ───────────────────────────────────
+  services.caddy = {
+    enable = true;
+    virtualHosts.":80" = {
+      extraConfig = ''
+        root * ${./media-dashboard}
+        file_server
+
+        handle /jellyfin/* {
+          reverse_proxy localhost:8096
+        }
+        handle /seerr/* {
+          reverse_proxy localhost:5055
+        }
+        handle /sonarr/* {
+          reverse_proxy localhost:8989
+        }
+        handle /radarr/* {
+          reverse_proxy localhost:7878
+        }
+        handle /prowlarr/* {
+          reverse_proxy localhost:9696
+        }
+        handle /bazarr/* {
+          reverse_proxy localhost:6767
+        }
+        handle /transmission/* {
+          reverse_proxy localhost:9091
+        }
+        handle /minio/* {
+          reverse_proxy localhost:9001
+        }
+      '';
+    };
+  };
 
   # ── FlareSolverr (Cloudflare bypass for Prowlarr indexers) ───────────
   services.flaresolverr = {
