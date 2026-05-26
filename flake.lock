@@ -851,16 +851,17 @@
         "website-builder": "website-builder"
       },
       "locked": {
-        "lastModified": 1778346734,
-        "narHash": "sha256-G5ZyrISExI0L6CqHX/0CrdTVEu9lpIdevhpkYwhGf/E=",
+        "lastModified": 1778908661,
+        "narHash": "sha256-eeRN0ew1VfutaVNxoaYvua7CHoqc7gI5vLPxUL5ko7k=",
         "owner": "nix-media-server",
         "repo": "nixarr",
-        "rev": "476ffae2a09911008847dd5a86c18b8cb484d198",
+        "rev": "3bde55fe657ee3ec1c2b2c05294ff381cb8f2d43",
         "type": "github"
       },
       "original": {
         "owner": "nix-media-server",
         "repo": "nixarr",
+        "rev": "3bde55fe657ee3ec1c2b2c05294ff381cb8f2d43",
         "type": "github"
       }
     },
@@ -1150,11 +1151,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1779720013,
-        "narHash": "sha256-1HQwg5XUVrYBdKvKRYR66txte81j9gSS6Qe6hIlc9tA=",
+        "lastModified": 1779769296,
+        "narHash": "sha256-CjVXvemezkl8tarFmn9ya+ZIm6yuUEdnZEk3Rc3U7ik=",
         "owner": "taciturnaxolotl",
         "repo": "potluck",
-        "rev": "98765a84352bce4eb59ff64511c2b8850d209dcc",
+        "rev": "9ff2b6b34f6912428efaeea4b2fc62318c8bbf51",
         "type": "github"
       },
       "original": {
