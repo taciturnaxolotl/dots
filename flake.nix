@@ -130,7 +130,7 @@
     };
 
     nixarr = {
-      url = "github:nix-media-server/nixarr";
+      url = "github:nix-media-server/nixarr/3bde55fe657ee3ec1c2b2c05294ff381cb8f2d43";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

@@ -11,6 +11,9 @@
     ./home-manager.nix
 
     (inputs.import-tree ../../modules/nixos)
+
+    # Backport tailscale-serve module from nixpkgs-unstable (not in 25.11)
+    "${inputs.nixpkgs-unstable}/nixos/modules/services/networking/tailscale-serve.nix"
   ];
 
   nixpkgs = {
@@ -229,7 +232,10 @@
       wgConf = config.age.secrets.protonvpn-wg.path;
     };
 
-    jellyfin.enable = true;
+    jellyfin = {
+      enable = true;
+      api.enable = false;
+    };
 
     seerr.enable = true;
 
