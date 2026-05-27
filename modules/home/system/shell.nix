@@ -1085,12 +1085,15 @@ in
                 };
               }
               {
-                type = "jj";
+                type = "jujutsu";
                 style = "plain";
                 foreground = "p:grey";
                 background = "transparent";
-                template = " ◬ {{if .ClosestBookmarks}}{{.ClosestBookmarks}} {{end}}<cyan>@{{.ChangeId}}</>{{if .Working.Changed}}*{{end}}";
-                properties = { };
+                template = " ◬ <cyan>@{{.Data.ChangeID}}</>{{if .Data.Working.Changed}} {{.Data.Working.String}}{{end}}";
+                properties = {
+                  fetch_status = true;
+                  change_id_min_len = 7;
+                };
               }
             ];
           }
