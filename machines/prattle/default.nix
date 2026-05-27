@@ -332,6 +332,48 @@
     ''}"
   ];
 
+  # ── ProtonVPN NAT-PMP port forwarding ─────────────────────────────────
+  # Requests a public port from ProtonVPN's gateway every 45s via NAT-PMP
+  # and pushes it to Transmission inside the VPN namespace.
+  systemd.services.protonvpn-port-forward = {
+    description = "NAT-PMP port forwarding through ProtonVPN for Transmission";
+    bindsTo = [ "wg.service" "transmission.service" ];
+    after = [ "wg.service" "transmission.service" ];
+    wantedBy = [ "multi-user.target" ];
+    unitConfig.JoinsNamespaceOf = "transmission.service";
+    serviceConfig = {
+      Type = "simple";
+      Restart = "on-failure";
+      User = "transmission";
+      Group = "media";
+      ExecStart = pkgs.writeShellScript "protonvpn-port-forward" ''
+        sleep 5
+        GATEWAY=10.2.0.1
+        echo "starting NAT-PMP loop, gateway=$GATEWAY"
+        while true; do
+          TCP_OUT=$(${pkgs.libnatpmp}/bin/natpmpc -a 1 0 tcp 60 -g "$GATEWAY" 2>&1) || true
+          ${pkgs.libnatpmp}/bin/natpmpc -a 1 0 udp 60 -g "$GATEWAY" >/dev/null 2>&1 || true
+          echo "natpmpc: $TCP_OUT" | head -1
+          PORT=$(echo "$TCP_OUT" | ${pkgs.gawk}/bin/awk '/Mapped public port/ {print $4}')
+          if [ -n "$PORT" ] && [ "$PORT" -ne 0 ] 2>/dev/null; then
+            echo "mapped port $PORT, updating transmission"
+            SID=$(${pkgs.curl}/bin/curl -s http://localhost:9091/transmission/rpc 2>&1 | ${pkgs.gnused}/bin/sed -n 's/.*X-Transmission-Session-Id: //p')
+            if [ -n "$SID" ]; then
+              ${pkgs.curl}/bin/curl -s -X POST \
+                "http://localhost:9091/transmission/rpc" \
+                -H "X-Transmission-Session-Id: $SID" \
+                -H "Content-Type: application/json" \
+                --data "{\"method\":\"session-set\",\"arguments\":{\"peer-port\":$PORT}}" \
+                >/dev/null 2>&1 || true
+              echo "transmission port updated to $PORT"
+            fi
+          fi
+          sleep 45
+        done
+      '';
+    };
+  };
+
   # ── Media dashboard + reverse proxy ───────────────────────────────────
   services.caddy = {
     enable = true;
