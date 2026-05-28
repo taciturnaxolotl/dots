@@ -24,7 +24,7 @@
           pager = "delta";
         };
         signing = {
-          sign-all = true;
+          behavior = "force";
           backend = "ssh";
           key = "~/.ssh/id_rsa.pub";
         };
