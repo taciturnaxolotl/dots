@@ -87,7 +87,7 @@ jobs:
 
       - name: Deploy ${{ matrix.node.name }}
         run: |
-          nix run 'github:serokell/deploy-rs' -- \
+          nix develop .#default --command deploy \
             --skip-checks \
             --remote-build \
             --ssh-user kierank \

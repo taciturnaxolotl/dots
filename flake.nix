@@ -5,6 +5,7 @@
     # Nixpkgs
     nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
+    nixpkgs-unstable-small.url = "github:nixos/nixpkgs/nixos-unstable-small";
 
     # NixOS hardware configuration
     hardware.url = "github:NixOS/nixos-hardware/master";
@@ -112,7 +113,7 @@
 
     deploy-rs = {
       url = "github:serokell/deploy-rs";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.nixpkgs.follows = "nixpkgs-unstable-small";
     };
 
     tangled = {
@@ -141,6 +142,7 @@
       self,
       nixpkgs,
       nixpkgs-unstable,
+      nixpkgs-unstable-small,
       agenix,
       home-manager,
       nur,
@@ -341,13 +343,13 @@
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
       formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
 
-      devShells.aarch64-darwin.default = nixpkgs.legacyPackages.aarch64-darwin.mkShell {
+      devShells.aarch64-darwin.default = nixpkgs-unstable-small.legacyPackages.aarch64-darwin.mkShell {
         packages = [ deploy-rs.packages.aarch64-darwin.deploy-rs ];
       };
-      devShells.x86_64-linux.default = nixpkgs.legacyPackages.x86_64-linux.mkShell {
+      devShells.x86_64-linux.default = nixpkgs-unstable-small.legacyPackages.x86_64-linux.mkShell {
         packages = [ deploy-rs.packages.x86_64-linux.deploy-rs ];
       };
-      devShells.aarch64-linux.default = nixpkgs.legacyPackages.aarch64-linux.mkShell {
+      devShells.aarch64-linux.default = nixpkgs-unstable-small.legacyPackages.aarch64-linux.mkShell {
         packages = [ deploy-rs.packages.aarch64-linux.deploy-rs ];
       };
 
