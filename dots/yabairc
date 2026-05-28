@@ -29,6 +29,14 @@ for SPACE in $(yabai -m query --spaces | jq -r '.[].index'); do
   yabai -m config --space "$SPACE" window_gap         6
 done
 
+# Rules: float these apps (must come before space-assignment rules)
+yabai -m rule --add app="^Dia$" title="^Bitwarden$" float=on
+yabai -m rule --add app="^UTM$"             manage=off
+yabai -m rule --add app="^VMware Fusion$"   manage=off
+yabai -m rule --add app="^FaceTime$"        manage=off
+yabai -m rule --add app="^Screen Sharing$"  manage=off
+yabai -m rule --add app="^Antinote$"        manage=off
+yabai -m rule --add app="^hw05$"            manage=off
 # Rules: assign apps to specific spaces
 yabai -m rule --add app="^Dia$" title="^Personal:"   space=1
 yabai -m rule --add app="^Dia$" title="^Charm"        space=2
@@ -37,14 +45,7 @@ yabai -m rule --add app="^Slack$"                     space=8
 yabai -m rule --add app="^Vesktop$"                   space=7
 yabai -m rule --add app="^Notion$"                    space=9
 
-# Rules: float these apps
-yabai -m rule --add app="^UTM$"             manage=off
-yabai -m rule --add app="^VMware Fusion$"   manage=off
-yabai -m rule --add app="^FaceTime$"        manage=off
-yabai -m rule --add app="^Screen Sharing$"  manage=off
-yabai -m rule --add app="^Antinote$"        manage=off
-yabai -m rule --add app="^hw05$"            manage=off
-yabai -m rule --add app="^Dia$" title="^Bitwarden$" manage=off
+# Rules: unmanaged apps
 yabai -m rule --add app="^Finder$" subrole="AXDialog" manage=off
 yabai -m rule --add app="^Finder$" title="^Copy$" manage=off
 yabai -m rule --add app="^Finder$" title="^Trash$" manage=off
