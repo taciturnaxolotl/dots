@@ -19,8 +19,11 @@
           name = "Kieran Klukas";
           email = "kieran@dunkirk.sh";
         };
+        git = {
+          push-new-bookmarks = true;
+        };
         ui = {
-          default-command = "log";
+          default-command = "log-recent";
           pager = "delta";
         };
         signing = {
@@ -31,6 +34,20 @@
         remotes.origin.auto-track-bookmarks = "*";
         "revset-aliases" = {
           "mine()" = "author(kieran@dunkirk.sh) | author(me@dunkirk.sh)";
+          "closest_bookmark(to)" = "heads(::to & bookmarks())";
+          "immutable_heads()" = "builtin_immutable_heads() | remote_bookmarks()";
+          "default()" = ''coalesce(trunk(),root())::present(@) | ancestors(visible_heads() & recent(), 2)'';
+          "recent()" = ''committer_date(after:"1 month ago")'';
+        };
+        aliases = {
+          tug = [ "bookmark" "move" "--from" "closest_bookmark(@-)" "--to" "@-" ];
+          pull = [ "git" "fetch" ];
+          s = [ "squash" ];
+          si = [ "squash" "--interactive" ];
+          log-recent = [ "log" "-r" "default() & recent()" ];
+        };
+        "template-aliases" = {
+          "format_short_change_id(id)" = "id.shortest()";
         };
       };
     };
