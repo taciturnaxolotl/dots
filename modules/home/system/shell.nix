@@ -696,7 +696,7 @@ EOF
          github_url="git@github.com:$GITHUB_USER/$NAME.git"
 
          # Configure origin → knot (tangled)
-         if [[ "$TANGLED" == true ]]; then
+         if [[ "$TANGLED" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
            if ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
              current_origin=$(${pkgs.git}/bin/git remote get-url origin)
              if [[ "$current_origin" != "$knot_url" ]]; then
@@ -712,7 +712,7 @@ EOF
          fi
 
          # Configure github remote
-         if [[ "$GITHUB" == true ]]; then
+         if [[ "$GITHUB" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
            # When tangled is also enabled, use "github" remote name; otherwise use "origin"
            github_remote_name="github"
            if [[ "$TANGLED" == false ]]; then
@@ -733,8 +733,11 @@ EOF
            fi
          fi
 
-         # Always set default push remote to origin
-         ${pkgs.git}/bin/git config branch.$BRANCH.remote origin 2>/dev/null || true
+         # Always set default push remote to origin (even when skipping remote creation)
+         if [[ "$TANGLED" == true ]]; then
+           ${pkgs.git}/bin/git config branch.$BRANCH.remote origin
+           ${pkgs.gum}/bin/gum style --foreground 35 "✓ Set $BRANCH upstream → origin"
+         fi
 
          echo
          ${pkgs.gum}/bin/gum style --foreground 117 "Configured remotes:"
