@@ -156,6 +156,7 @@
       extraGroups = [
         "wheel"
         "media"
+        "cdrom"
       ];
     };
     root.openssh.authorizedKeys.keys = [
