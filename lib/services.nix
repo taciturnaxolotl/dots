@@ -211,6 +211,16 @@
               health_url = null;
             }
           ))
+          (lib.optional ((allServices.arm.enable or false) && (allServices.arm.domain != null)) (
+            mkCustom "arm" {
+              description = "Automatic Ripping Machine";
+              domain = allServices.arm.domain;
+              port = allServices.arm.port;
+              runtime = "docker";
+              repository = "https://github.com/automatic-ripping-machine/automatic-ripping-machine";
+              health_url = "https://${allServices.arm.domain}";
+            }
+          ))
         ];
 
       serviceList = (lib.mapAttrsToList mkEntry standardServices) ++ emojibotInstances ++ customServices;

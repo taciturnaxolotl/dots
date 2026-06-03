@@ -268,6 +268,12 @@
     };
   };
 
+  # ── ARM (Automatic Ripping Machine) ───────────────────────────────
+  atelier.services.arm = {
+    enable = true;
+    nvidiaGpu = false;
+  };
+
   # Root folders and hardlinks for Sonarr/Radarr
   services.sonarr.settings.mediaManagement = {
     useHardlinksInsteadOfCopy = true;
