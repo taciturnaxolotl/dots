@@ -113,7 +113,8 @@ in
           ".DS_STORE/*"
           "desktop.ini"
         ];
-      } // lib.optionalAttrs cfg.oidc.enable {
+      }
+      // lib.optionalAttrs cfg.oidc.enable {
         PAPERLESS_REDIRECT_LOGIN_TO_SSO = "true";
       };
     };

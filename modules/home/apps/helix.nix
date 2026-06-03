@@ -15,30 +15,28 @@
     programs.helix = {
       enable = true;
       package = pkgs.evil-helix;
-      extraPackages =
-        with pkgs;
-        [
-          clang-tools # clangd
-          cmake-language-server # neocmakelsp
-          omnisharp-roslyn # OmniSharp
-          gopls
-          jdt-language-server # jdtls
-          typescript-language-server
-          unstable.biome
-          lua-language-server
-          nil # nix
-          nodePackages.intelephense
-          python313Packages.python-lsp-server # pylsp
-          ruby-lsp
-          rust-analyzer
-          nodePackages.bash-language-server
-          nodePackages.svelte-language-server
-          taplo
-          vscode-langservers-extracted
-          kotlin-language-server
-          harper
-          inputs.wakatime-ls.packages.${pkgs.stdenv.hostPlatform.system}.default
-        ];
+      extraPackages = with pkgs; [
+        clang-tools # clangd
+        cmake-language-server # neocmakelsp
+        omnisharp-roslyn # OmniSharp
+        gopls
+        jdt-language-server # jdtls
+        typescript-language-server
+        unstable.biome
+        lua-language-server
+        nil # nix
+        nodePackages.intelephense
+        python313Packages.python-lsp-server # pylsp
+        ruby-lsp
+        rust-analyzer
+        nodePackages.bash-language-server
+        nodePackages.svelte-language-server
+        taplo
+        vscode-langservers-extracted
+        kotlin-language-server
+        harper
+        inputs.wakatime-ls.packages.${pkgs.stdenv.hostPlatform.system}.default
+      ];
       settings = {
         theme = "catppuccin_macchiato";
         editor = {
@@ -293,7 +291,10 @@
           }
           {
             name = "markdown";
-            file-types = [ { glob = "*.md.tpl"; } { glob = "*.md"; } ];
+            file-types = [
+              { glob = "*.md.tpl"; }
+              { glob = "*.md"; }
+            ];
             text-width = 120;
             soft-wrap.wrap-at-text-width = true;
           }
@@ -306,7 +307,8 @@
             ];
             auto-format = true;
           }
-        ] ++ lib.optionals config.atelier.apps.helix.swift [
+        ]
+        ++ lib.optionals config.atelier.apps.helix.swift [
           {
             name = "swift";
             language-servers = [

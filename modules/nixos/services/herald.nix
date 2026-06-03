@@ -2,11 +2,16 @@
 #
 # Feeds uploaded via SSH/SCP, emails sent on schedule
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.atelier.services.herald;
-  
+
   # Generate config.yaml from options
   configFile = pkgs.writeText "herald-config.yaml" ''
     host: ${cfg.host}
@@ -14,20 +19,22 @@ let
     http_port: ${toString cfg.httpPort}
     origin: https://${cfg.domain}
     external_ssh_port: ${toString cfg.externalSshPort}
-    
+
     host_key_path: ${cfg.dataDir}/host_key
     db_path: ${cfg.dataDir}/herald.db
-    
+
     smtp:
       host: ${cfg.smtp.host}
       port: ${toString cfg.smtp.port}
       user: ${cfg.smtp.user}
       pass: ''${SMTP_PASS}
       from: ${cfg.smtp.from}
-      ${lib.optionalString (cfg.smtp.dkim.selector != null) ''dkim_selector: ${cfg.smtp.dkim.selector}''}
-      ${lib.optionalString (cfg.smtp.dkim.domain != null) ''dkim_domain: ${cfg.smtp.dkim.domain}''}
-      ${lib.optionalString (cfg.smtp.dkim.privateKeyFile != null) ''dkim_private_key_file: ${cfg.smtp.dkim.privateKeyFile}''}
-    
+      ${lib.optionalString (cfg.smtp.dkim.selector != null) "dkim_selector: ${cfg.smtp.dkim.selector}"}
+      ${lib.optionalString (cfg.smtp.dkim.domain != null) "dkim_domain: ${cfg.smtp.dkim.domain}"}
+      ${lib.optionalString (
+        cfg.smtp.dkim.privateKeyFile != null
+      ) "dkim_private_key_file: ${cfg.smtp.dkim.privateKeyFile}"}
+
     allow_all_keys: ${if cfg.allowAllKeys then "true" else "false"}
   '';
 in
@@ -139,8 +146,8 @@ in
 
   config = lib.mkIf cfg.enable {
     # Create user and group
-    users.groups.services = {};
-    
+    users.groups.services = { };
+
     users.users.herald = {
       isSystemUser = true;
       group = "herald";
@@ -150,7 +157,7 @@ in
       shell = pkgs.bash;
     };
 
-    users.groups.herald = {};
+    users.groups.herald = { };
 
     # Systemd service
     systemd.services.herald = {
@@ -167,7 +174,7 @@ in
         ExecStart = "${cfg.package}/bin/herald serve -c ${configFile}";
         Restart = "always";
         RestartSec = "10s";
-        
+
         # Security hardening
         NoNewPrivileges = true;
         ProtectSystem = "strict";

@@ -3,7 +3,12 @@
 # Multi-port service: API, Hocuspocus WS, Cursor WS
 # App lives in web/ subdirectory, needs Vite build step
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   mkService = import ../../lib/mkService.nix;
@@ -54,7 +59,10 @@ let
       };
 
       # Caddy needs to read static files from the dist directory
-      users.users.caddy.extraGroups = [ "cedarlogic" "services" ];
+      users.users.caddy.extraGroups = [
+        "cedarlogic"
+        "services"
+      ];
 
       # Longer timeout for Vite build
       systemd.services.cedarlogic.serviceConfig = {

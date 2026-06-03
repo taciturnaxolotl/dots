@@ -32,14 +32,26 @@ in
     allowedTCPPorts = lib.mkOption {
       type = lib.types.listOf lib.types.port;
       default = lib.lists.range 20000 20099;
-      example = [ 20000 20001 20002 20003 20004 ];
+      example = [
+        20000
+        20001
+        20002
+        20003
+        20004
+      ];
       description = "TCP port range to allow for TCP tunnels (default: 20000-20099)";
     };
 
     allowedUDPPorts = lib.mkOption {
       type = lib.types.listOf lib.types.port;
       default = lib.lists.range 20000 20099;
-      example = [ 20000 20001 20002 20003 20004 ];
+      example = [
+        20000
+        20001
+        20002
+        20003
+        20004
+      ];
       description = "UDP port range to allow for UDP tunnels (default: 20000-20099)";
     };
 
@@ -123,7 +135,7 @@ in
             ''
           else
             ''auth.token = "${cfg.authToken}"'';
-        
+
         configFile = pkgs.writeText "frps.toml" ''
           bindAddr = "${cfg.bindAddr}"
           bindPort = ${toString cfg.bindPort}
@@ -140,7 +152,7 @@ in
 
           # Subdomain support for *.${cfg.domain}
           subDomainHost = "${cfg.domain}"
-          
+
           # Allow port ranges for TCP/UDP tunnels
           # Format: [[{"start": 20000, "end": 20099}]]
           allowPorts = [
@@ -170,9 +182,12 @@ in
     # bore-auth service for Indiko authentication
     systemd.services.bore-auth = lib.mkIf cfg.auth.enable {
       description = "bore authentication service";
-      after = [ "network.target" "frps.service" ];
+      after = [
+        "network.target"
+        "frps.service"
+      ];
       wantedBy = [ "multi-user.target" ];
-      
+
       environment = {
         LISTEN_ADDR = "127.0.0.1:8401";
         FRPS_API_URL = "http://127.0.0.1:7400";
@@ -188,11 +203,12 @@ in
         Restart = "on-failure";
         RestartSec = "5s";
         DynamicUser = true;
-        
+
         LoadCredential = [
           "cookie_hash_key:${cfg.auth.cookieHashKeyFile}"
           "cookie_block_key:${cfg.auth.cookieBlockKeyFile}"
-        ] ++ lib.optionals (cfg.auth.clientSecretFile != null) [
+        ]
+        ++ lib.optionals (cfg.auth.clientSecretFile != null) [
           "client_secret:${cfg.auth.clientSecretFile}"
         ];
       };
@@ -218,19 +234,19 @@ in
           header {
             Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
           }
-          
+
           ${lib.optionalString cfg.auth.enable ''
-          # Auth endpoints
-          handle /.auth/* {
-            reverse_proxy localhost:8401
-          }
+            # Auth endpoints
+            handle /.auth/* {
+              reverse_proxy localhost:8401
+            }
           ''}
-          
+
           # Proxy /api/* to frps dashboard
           handle /api/* {
             reverse_proxy localhost:7400
           }
-          
+
           # Serve dashboard HTML
           handle {
             root * ${./.}
@@ -249,15 +265,15 @@ in
           header {
             Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
           }
-          
+
           ${lib.optionalString cfg.auth.enable ''
-          # Auth check via forward_auth
-          forward_auth localhost:8401 {
-            uri /.auth/check
-            copy_headers X-Auth-User X-Auth-Name X-Auth-Email
-          }
+            # Auth check via forward_auth
+            forward_auth localhost:8401 {
+              uri /.auth/check
+              copy_headers X-Auth-User X-Auth-Name X-Auth-Email
+            }
           ''}
-          
+
           reverse_proxy localhost:${toString cfg.vhostHTTPPort} {
             header_up X-Forwarded-Proto {scheme}
             header_up X-Forwarded-For {remote}

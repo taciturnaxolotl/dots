@@ -10,7 +10,11 @@
 # Evaluate with:
 #   nix eval --json .#services-manifest
 
-{ configSets, extraMachines ? {}, lib }:
+{
+  configSets,
+  extraMachines ? { },
+  lib,
+}:
 
 let
   services = import ./services.nix { inherit lib; };
@@ -20,7 +24,7 @@ let
     hostname = cfg.hostname or name;
     type = cfg.type or "server";
     tailscale_host = cfg.tailscaleHost or null;
-    services = [];
+    services = [ ];
   }) extraMachines;
 in
 (services.mkMachinesManifest configSets) // extras

@@ -10,9 +10,12 @@ let
 
   mkConfigLine =
     setting: value:
-    if value == true then "yabai -m config ${setting} on"
-    else if value == false then "yabai -m config ${setting} off"
-    else "yabai -m config ${setting} ${toString value}";
+    if value == true then
+      "yabai -m config ${setting} on"
+    else if value == false then
+      "yabai -m config ${setting} off"
+    else
+      "yabai -m config ${setting} ${toString value}";
 
   globalSettings = lib.filterAttrs (_: v: v != null) cfg.config.global;
   spaceSettings = lib.filterAttrs (_: v: v != null) cfg.config.space;
@@ -62,7 +65,14 @@ in
     config = {
       global = lib.mkOption {
         type = lib.types.submodule {
-          freeformType = with lib.types; attrsOf (oneOf [ bool int float str ]);
+          freeformType =
+            with lib.types;
+            attrsOf (oneOf [
+              bool
+              int
+              float
+              str
+            ]);
           options = {
             mouse_follows_focus = lib.mkOption {
               type = lib.types.nullOr lib.types.bool;
@@ -85,7 +95,12 @@ in
               default = "auto";
             };
             split_ratio = lib.mkOption {
-              type = lib.types.nullOr (lib.types.oneOf [ lib.types.float lib.types.str ]);
+              type = lib.types.nullOr (
+                lib.types.oneOf [
+                  lib.types.float
+                  lib.types.str
+                ]
+              );
               default = 0.50;
             };
             auto_balance = lib.mkOption {
@@ -112,7 +127,14 @@ in
 
       space = lib.mkOption {
         type = lib.types.submodule {
-          freeformType = with lib.types; attrsOf (oneOf [ bool int float str ]);
+          freeformType =
+            with lib.types;
+            attrsOf (oneOf [
+              bool
+              int
+              float
+              str
+            ]);
           options = {
             layout = lib.mkOption {
               type = lib.types.nullOr lib.types.str;

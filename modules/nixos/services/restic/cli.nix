@@ -8,60 +8,70 @@
 #   atelier-backup backup       - Trigger manual backup
 #   atelier-backup dr           - Disaster recovery mode
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.atelier.backup;
-  
+
   # Collect all services with backup data for the manifest
-  atelierServices = lib.filterAttrs (name: svc: 
-    (svc.enable or false) && (svc.data or null) != null
-  ) (config.atelier.services or {});
-  
-  hasData = svc: 
-    (svc.data.sqlite or null) != null ||
-    (svc.data.postgres or null) != null ||
-    (svc.data.files or []) != [];
-  
+  atelierServices = lib.filterAttrs (name: svc: (svc.enable or false) && (svc.data or null) != null) (
+    config.atelier.services or { }
+  );
+
+  hasData =
+    svc:
+    (svc.data.sqlite or null) != null
+    || (svc.data.postgres or null) != null
+    || (svc.data.files or [ ]) != [ ];
+
   servicesWithData = lib.filterAttrs (name: svc: hasData svc) atelierServices;
-  
+
   # Also include manually registered backup services
   allBackupServices = (lib.attrNames cfg.services) ++ (lib.attrNames servicesWithData);
-  
+
   # Generate manifest for disaster recovery
-  backupManifest = pkgs.writeText "backup-manifest.json" (builtins.toJSON {
-    version = 1;
-    generated = "nixos-rebuild";
-    services = lib.mapAttrs (name: svc: {
-      dataDir = svc.dataDir or "/var/lib/${name}";
-      data = {
-        sqlite = svc.data.sqlite or null;
-        postgres = svc.data.postgres or null;
-        files = svc.data.files or [];
-        exclude = svc.data.exclude or [];
-      };
-    }) servicesWithData // lib.mapAttrs (name: backupCfg: {
-      paths = backupCfg.paths;
-      exclude = backupCfg.exclude or [];
-      manual = true;
-    }) cfg.services;
-  });
-  
+  backupManifest = pkgs.writeText "backup-manifest.json" (
+    builtins.toJSON {
+      version = 1;
+      generated = "nixos-rebuild";
+      services =
+        lib.mapAttrs (name: svc: {
+          dataDir = svc.dataDir or "/var/lib/${name}";
+          data = {
+            sqlite = svc.data.sqlite or null;
+            postgres = svc.data.postgres or null;
+            files = svc.data.files or [ ];
+            exclude = svc.data.exclude or [ ];
+          };
+        }) servicesWithData
+        // lib.mapAttrs (name: backupCfg: {
+          paths = backupCfg.paths;
+          exclude = backupCfg.exclude or [ ];
+          manual = true;
+        }) cfg.services;
+    }
+  );
+
   backupCliScript = pkgs.writeShellScript "atelier-backup" ''
     set -e
-    
+
     # Colors via gum
     style() { ${pkgs.gum}/bin/gum style "$@"; }
     confirm() { ${pkgs.gum}/bin/gum confirm "$@"; }
     choose() { ${pkgs.gum}/bin/gum choose "$@"; }
     input() { ${pkgs.gum}/bin/gum input "$@"; }
     spin() { ${pkgs.gum}/bin/gum spin "$@"; }
-    
+
     # Auto-elevate to root if needed
     if [ "$(id -u)" -ne 0 ]; then
       exec sudo "$0" "$@"
     fi
-    
+
     # Restic wrapper with secrets
     restic_cmd() {
       ${pkgs.restic}/bin/restic \
@@ -70,16 +80,16 @@ let
         "$@"
     }
     export -f restic_cmd
-    
+
     # Load B2 credentials from environment file
     set -a
     source ${config.age.secrets."restic/env".path}
     set +a
-    
+
     # Available services
     SERVICES="${lib.concatStringsSep " " allBackupServices}"
     MANIFEST="${backupManifest}"
-    
+
     cmd_status() {
       style --bold --foreground 212 "Backup Status"
       echo
@@ -99,7 +109,7 @@ let
         fi
       done
     }
-    
+
     cmd_list() {
       style --bold --foreground 212 "List Snapshots"
       echo
@@ -117,7 +127,7 @@ let
       
       restic_cmd snapshots --tag "service:$svc" --compact
     }
-    
+
     cmd_backup() {
       style --bold --foreground 212 "Manual Backup"
       echo
@@ -176,7 +186,7 @@ let
       fi
       
     }
-    
+
     cmd_restore() {
       style --bold --foreground 212 "Restore Wizard"
       echo
@@ -246,7 +256,7 @@ let
           ;;
       esac
     }
-    
+
     cmd_dr() {
       style --bold --foreground 196 "⚠ DISASTER RECOVERY MODE"
       echo
@@ -287,7 +297,7 @@ let
       echo
       style --foreground 35 --bold "✓ Disaster recovery complete"
     }
-    
+
     cmd_menu() {
       style --bold --foreground 212 "Atelier Backup"
       echo
@@ -308,7 +318,7 @@ let
         *) exit 0 ;;
       esac
     }
-    
+
     # Main
     case "''${1:-}" in
       status) cmd_status ;;
@@ -339,44 +349,48 @@ let
   backupCli = pkgs.stdenv.mkDerivation {
     pname = "atelier-backup";
     version = "1.0.0";
-    
+
     dontUnpack = true;
-    
-    nativeBuildInputs = [ pkgs.installShellFiles pkgs.pandoc ];
-    
+
+    nativeBuildInputs = [
+      pkgs.installShellFiles
+      pkgs.pandoc
+    ];
+
     manPageSrc = ./atelier-backup.1.md;
     bashCompletionSrc = ./completions/atelier-backup.bash;
     zshCompletionSrc = ./completions/atelier-backup.zsh;
     fishCompletionSrc = ./completions/atelier-backup.fish;
-    
+
     buildPhase = ''
       ${pkgs.pandoc}/bin/pandoc -s -t man $manPageSrc -o atelier-backup.1
     '';
-    
+
     installPhase = ''
       mkdir -p $out/bin
       cp ${backupCliScript} $out/bin/atelier-backup
       chmod +x $out/bin/atelier-backup
-      
+
       # Install man page
       installManPage atelier-backup.1
-      
+
       # Install completions
       installShellCompletion --bash --name atelier-backup $bashCompletionSrc
       installShellCompletion --zsh --name _atelier-backup $zshCompletionSrc
       installShellCompletion --fish --name atelier-backup.fish $fishCompletionSrc
     '';
-    
+
     meta = with lib; {
       description = "Interactive backup management CLI for atelier services";
       license = licenses.mit;
     };
   };
 
-in {
+in
+{
   config = lib.mkIf cfg.enable {
     environment.systemPackages = [ backupCli ];
-    
+
     # Store manifest for reference
     environment.etc."atelier/backup-manifest.json".source = backupManifest;
   };

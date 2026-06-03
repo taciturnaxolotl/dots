@@ -11,10 +11,11 @@ let
   authKeyFileArg = if cfg.authKeyFile != null then ''"${cfg.authKeyFile}"'' else "\"\"";
 
   # Platform-specific clipboard commands
-  clipboardCopy = if pkgs.stdenv.isDarwin then
-    "printf '%s' \"$url\" | pbcopy 2>/dev/null"
-  else
-    "echo \"$url\" | ${pkgs.wl-clipboard}/bin/wl-copy 2>/dev/null || echo \"$url\" | ${pkgs.xclip}/bin/xclip -selection clipboard 2>/dev/null";
+  clipboardCopy =
+    if pkgs.stdenv.isDarwin then
+      "printf '%s' \"$url\" | pbcopy 2>/dev/null"
+    else
+      "echo \"$url\" | ${pkgs.wl-clipboard}/bin/wl-copy 2>/dev/null || echo \"$url\" | ${pkgs.xclip}/bin/xclip -selection clipboard 2>/dev/null";
 
   pbnjScript = pkgs.writeShellScript "pbnj" ''
     set -e
@@ -23,7 +24,7 @@ let
     CONFIG_FILE="''${PBNJ_CONFIG:-$HOME/.pbnj.json}"
     CONFIGURED_HOST=${hostArg}
     CONFIGURED_AUTH_KEY_FILE=${authKeyFileArg}
-    
+
     # Load config
     load_config() {
       # Priority: env var > nix config > config file
@@ -43,14 +44,14 @@ let
         AUTH_KEY=$(${pkgs.jq}/bin/jq -r '.auth_key // empty' "$CONFIG_FILE" 2>/dev/null)
       fi
     }
-    
+
     check_config() {
       if [ -z "$HOST" ] || [ -z "$AUTH_KEY" ]; then
         ${pkgs.gum}/bin/gum style --foreground 196 "Not configured. Run 'pbnj init' first."
         exit 1
       fi
     }
-    
+
     # Detect language from filename
     detect_language() {
       local filename="$1"
@@ -85,7 +86,7 @@ let
         *) echo "" ;;
       esac
     }
-    
+
     # Format age
     format_age() {
       local created="$1"
@@ -105,7 +106,7 @@ let
         echo "$((diff / 604800))w ago"
       fi
     }
-    
+
     # Commands
     cmd_init() {
       ${pkgs.gum}/bin/gum style --bold --foreground 212 "Configure pbnj"
@@ -131,7 +132,7 @@ let
       
       ${pkgs.gum}/bin/gum style --foreground 35 "✓ Configuration saved to $CONFIG_FILE"
     }
-    
+
     cmd_config() {
       load_config
       
@@ -147,7 +148,7 @@ let
       masked="''${AUTH_KEY:0:4}...''${AUTH_KEY: -4}"
       echo "  Auth: $masked"
     }
-    
+
     cmd_list() {
       load_config
       check_config
@@ -187,7 +188,7 @@ let
         ${pkgs.gum}/bin/gum style --foreground 35 "✓ Copied: $url"
       fi
     }
-    
+
     cmd_delete() {
       load_config
       check_config
@@ -213,7 +214,7 @@ let
       
       ${pkgs.gum}/bin/gum style --foreground 35 "✓ Deleted"
     }
-    
+
     cmd_delete_all() {
       load_config
       check_config
@@ -232,7 +233,7 @@ let
       
       ${pkgs.gum}/bin/gum style --foreground 35 "✓ All pastes deleted"
     }
-    
+
     cmd_upload() {
       load_config
       check_config
@@ -354,7 +355,7 @@ let
       
       ${pkgs.gum}/bin/gum style --foreground 35 "$paste_url"
     }
-    
+
     # Main
     case "''${1:-}" in
       init|--init)
@@ -422,7 +423,10 @@ let
 
     dontUnpack = true;
 
-    nativeBuildInputs = with pkgs; [ pandoc installShellFiles ];
+    nativeBuildInputs = with pkgs; [
+      pandoc
+      installShellFiles
+    ];
 
     manPageSrc = ./pbnj.1.md;
     bashCompletionSrc = ./completions/pbnj.bash;

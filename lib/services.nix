@@ -1,4 +1,5 @@
-/** Service utility functions for the atelier infrastructure.
+/**
+  Service utility functions for the atelier infrastructure.
 
   These functions operate on NixOS configurations to extract
   service metadata for dashboards, monitoring, and documentation.
@@ -27,11 +28,7 @@
     => true
     ```
   */
-  isMkService = cfg:
-    (cfg.enable or false)
-    && (cfg ? domain)
-    && (cfg ? port)
-    && (cfg ? _description);
+  isMkService = cfg: (cfg.enable or false) && (cfg ? domain) && (cfg ? port) && (cfg ? _description);
 
   /**
     Convert a single mkService config into a manifest entry.
@@ -65,7 +62,7 @@
     data = {
       sqlite = cfg.data.sqlite or null;
       postgres = cfg.data.postgres or null;
-      files = cfg.data.files or [];
+      files = cfg.data.files or [ ];
     };
   };
 
@@ -93,15 +90,12 @@
     => [ { name = "cachet"; domain = "cachet.dunkirk.sh"; ... } ... ]
     ```
   */
-  mkManifest = config:
+  mkManifest =
+    config:
     let
       allServices = config.atelier.services;
 
-      isMkSvc = _: v:
-        (v.enable or false)
-        && (v ? domain)
-        && (v ? port)
-        && (v ? _description);
+      isMkSvc = _: v: (v.enable or false) && (v ? domain) && (v ? port) && (v ? _description);
 
       standardServices = lib.filterAttrs isMkSvc allServices;
 
@@ -116,13 +110,13 @@
         data = {
           sqlite = cfg.data.sqlite or null;
           postgres = cfg.data.postgres or null;
-          files = cfg.data.files or [];
+          files = cfg.data.files or [ ];
         };
       };
 
       emojibotInstances =
         let
-          instances = allServices.emojibot.instances or {};
+          instances = allServices.emojibot.instances or { };
           enabled = lib.filterAttrs (_: v: v.enable or false) instances;
         in
         lib.mapAttrsToList (name: inst: {
@@ -133,63 +127,91 @@
           runtime = "bun";
           repository = inst.repository or null;
           health_url = inst.healthUrl or null;
-          data = { sqlite = null; postgres = null; files = []; };
+          data = {
+            sqlite = null;
+            postgres = null;
+            files = [ ];
+          };
         }) enabled;
 
       # Custom services that don't use mkService but should appear in the manifest
-      customServices = let
-        noData = { sqlite = null; postgres = null; files = []; };
-        mkCustom = name: attrs: { inherit name; data = noData; } // attrs;
-      in lib.concatLists [
-        (lib.optional ((allServices.herald.enable or false) && (allServices.herald ? domain)) (mkCustom "herald" {
-          description = "RSS-to-Email via SSH";
-          domain = allServices.herald.domain;
-          port = allServices.herald.httpPort or 8085;
-          runtime = "go";
-          repository = null;
-          health_url = "https://${allServices.herald.domain}";
-        }))
-        (lib.optional ((allServices.frps.enable or false) && (allServices.frps ? domain)) (mkCustom "bore" {
-          description = "HTTP/TCP/UDP tunnel proxy";
-          domain = allServices.frps.domain;
-          port = allServices.frps.vhostHTTPPort or 7080;
-          runtime = "go";
-          repository = null;
-          health_url = "https://${allServices.frps.domain}";
-        }))
-        (lib.optional (config.services.tangled.knot.enable or false) (mkCustom "knot" {
-          description = "Tangled git hosting";
-          domain = config.services.tangled.knot.server.hostname or "knot.dunkirk.sh";
-          port = 5555;
-          runtime = "go";
-          repository = null;
-          health_url = "https://${config.services.tangled.knot.server.hostname or "knot.dunkirk.sh"}";
-        }))
-        (lib.optional (config.services.tangled.spindle.enable or false) (mkCustom "spindle" {
-          description = "Tangled CI";
-          domain = config.services.tangled.spindle.server.hostname or "spindle.dunkirk.sh";
-          port = 6555;
-          runtime = "go";
-          repository = null;
-          health_url = "https://${config.services.tangled.spindle.server.hostname or "spindle.dunkirk.sh"}";
-        }))
-        (lib.optional (config.services.n8n.enable or false) (mkCustom "n8n" {
-          description = "Workflow automation";
-          domain = config.services.n8n.environment.N8N_HOST or "n8n.dunkirk.sh";
-          port = 5678;
-          runtime = "node";
-          repository = null;
-          health_url = "https://${config.services.n8n.environment.N8N_HOST or "n8n.dunkirk.sh"}/healthz";
-        }))
-        (lib.optional (config.services.minio.enable or false) (mkCustom "minio" {
-          description = "S3-compatible object storage";
-          domain = "s3.dunkirk.sh";
-          port = 9001;
-          runtime = "go";
-          repository = null;
-          health_url = null;
-        }))
-      ];
+      customServices =
+        let
+          noData = {
+            sqlite = null;
+            postgres = null;
+            files = [ ];
+          };
+          mkCustom =
+            name: attrs:
+            {
+              inherit name;
+              data = noData;
+            }
+            // attrs;
+        in
+        lib.concatLists [
+          (lib.optional ((allServices.herald.enable or false) && (allServices.herald ? domain)) (
+            mkCustom "herald" {
+              description = "RSS-to-Email via SSH";
+              domain = allServices.herald.domain;
+              port = allServices.herald.httpPort or 8085;
+              runtime = "go";
+              repository = null;
+              health_url = "https://${allServices.herald.domain}";
+            }
+          ))
+          (lib.optional ((allServices.frps.enable or false) && (allServices.frps ? domain)) (
+            mkCustom "bore" {
+              description = "HTTP/TCP/UDP tunnel proxy";
+              domain = allServices.frps.domain;
+              port = allServices.frps.vhostHTTPPort or 7080;
+              runtime = "go";
+              repository = null;
+              health_url = "https://${allServices.frps.domain}";
+            }
+          ))
+          (lib.optional (config.services.tangled.knot.enable or false) (
+            mkCustom "knot" {
+              description = "Tangled git hosting";
+              domain = config.services.tangled.knot.server.hostname or "knot.dunkirk.sh";
+              port = 5555;
+              runtime = "go";
+              repository = null;
+              health_url = "https://${config.services.tangled.knot.server.hostname or "knot.dunkirk.sh"}";
+            }
+          ))
+          (lib.optional (config.services.tangled.spindle.enable or false) (
+            mkCustom "spindle" {
+              description = "Tangled CI";
+              domain = config.services.tangled.spindle.server.hostname or "spindle.dunkirk.sh";
+              port = 6555;
+              runtime = "go";
+              repository = null;
+              health_url = "https://${config.services.tangled.spindle.server.hostname or "spindle.dunkirk.sh"}";
+            }
+          ))
+          (lib.optional (config.services.n8n.enable or false) (
+            mkCustom "n8n" {
+              description = "Workflow automation";
+              domain = config.services.n8n.environment.N8N_HOST or "n8n.dunkirk.sh";
+              port = 5678;
+              runtime = "node";
+              repository = null;
+              health_url = "https://${config.services.n8n.environment.N8N_HOST or "n8n.dunkirk.sh"}/healthz";
+            }
+          ))
+          (lib.optional (config.services.minio.enable or false) (
+            mkCustom "minio" {
+              description = "S3-compatible object storage";
+              domain = "s3.dunkirk.sh";
+              port = 9001;
+              runtime = "go";
+              repository = null;
+              health_url = null;
+            }
+          ))
+        ];
 
       serviceList = (lib.mapAttrsToList mkEntry standardServices) ++ emojibotInstances ++ customServices;
     in
@@ -219,19 +241,20 @@
     => { terebithia = { hostname = "terebithia"; services = [ ... ]; }; }
     ```
   */
-  mkMachinesManifest = configSets:
+  mkMachinesManifest =
+    configSets:
     let
       self = import ./services.nix { inherit lib; };
-      merged = lib.foldl (acc: cs: acc // cs) {} configSets;
-      enabled = lib.filterAttrs (_: sys:
-        sys.config.atelier.machine.enable or false
-      ) merged;
-      mkMachineEntry = name: sys:
+      merged = lib.foldl (acc: cs: acc // cs) { } configSets;
+      enabled = lib.filterAttrs (_: sys: sys.config.atelier.machine.enable or false) merged;
+      mkMachineEntry =
+        name: sys:
         let
           config = sys.config;
           hasAtelierServices = config ? atelier && config.atelier ? services;
-          services = if hasAtelierServices then self.mkManifest config else [];
-        in {
+          services = if hasAtelierServices then self.mkManifest config else [ ];
+        in
+        {
           hostname = config.networking.hostName or name;
           type = config.atelier.machine.type or "server";
           tailscale_host = config.atelier.machine.tailscaleHost or null;

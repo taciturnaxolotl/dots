@@ -9,7 +9,10 @@
     };
 
     type = lib.mkOption {
-      type = lib.types.enum [ "server" "client" ];
+      type = lib.types.enum [
+        "server"
+        "client"
+      ];
       default = "server";
       description = "Machine type — server or client";
     };

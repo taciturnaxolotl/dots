@@ -2,7 +2,12 @@
 #
 # Has a database that needs backup
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   mkService = import ../../lib/mkService.nix;

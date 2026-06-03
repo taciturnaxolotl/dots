@@ -424,564 +424,564 @@ let
   '';
 
   ghrpc = pkgs.writeShellScriptBin "ghrpc" ''
-       set -euo pipefail
+           set -euo pipefail
 
-       # Defaults (configured by Nix)
-       PLC_ID="${tangled.plcId}"
-       GITHUB_USER="${tangled.githubUser}"
-       KNOT_HOST="${tangled.knotHost}"
-       TANGLED_DOMAIN="${tangled.domain}"
-       BRANCH="${tangled.defaultBranch}"
-       VISIBILITY=""
-       DESCRIPTION=""
-       GITHUB=true
-       TANGLED=true
-       NAME=""
-       INTERACTIVE=true
+           # Defaults (configured by Nix)
+           PLC_ID="${tangled.plcId}"
+           GITHUB_USER="${tangled.githubUser}"
+           KNOT_HOST="${tangled.knotHost}"
+           TANGLED_DOMAIN="${tangled.domain}"
+           BRANCH="${tangled.defaultBranch}"
+           VISIBILITY=""
+           DESCRIPTION=""
+           GITHUB=true
+           TANGLED=true
+           NAME=""
+           INTERACTIVE=true
 
-       usage() {
-         cat <<EOF
-Usage: ghrpc [NAME] [OPTIONS]
+           usage() {
+             cat <<EOF
+    Usage: ghrpc [NAME] [OPTIONS]
 
-Create repositories on GitHub and Tangled with git remotes configured.
-Remotes: origin → knot (ssh), github → GitHub
+    Create repositories on GitHub and Tangled with git remotes configured.
+    Remotes: origin → knot (ssh), github → GitHub
 
-Arguments:
-  NAME                    Repository name (prompts if not provided)
+    Arguments:
+      NAME                    Repository name (prompts if not provided)
 
-Options:
-  -d, --description STR   Repository description
-  -p, --public            Make repository public (default)
-  --private               Make repository private
-  -g, --github-only       Only create on GitHub
-  -t, --tangled-only      Only create on Tangled
-  --no-github             Skip GitHub
-  --no-tangled            Skip Tangled
-  --plc ID                PLC ID (default: $PLC_ID)
-  --domain DOMAIN         Tangled domain (default: $TANGLED_DOMAIN)
-  -h, --help              Show this help
+    Options:
+      -d, --description STR   Repository description
+      -p, --public            Make repository public (default)
+      --private               Make repository private
+      -g, --github-only       Only create on GitHub
+      -t, --tangled-only      Only create on Tangled
+      --no-github             Skip GitHub
+      --no-tangled            Skip Tangled
+      --plc ID                PLC ID (default: $PLC_ID)
+      --domain DOMAIN         Tangled domain (default: $TANGLED_DOMAIN)
+      -h, --help              Show this help
 
-URLs:
-  Tangled: https://tangled.org/$TANGLED_DOMAIN/REPO
-  GitHub:  https://github.com/$GITHUB_USER/REPO
-  Knot:    git@$KNOT_HOST:$PLC_ID/REPO
-EOF
-         exit 0
-       }
+    URLs:
+      Tangled: https://tangled.org/$TANGLED_DOMAIN/REPO
+      GitHub:  https://github.com/$GITHUB_USER/REPO
+      Knot:    git@$KNOT_HOST:$PLC_ID/REPO
+    EOF
+             exit 0
+           }
 
-       # Parse arguments
-       while [[ $# -gt 0 ]]; do
-         case "$1" in
-           -h|--help) usage ;;
-           -d|--description) DESCRIPTION="$2"; shift 2 ;;
-           -p|--public) VISIBILITY="public"; shift ;;
-           --private) VISIBILITY="private"; shift ;;
-           -g|--github-only) TANGLED=false; shift ;;
-           -t|--tangled-only) GITHUB=false; shift ;;
-           --no-github) GITHUB=false; shift ;;
-           --no-tangled) TANGLED=false; shift ;;
-           --plc) PLC_ID="$2"; shift 2 ;;
-           --domain) TANGLED_DOMAIN="$2"; shift 2 ;;
-           -*)
-             ${pkgs.gum}/bin/gum style --foreground 196 "Unknown option: $1"
+           # Parse arguments
+           while [[ $# -gt 0 ]]; do
+             case "$1" in
+               -h|--help) usage ;;
+               -d|--description) DESCRIPTION="$2"; shift 2 ;;
+               -p|--public) VISIBILITY="public"; shift ;;
+               --private) VISIBILITY="private"; shift ;;
+               -g|--github-only) TANGLED=false; shift ;;
+               -t|--tangled-only) GITHUB=false; shift ;;
+               --no-github) GITHUB=false; shift ;;
+               --no-tangled) TANGLED=false; shift ;;
+               --plc) PLC_ID="$2"; shift 2 ;;
+               --domain) TANGLED_DOMAIN="$2"; shift 2 ;;
+               -*)
+                 ${pkgs.gum}/bin/gum style --foreground 196 "Unknown option: $1"
+                 exit 1
+                 ;;
+               *) NAME="$1"; shift ;;
+             esac
+           done
+
+           # Check if running interactively
+           if [[ ! -t 0 ]]; then
+             INTERACTIVE=false
+           fi
+
+           # Determine repo name
+           if [[ -z "$NAME" ]]; then
+             if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
+               NAME=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
+               if [[ "$INTERACTIVE" == true ]]; then
+                 NAME=$(${pkgs.gum}/bin/gum input --placeholder "$NAME" --header "Repository name" --value "$NAME")
+               fi
+             else
+               if [[ "$INTERACTIVE" == true ]]; then
+                 NAME=$(${pkgs.gum}/bin/gum input --placeholder "my-repo" --header "Repository name")
+               fi
+             fi
+
+             if [[ -z "$NAME" ]]; then
+               ${pkgs.gum}/bin/gum style --foreground 196 "Error: Repository name is required"
+               exit 1
+             fi
+           fi
+
+           # Validate repository name
+           if [[ ! "$NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+             ${pkgs.gum}/bin/gum style --foreground 196 "Error: Invalid repository name. Use only alphanumeric, dots, hyphens, and underscores."
              exit 1
-             ;;
-           *) NAME="$1"; shift ;;
-         esac
-       done
-
-       # Check if running interactively
-       if [[ ! -t 0 ]]; then
-         INTERACTIVE=false
-       fi
-
-       # Determine repo name
-       if [[ -z "$NAME" ]]; then
-         if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null; then
-           NAME=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
-           if [[ "$INTERACTIVE" == true ]]; then
-             NAME=$(${pkgs.gum}/bin/gum input --placeholder "$NAME" --header "Repository name" --value "$NAME")
            fi
-         else
-           if [[ "$INTERACTIVE" == true ]]; then
-             NAME=$(${pkgs.gum}/bin/gum input --placeholder "my-repo" --header "Repository name")
-           fi
-         fi
 
-         if [[ -z "$NAME" ]]; then
-           ${pkgs.gum}/bin/gum style --foreground 196 "Error: Repository name is required"
-           exit 1
-         fi
-       fi
-
-       # Validate repository name
-       if [[ ! "$NAME" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-         ${pkgs.gum}/bin/gum style --foreground 196 "Error: Invalid repository name. Use only alphanumeric, dots, hyphens, and underscores."
-         exit 1
-       fi
-
-       ${pkgs.gum}/bin/gum style --foreground 212 --bold "Setting up repository: $NAME"
-       echo
-
-       # Navigate to directory (create if needed)
-       CURRENT_DIR=$(pwd)
-       CURRENT_REPO_NAME=""
-
-       if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
-         CURRENT_REPO_NAME=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
-       fi
-
-       # If not in the target directory, navigate or create it
-       if [[ "$CURRENT_REPO_NAME" != "$NAME" ]]; then
-         if [[ -d "$NAME" ]]; then
-           cd "$NAME"
-         else
-           mkdir -p "$NAME"
-           cd "$NAME"
-         fi
-       fi
-
-       # Check directory and git status
-       IS_GIT_REPO=false
-       HAS_COMMITS=false
-       HAS_REMOTES=false
-       README_EXISTS=false
-       LICENSE_EXISTS=false
-
-       if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
-         IS_GIT_REPO=true
-
-         if ${pkgs.git}/bin/git rev-parse HEAD &>/dev/null 2>&1; then
-           HAS_COMMITS=true
-         fi
-
-         if [[ -n "$(${pkgs.git}/bin/git remote)" ]]; then
-           HAS_REMOTES=true
-         fi
-       fi
-
-       [[ -f "README.md" ]] && README_EXISTS=true
-       [[ -f "LICENSE.md" ]] && LICENSE_EXISTS=true
-
-       # Handle existing git repo with remotes
-       SKIP_REMOTE_CREATION=false
-       if [[ "$IS_GIT_REPO" == true ]] && [[ "$HAS_REMOTES" == true ]]; then
-         ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Warning: Git repository already exists with remotes:"
-         ${pkgs.git}/bin/git remote -v
-         echo
-
-         # Check if README or LICENSE exist
-         if [[ "$README_EXISTS" == false ]] || [[ "$LICENSE_EXISTS" == false ]]; then
-           ${pkgs.gum}/bin/gum style --foreground 117 "Missing files detected:"
-           [[ "$README_EXISTS" == false ]] && echo "  - README.md"
-           [[ "$LICENSE_EXISTS" == false ]] && echo "  - LICENSE.md"
+           ${pkgs.gum}/bin/gum style --foreground 212 --bold "Setting up repository: $NAME"
            echo
 
-           if [[ "$INTERACTIVE" == true ]]; then
-             if ${pkgs.gum}/bin/gum confirm "Continue and add missing files?"; then
-               SKIP_REMOTE_CREATION=true
-               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Will add missing templates to existing repo"
-             else
-               ${pkgs.gum}/bin/gum style --foreground 214 "Aborted by user"
-               exit 0
-             fi
-           else
-             SKIP_REMOTE_CREATION=true
-           fi
-         else
-           if [[ "$INTERACTIVE" == true ]]; then
-             if ${pkgs.gum}/bin/gum confirm "Reconfigure remotes?"; then
-               SKIP_REMOTE_CREATION=true
-             else
-               ${pkgs.gum}/bin/gum style --foreground 214 "Aborted by user"
-               exit 0
-             fi
-           else
-             ${pkgs.gum}/bin/gum style --foreground 196 "Error: Repository already fully configured"
-             exit 1
-           fi
-         fi
-       fi
+           # Navigate to directory (create if needed)
+           CURRENT_DIR=$(pwd)
+           CURRENT_REPO_NAME=""
 
-       # Initialize git repo if needed
-       if [[ "$IS_GIT_REPO" == false ]]; then
-         if [[ -n "$(ls -A 2>/dev/null)" ]] && [[ "$INTERACTIVE" == true ]]; then
-           if ${pkgs.gum}/bin/gum confirm "Directory has files but no git repo. Initialize?"; then
-             ${pkgs.git}/bin/git init -b "$BRANCH"
+           if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
+             CURRENT_REPO_NAME=$(basename "$(${pkgs.git}/bin/git rev-parse --show-toplevel)")
+           fi
+
+           # If not in the target directory, navigate or create it
+           if [[ "$CURRENT_REPO_NAME" != "$NAME" ]]; then
+             if [[ -d "$NAME" ]]; then
+               cd "$NAME"
+             else
+               mkdir -p "$NAME"
+               cd "$NAME"
+             fi
+           fi
+
+           # Check directory and git status
+           IS_GIT_REPO=false
+           HAS_COMMITS=false
+           HAS_REMOTES=false
+           README_EXISTS=false
+           LICENSE_EXISTS=false
+
+           if ${pkgs.git}/bin/git rev-parse --is-inside-work-tree &>/dev/null 2>&1; then
              IS_GIT_REPO=true
-             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Initialized git repository"
-           else
-             ${pkgs.gum}/bin/gum style --foreground 196 "Error: Git repository required"
-             exit 1
+
+             if ${pkgs.git}/bin/git rev-parse HEAD &>/dev/null 2>&1; then
+               HAS_COMMITS=true
+             fi
+
+             if [[ -n "$(${pkgs.git}/bin/git remote)" ]]; then
+               HAS_REMOTES=true
+             fi
            fi
-         else
-           ${pkgs.git}/bin/git init -b "$BRANCH"
-           IS_GIT_REPO=true
-           ${pkgs.gum}/bin/gum style --foreground 35 "✓ Initialized git repository"
-         fi
-       fi
 
-       # Prompt for missing options if interactive
-       if [[ "$INTERACTIVE" == true ]]; then
-         if [[ -z "$DESCRIPTION" ]]; then
-           DESCRIPTION=$(${pkgs.gum}/bin/gum input --placeholder "A cool project" --header "Description (optional)")
-         fi
+           [[ -f "README.md" ]] && README_EXISTS=true
+           [[ -f "LICENSE.md" ]] && LICENSE_EXISTS=true
 
-         if [[ -z "$VISIBILITY" ]]; then
-           VISIBILITY=$(${pkgs.gum}/bin/gum choose --header "Visibility" "public" "private")
-         fi
+           # Handle existing git repo with remotes
+           SKIP_REMOTE_CREATION=false
+           if [[ "$IS_GIT_REPO" == true ]] && [[ "$HAS_REMOTES" == true ]]; then
+             ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Warning: Git repository already exists with remotes:"
+             ${pkgs.git}/bin/git remote -v
+             echo
 
-         if [[ "$GITHUB" == true ]] && [[ "$TANGLED" == true ]]; then
-           TARGET=$(${pkgs.gum}/bin/gum choose --header "Create on" "Both GitHub and Tangled" "GitHub only" "Tangled only")
-           case "$TARGET" in
-             "GitHub only") TANGLED=false ;;
-             "Tangled only") GITHUB=false ;;
-           esac
-         fi
-       else
-         # Non-interactive defaults
-         [[ -z "$VISIBILITY" ]] && VISIBILITY="public"
-       fi
+             # Check if README or LICENSE exist
+             if [[ "$README_EXISTS" == false ]] || [[ "$LICENSE_EXISTS" == false ]]; then
+               ${pkgs.gum}/bin/gum style --foreground 117 "Missing files detected:"
+               [[ "$README_EXISTS" == false ]] && echo "  - README.md"
+               [[ "$LICENSE_EXISTS" == false ]] && echo "  - LICENSE.md"
+               echo
 
-       # Create on Tangled
-       if [[ "$TANGLED" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
-         tangled_cookie=""
-         if [[ -f "/run/agenix/tangled-session" ]]; then
-           tangled_cookie=$(cat /run/agenix/tangled-session)
-         fi
-
-         if [[ -z "$tangled_cookie" ]]; then
-           ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Warning: No tangled session cookie found"
-           ${pkgs.gum}/bin/gum style --foreground 117 "  Expected: /run/agenix/tangled-session"
-         else
-           encoded_desc=$(printf '%s' "$DESCRIPTION" | ${pkgs.gnused}/bin/sed 's| |%20|g; s|!|%21|g; s|"|%22|g; s|#|%23|g; s|\$|%24|g; s|&|%26|g; s|'"'"'|%27|g; s|(|%28|g; s|)|%29|g; s|\*|%2A|g; s|+|%2B|g; s|,|%2C|g; s|/|%2F|g; s|:|%3A|g; s|;|%3B|g; s|=|%3D|g; s|\?|%3F|g; s|@|%40|g; s|\[|%5B|g; s|\]|%5D|g')
-
-           response=$(${pkgs.curl}/bin/curl -sf 'https://tangled.org/repo/new' \
-             -H 'Accept: */*' \
-             -H 'Content-Type: application/x-www-form-urlencoded' \
-             -b "appview-session-v2=$tangled_cookie" \
-             -H 'HX-Request: true' \
-             -H 'Origin: https://tangled.org' \
-             --data-raw "name=$NAME&description=$encoded_desc&branch=$BRANCH&domain=$TANGLED_DOMAIN" 2>&1)
-
-           if [[ $? -ne 0 ]] || echo "$response" | grep -qi "error\|failed"; then
-             ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create Tangled repository"
-             [[ -n "$response" ]] && echo "$response" | head -n 3
-           else
-             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
-           fi
-         fi
-       fi
-
-       # Create on GitHub via gh CLI
-       if [[ "$GITHUB" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
-         gh_args=("$GITHUB_USER/$NAME" "--$VISIBILITY")
-         [[ -n "$DESCRIPTION" ]] && gh_args+=("--description" "$DESCRIPTION")
-
-         if ${pkgs.gh}/bin/gh repo create "''${gh_args[@]}" 2>/tmp/gh-error-$$.log; then
-           ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
-         else
-           ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create GitHub repository"
-           [[ -f /tmp/gh-error-$$.log ]] && cat /tmp/gh-error-$$.log | head -n 3
-           rm -f /tmp/gh-error-$$.log
-         fi
-       fi
-
-       # Configure remotes
-       if [[ "$IS_GIT_REPO" == true ]]; then
-         echo
-         ${pkgs.gum}/bin/gum style --foreground 117 "Configuring remotes..."
-
-         knot_url="git@$KNOT_HOST:$PLC_ID/$NAME"
-         github_url="git@github.com:$GITHUB_USER/$NAME.git"
-
-         # Configure origin → knot (tangled)
-         if [[ "$TANGLED" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
-           if ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
-             current_origin=$(${pkgs.git}/bin/git remote get-url origin)
-             if [[ "$current_origin" != "$knot_url" ]]; then
-               ${pkgs.git}/bin/git remote set-url origin "$knot_url"
-               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Updated origin → $knot_url"
+               if [[ "$INTERACTIVE" == true ]]; then
+                 if ${pkgs.gum}/bin/gum confirm "Continue and add missing files?"; then
+                   SKIP_REMOTE_CREATION=true
+                   ${pkgs.gum}/bin/gum style --foreground 35 "✓ Will add missing templates to existing repo"
+                 else
+                   ${pkgs.gum}/bin/gum style --foreground 214 "Aborted by user"
+                   exit 0
+                 fi
+               else
+                 SKIP_REMOTE_CREATION=true
+               fi
              else
-               ${pkgs.gum}/bin/gum style --foreground 117 "  origin → $knot_url (unchanged)"
+               if [[ "$INTERACTIVE" == true ]]; then
+                 if ${pkgs.gum}/bin/gum confirm "Reconfigure remotes?"; then
+                   SKIP_REMOTE_CREATION=true
+                 else
+                   ${pkgs.gum}/bin/gum style --foreground 214 "Aborted by user"
+                   exit 0
+                 fi
+               else
+                 ${pkgs.gum}/bin/gum style --foreground 196 "Error: Repository already fully configured"
+                 exit 1
+               fi
+             fi
+           fi
+
+           # Initialize git repo if needed
+           if [[ "$IS_GIT_REPO" == false ]]; then
+             if [[ -n "$(ls -A 2>/dev/null)" ]] && [[ "$INTERACTIVE" == true ]]; then
+               if ${pkgs.gum}/bin/gum confirm "Directory has files but no git repo. Initialize?"; then
+                 ${pkgs.git}/bin/git init -b "$BRANCH"
+                 IS_GIT_REPO=true
+                 ${pkgs.gum}/bin/gum style --foreground 35 "✓ Initialized git repository"
+               else
+                 ${pkgs.gum}/bin/gum style --foreground 196 "Error: Git repository required"
+                 exit 1
+               fi
+             else
+               ${pkgs.git}/bin/git init -b "$BRANCH"
+               IS_GIT_REPO=true
+               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Initialized git repository"
+             fi
+           fi
+
+           # Prompt for missing options if interactive
+           if [[ "$INTERACTIVE" == true ]]; then
+             if [[ -z "$DESCRIPTION" ]]; then
+               DESCRIPTION=$(${pkgs.gum}/bin/gum input --placeholder "A cool project" --header "Description (optional)")
+             fi
+
+             if [[ -z "$VISIBILITY" ]]; then
+               VISIBILITY=$(${pkgs.gum}/bin/gum choose --header "Visibility" "public" "private")
+             fi
+
+             if [[ "$GITHUB" == true ]] && [[ "$TANGLED" == true ]]; then
+               TARGET=$(${pkgs.gum}/bin/gum choose --header "Create on" "Both GitHub and Tangled" "GitHub only" "Tangled only")
+               case "$TARGET" in
+                 "GitHub only") TANGLED=false ;;
+                 "Tangled only") GITHUB=false ;;
+               esac
              fi
            else
-             ${pkgs.git}/bin/git remote add origin "$knot_url"
-             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Added origin → $knot_url"
-           fi
-         fi
-
-         # Configure github remote
-         if [[ "$GITHUB" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
-           # When tangled is also enabled, use "github" remote name; otherwise use "origin"
-           github_remote_name="github"
-           if [[ "$TANGLED" == false ]]; then
-             github_remote_name="origin"
+             # Non-interactive defaults
+             [[ -z "$VISIBILITY" ]] && VISIBILITY="public"
            fi
 
-           if ${pkgs.git}/bin/git remote get-url "$github_remote_name" &>/dev/null; then
-             current_github=$(${pkgs.git}/bin/git remote get-url "$github_remote_name")
-             if [[ "$current_github" != "$github_url" ]]; then
-               ${pkgs.git}/bin/git remote set-url "$github_remote_name" "$github_url"
-               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Updated $github_remote_name → $github_url"
-             else
-               ${pkgs.gum}/bin/gum style --foreground 117 "  $github_remote_name → $github_url (unchanged)"
+           # Create on Tangled
+           if [[ "$TANGLED" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
+             tangled_cookie=""
+             if [[ -f "/run/agenix/tangled-session" ]]; then
+               tangled_cookie=$(cat /run/agenix/tangled-session)
              fi
-           else
-             ${pkgs.git}/bin/git remote add "$github_remote_name" "$github_url"
-             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Added $github_remote_name → $github_url"
+
+             if [[ -z "$tangled_cookie" ]]; then
+               ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Warning: No tangled session cookie found"
+               ${pkgs.gum}/bin/gum style --foreground 117 "  Expected: /run/agenix/tangled-session"
+             else
+               encoded_desc=$(printf '%s' "$DESCRIPTION" | ${pkgs.gnused}/bin/sed 's| |%20|g; s|!|%21|g; s|"|%22|g; s|#|%23|g; s|\$|%24|g; s|&|%26|g; s|'"'"'|%27|g; s|(|%28|g; s|)|%29|g; s|\*|%2A|g; s|+|%2B|g; s|,|%2C|g; s|/|%2F|g; s|:|%3A|g; s|;|%3B|g; s|=|%3D|g; s|\?|%3F|g; s|@|%40|g; s|\[|%5B|g; s|\]|%5D|g')
+
+               response=$(${pkgs.curl}/bin/curl -sf 'https://tangled.org/repo/new' \
+                 -H 'Accept: */*' \
+                 -H 'Content-Type: application/x-www-form-urlencoded' \
+                 -b "appview-session-v2=$tangled_cookie" \
+                 -H 'HX-Request: true' \
+                 -H 'Origin: https://tangled.org' \
+                 --data-raw "name=$NAME&description=$encoded_desc&branch=$BRANCH&domain=$TANGLED_DOMAIN" 2>&1)
+
+               if [[ $? -ne 0 ]] || echo "$response" | grep -qi "error\|failed"; then
+                 ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create Tangled repository"
+                 [[ -n "$response" ]] && echo "$response" | head -n 3
+               else
+                 ${pkgs.gum}/bin/gum style --foreground 35 "✓ Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
+               fi
+             fi
            fi
-         fi
 
-         # Always set default push remote to origin (even when skipping remote creation)
-         if [[ "$TANGLED" == true ]]; then
-           ${pkgs.git}/bin/git config branch.$BRANCH.remote origin
-           ${pkgs.gum}/bin/gum style --foreground 35 "✓ Set $BRANCH upstream → origin"
-         fi
+           # Create on GitHub via gh CLI
+           if [[ "$GITHUB" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
+             gh_args=("$GITHUB_USER/$NAME" "--$VISIBILITY")
+             [[ -n "$DESCRIPTION" ]] && gh_args+=("--description" "$DESCRIPTION")
 
-         echo
-         ${pkgs.gum}/bin/gum style --foreground 117 "Configured remotes:"
-         ${pkgs.git}/bin/git remote -v
-       fi
+             if ${pkgs.gh}/bin/gh repo create "''${gh_args[@]}" 2>/tmp/gh-error-$$.log; then
+               ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
+             else
+               ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create GitHub repository"
+               [[ -f /tmp/gh-error-$$.log ]] && cat /tmp/gh-error-$$.log | head -n 3
+               rm -f /tmp/gh-error-$$.log
+             fi
+           fi
 
-       # Handle templates
-       ADD_README=false
-       ADD_LICENSE=false
-       LICENSE_TYPE=""
+           # Configure remotes
+           if [[ "$IS_GIT_REPO" == true ]]; then
+             echo
+             ${pkgs.gum}/bin/gum style --foreground 117 "Configuring remotes..."
 
-       if [[ "$INTERACTIVE" == true ]]; then
-         TEMPLATE_OPTIONS=()
-         [[ "$README_EXISTS" == false ]] && TEMPLATE_OPTIONS+=("README.md")
-         [[ "$LICENSE_EXISTS" == false ]] && TEMPLATE_OPTIONS+=("LICENSE.md")
+             knot_url="git@$KNOT_HOST:$PLC_ID/$NAME"
+             github_url="git@github.com:$GITHUB_USER/$NAME.git"
 
-         if [[ ''${#TEMPLATE_OPTIONS[@]} -gt 0 ]]; then
+             # Configure origin → knot (tangled)
+             if [[ "$TANGLED" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
+               if ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
+                 current_origin=$(${pkgs.git}/bin/git remote get-url origin)
+                 if [[ "$current_origin" != "$knot_url" ]]; then
+                   ${pkgs.git}/bin/git remote set-url origin "$knot_url"
+                   ${pkgs.gum}/bin/gum style --foreground 35 "✓ Updated origin → $knot_url"
+                 else
+                   ${pkgs.gum}/bin/gum style --foreground 117 "  origin → $knot_url (unchanged)"
+                 fi
+               else
+                 ${pkgs.git}/bin/git remote add origin "$knot_url"
+                 ${pkgs.gum}/bin/gum style --foreground 35 "✓ Added origin → $knot_url"
+               fi
+             fi
+
+             # Configure github remote
+             if [[ "$GITHUB" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
+               # When tangled is also enabled, use "github" remote name; otherwise use "origin"
+               github_remote_name="github"
+               if [[ "$TANGLED" == false ]]; then
+                 github_remote_name="origin"
+               fi
+
+               if ${pkgs.git}/bin/git remote get-url "$github_remote_name" &>/dev/null; then
+                 current_github=$(${pkgs.git}/bin/git remote get-url "$github_remote_name")
+                 if [[ "$current_github" != "$github_url" ]]; then
+                   ${pkgs.git}/bin/git remote set-url "$github_remote_name" "$github_url"
+                   ${pkgs.gum}/bin/gum style --foreground 35 "✓ Updated $github_remote_name → $github_url"
+                 else
+                   ${pkgs.gum}/bin/gum style --foreground 117 "  $github_remote_name → $github_url (unchanged)"
+                 fi
+               else
+                 ${pkgs.git}/bin/git remote add "$github_remote_name" "$github_url"
+                 ${pkgs.gum}/bin/gum style --foreground 35 "✓ Added $github_remote_name → $github_url"
+               fi
+             fi
+
+             # Always set default push remote to origin (even when skipping remote creation)
+             if [[ "$TANGLED" == true ]]; then
+               ${pkgs.git}/bin/git config branch.$BRANCH.remote origin
+               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Set $BRANCH upstream → origin"
+             fi
+
+             echo
+             ${pkgs.gum}/bin/gum style --foreground 117 "Configured remotes:"
+             ${pkgs.git}/bin/git remote -v
+           fi
+
+           # Handle templates
+           ADD_README=false
+           ADD_LICENSE=false
+           LICENSE_TYPE=""
+
+           if [[ "$INTERACTIVE" == true ]]; then
+             TEMPLATE_OPTIONS=()
+             [[ "$README_EXISTS" == false ]] && TEMPLATE_OPTIONS+=("README.md")
+             [[ "$LICENSE_EXISTS" == false ]] && TEMPLATE_OPTIONS+=("LICENSE.md")
+
+             if [[ ''${#TEMPLATE_OPTIONS[@]} -gt 0 ]]; then
+               echo
+               if ${pkgs.gum}/bin/gum confirm "Add templates (README/LICENSE)?"; then
+                 SELECTED=$(printf '%s\n' "''${TEMPLATE_OPTIONS[@]}" | ${pkgs.gum}/bin/gum choose --no-limit --header "Select templates")
+
+                 if echo "$SELECTED" | grep -q "README.md"; then
+                   ADD_README=true
+                 fi
+
+                 if echo "$SELECTED" | grep -q "LICENSE.md"; then
+                   ADD_LICENSE=true
+                   LICENSE_TYPE=$(${pkgs.gum}/bin/gum choose --header "Select license" "MIT" "Apache-2.0" "GPL-3.0" "BSD-3-Clause" "ISC" "O'Saasy" "Unlicense")
+                 fi
+               fi
+             fi
+           fi
+
+           # Create README.md
+           CURRENT_YEAR=$(date +%Y)
+           if [[ "$ADD_README" == true ]]; then
+             if [[ "$TANGLED" == true ]] && [[ "$GITHUB" == true ]]; then
+               cat > README.md <<READMEEOF
+    # $NAME
+
+    $DESCRIPTION
+
+    The canonical repo for this is hosted on tangled over at [\`$TANGLED_DOMAIN/$NAME\`](https://tangled.org/$TANGLED_DOMAIN/$NAME)
+
+    <p align="center">
+        <img src="https://raw.githubusercontent.com/taciturnaxolotl/carriage/main/.github/images/line-break.svg" />
+    </p>
+
+    <p align="center">
+        <i><code>&copy; $CURRENT_YEAR-present <a href="https://dunkirk.sh">Kieran Klukas</a></code></i>
+    </p>
+
+    <p align="center">
+        <a href="https://tangled.org/$TANGLED_DOMAIN/$NAME/blob/main/LICENSE.md"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=$LICENSE_TYPE&logoColor=d9e0ee&colorA=363a4f&colorB=b7bdf8"/></a>
+    </p>
+    READMEEOF
+             elif [[ "$GITHUB" == true ]]; then
+               cat > README.md <<READMEEOF
+    # $NAME
+
+    $DESCRIPTION
+
+    <p align="center">
+        <img src="https://raw.githubusercontent.com/taciturnaxolotl/carriage/main/.github/images/line-break.svg" />
+    </p>
+
+    <p align="center">
+        <i><code>&copy; $CURRENT_YEAR-present <a href="https://dunkirk.sh">Kieran Klukas</a></code></i>
+    </p>
+
+    <p align="center">
+        <a href="https://github.com/$GITHUB_USER/$NAME/blob/main/LICENSE.md"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=$LICENSE_TYPE&logoColor=d9e0ee&colorA=363a4f&colorB=b7bdf8"/></a>
+    </p>
+    READMEEOF
+             else
+               cat > README.md <<READMEEOF
+    # $NAME
+
+    $DESCRIPTION
+
+    <p align="center">
+        <img src="https://raw.githubusercontent.com/taciturnaxolotl/carriage/main/.github/images/line-break.svg" />
+    </p>
+
+    <p align="center">
+        <i><code>&copy; $CURRENT_YEAR-present <a href="https://dunkirk.sh">Kieran Klukas</a></code></i>
+    </p>
+
+    <p align="center">
+        <a href="https://tangled.org/$TANGLED_DOMAIN/$NAME/blob/main/LICENSE.md"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=$LICENSE_TYPE&logoColor=d9e0ee&colorA=363a4f&colorB=b7bdf8"/></a>
+    </p>
+    READMEEOF
+             fi
+             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Created README.md"
+           fi
+
+           # Create LICENSE.md
+           if [[ "$ADD_LICENSE" == true ]]; then
+             case "$LICENSE_TYPE" in
+               "MIT")
+                 cat > LICENSE.md <<'LICENSEEOF'
+    # MIT License
+
+    Copyright © `YEAR` `Kieran Klukas`
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    LICENSEEOF
+                 ;;
+               "Apache-2.0")
+                 cat > LICENSE.md <<'LICENSEEOF'
+    # Apache License 2.0
+
+    Copyright © `YEAR` `Kieran Klukas`
+
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+    LICENSEEOF
+                 ;;
+               "GPL-3.0")
+                 cat > LICENSE.md <<'LICENSEEOF'
+    # GNU General Public License v3.0
+
+    Copyright © `YEAR` `Kieran Klukas`
+
+    This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+    LICENSEEOF
+                 ;;
+               "BSD-3-Clause")
+                 cat > LICENSE.md <<'LICENSEEOF'
+    # BSD 3-Clause License
+
+    Copyright © `YEAR` `Kieran Klukas`
+
+    Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+
+    1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+    2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+    3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+    LICENSEEOF
+                 ;;
+               "ISC")
+                 cat > LICENSE.md <<'LICENSEEOF'
+    # ISC License
+
+    Copyright © `YEAR` `Kieran Klukas`
+
+    Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
+
+    THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+    LICENSEEOF
+                 ;;
+               "O'Saasy")
+                 cat > LICENSE.md <<'LICENSEEOF'
+    # The O'Saasy License
+
+    Copyright © `YEAR` `Kieran Klukas`
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+    No licensee or downstream recipient may use the Software (including any modified or derivative versions) to directly compete with the original Licensor by offering it to third parties as a hosted, managed, or Software-as-a-Service (SaaS) product or cloud service where the primary value of the service is the functionality of the Software itself.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+    LICENSEEOF
+                 ;;
+               "Unlicense")
+                 cat > LICENSE.md <<'LICENSEEOF'
+    # The Unlicense
+
+    This is free and unencumbered software released into the public domain.
+
+    Anyone is free to copy, modify, publish, use, compile, sell, or distribute this software, either in source code form or as a compiled binary, for any purpose, commercial or non-commercial, and by any means.
+
+    In jurisdictions that recognize copyright laws, the author or authors of this software dedicate any and all copyright interest in the software to the public domain. We make this dedication for the benefit of the public at large and to the detriment of our heirs and successors. We intend this dedication to be an overt act of relinquishment in perpetuity of all present and future rights to this software under copyright law.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+    For more information, please refer to <https://unlicense.org>
+    LICENSEEOF
+                 ;;
+             esac
+
+             # Replace YEAR placeholder
+             ${pkgs.gnused}/bin/sed -i "s/YEAR/$CURRENT_YEAR/g" LICENSE.md
+             ${pkgs.gum}/bin/gum style --foreground 35 "✓ Created LICENSE.md ($LICENSE_TYPE)"
+           fi
+
+           # Commit and push templates if created
+           if [[ "$ADD_README" == true ]] || [[ "$ADD_LICENSE" == true ]]; then
+             echo
+             ${pkgs.gum}/bin/gum style --foreground 117 "Committing templates..."
+
+             ${pkgs.git}/bin/git add README.md LICENSE.md 2>/dev/null || true
+
+             if ${pkgs.git}/bin/git commit -m "Add project templates" 2>/dev/null; then
+               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Committed templates"
+
+               # Push to remotes if they exist
+               if [[ "$TANGLED" == true ]] && ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
+                 if ${pkgs.git}/bin/git push -u origin $BRANCH 2>/dev/null; then
+                   ${pkgs.gum}/bin/gum style --foreground 35 "✓ Pushed to origin (knot)"
+                 else
+                   ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Failed to push to origin"
+                 fi
+               fi
+
+               if [[ "$GITHUB" == true ]] && ${pkgs.git}/bin/git remote get-url github &>/dev/null; then
+                 if ${pkgs.git}/bin/git push -u github $BRANCH 2>/dev/null; then
+                   ${pkgs.gum}/bin/gum style --foreground 35 "✓ Pushed to github"
+                 else
+                   ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Failed to push to github"
+                 fi
+               fi
+             fi
+           fi
+
            echo
-           if ${pkgs.gum}/bin/gum confirm "Add templates (README/LICENSE)?"; then
-             SELECTED=$(printf '%s\n' "''${TEMPLATE_OPTIONS[@]}" | ${pkgs.gum}/bin/gum choose --no-limit --header "Select templates")
+           ${pkgs.gum}/bin/gum style --foreground 35 --bold "✓ Repository setup complete!"
 
-             if echo "$SELECTED" | grep -q "README.md"; then
-               ADD_README=true
-             fi
+           # Show summary
+           echo
+           ${pkgs.gum}/bin/gum style --foreground 117 "Summary:"
+           echo "  Name: $NAME"
+           [[ -n "$DESCRIPTION" ]] && echo "  Description: $DESCRIPTION"
+           echo "  Visibility: $VISIBILITY"
+           [[ "$TANGLED" == true ]] && echo "  Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
+           [[ "$GITHUB" == true ]] && echo "  GitHub: https://github.com/$GITHUB_USER/$NAME"
 
-             if echo "$SELECTED" | grep -q "LICENSE.md"; then
-               ADD_LICENSE=true
-               LICENSE_TYPE=$(${pkgs.gum}/bin/gum choose --header "Select license" "MIT" "Apache-2.0" "GPL-3.0" "BSD-3-Clause" "ISC" "O'Saasy" "Unlicense")
-             fi
-           fi
-         fi
-       fi
-
-       # Create README.md
-       CURRENT_YEAR=$(date +%Y)
-       if [[ "$ADD_README" == true ]]; then
-         if [[ "$TANGLED" == true ]] && [[ "$GITHUB" == true ]]; then
-           cat > README.md <<READMEEOF
-# $NAME
-
-$DESCRIPTION
-
-The canonical repo for this is hosted on tangled over at [\`$TANGLED_DOMAIN/$NAME\`](https://tangled.org/$TANGLED_DOMAIN/$NAME)
-
-<p align="center">
-    <img src="https://raw.githubusercontent.com/taciturnaxolotl/carriage/main/.github/images/line-break.svg" />
-</p>
-
-<p align="center">
-    <i><code>&copy; $CURRENT_YEAR-present <a href="https://dunkirk.sh">Kieran Klukas</a></code></i>
-</p>
-
-<p align="center">
-    <a href="https://tangled.org/$TANGLED_DOMAIN/$NAME/blob/main/LICENSE.md"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=$LICENSE_TYPE&logoColor=d9e0ee&colorA=363a4f&colorB=b7bdf8"/></a>
-</p>
-READMEEOF
-         elif [[ "$GITHUB" == true ]]; then
-           cat > README.md <<READMEEOF
-# $NAME
-
-$DESCRIPTION
-
-<p align="center">
-    <img src="https://raw.githubusercontent.com/taciturnaxolotl/carriage/main/.github/images/line-break.svg" />
-</p>
-
-<p align="center">
-    <i><code>&copy; $CURRENT_YEAR-present <a href="https://dunkirk.sh">Kieran Klukas</a></code></i>
-</p>
-
-<p align="center">
-    <a href="https://github.com/$GITHUB_USER/$NAME/blob/main/LICENSE.md"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=$LICENSE_TYPE&logoColor=d9e0ee&colorA=363a4f&colorB=b7bdf8"/></a>
-</p>
-READMEEOF
-         else
-           cat > README.md <<READMEEOF
-# $NAME
-
-$DESCRIPTION
-
-<p align="center">
-    <img src="https://raw.githubusercontent.com/taciturnaxolotl/carriage/main/.github/images/line-break.svg" />
-</p>
-
-<p align="center">
-    <i><code>&copy; $CURRENT_YEAR-present <a href="https://dunkirk.sh">Kieran Klukas</a></code></i>
-</p>
-
-<p align="center">
-    <a href="https://tangled.org/$TANGLED_DOMAIN/$NAME/blob/main/LICENSE.md"><img src="https://img.shields.io/static/v1.svg?style=for-the-badge&label=License&message=$LICENSE_TYPE&logoColor=d9e0ee&colorA=363a4f&colorB=b7bdf8"/></a>
-</p>
-READMEEOF
-         fi
-         ${pkgs.gum}/bin/gum style --foreground 35 "✓ Created README.md"
-       fi
-
-       # Create LICENSE.md
-       if [[ "$ADD_LICENSE" == true ]]; then
-         case "$LICENSE_TYPE" in
-           "MIT")
-             cat > LICENSE.md <<'LICENSEEOF'
-# MIT License
-
-Copyright © `YEAR` `Kieran Klukas`
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-LICENSEEOF
-             ;;
-           "Apache-2.0")
-             cat > LICENSE.md <<'LICENSEEOF'
-# Apache License 2.0
-
-Copyright © `YEAR` `Kieran Klukas`
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License. You may obtain a copy of the License at
-
-http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
-LICENSEEOF
-             ;;
-           "GPL-3.0")
-             cat > LICENSE.md <<'LICENSEEOF'
-# GNU General Public License v3.0
-
-Copyright © `YEAR` `Kieran Klukas`
-
-This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
-LICENSEEOF
-             ;;
-           "BSD-3-Clause")
-             cat > LICENSE.md <<'LICENSEEOF'
-# BSD 3-Clause License
-
-Copyright © `YEAR` `Kieran Klukas`
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-3. Neither the name of the copyright holder nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-LICENSEEOF
-             ;;
-           "ISC")
-             cat > LICENSE.md <<'LICENSEEOF'
-# ISC License
-
-Copyright © `YEAR` `Kieran Klukas`
-
-Permission to use, copy, modify, and/or distribute this software for any purpose with or without fee is hereby granted, provided that the above copyright notice and this permission notice appear in all copies.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
-LICENSEEOF
-             ;;
-           "O'Saasy")
-             cat > LICENSE.md <<'LICENSEEOF'
-# The O'Saasy License
-
-Copyright © `YEAR` `Kieran Klukas`
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-No licensee or downstream recipient may use the Software (including any modified or derivative versions) to directly compete with the original Licensor by offering it to third parties as a hosted, managed, or Software-as-a-Service (SaaS) product or cloud service where the primary value of the service is the functionality of the Software itself.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-LICENSEEOF
-             ;;
-           "Unlicense")
-             cat > LICENSE.md <<'LICENSEEOF'
-# The Unlicense
-
-This is free and unencumbered software released into the public domain.
-
-Anyone is free to copy, modify, publish, use, compile, sell, or distribute this software, either in source code form or as a compiled binary, for any purpose, commercial or non-commercial, and by any means.
-
-In jurisdictions that recognize copyright laws, the author or authors of this software dedicate any and all copyright interest in the software to the public domain. We make this dedication for the benefit of the public at large and to the detriment of our heirs and successors. We intend this dedication to be an overt act of relinquishment in perpetuity of all present and future rights to this software under copyright law.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-For more information, please refer to <https://unlicense.org>
-LICENSEEOF
-             ;;
-         esac
-
-         # Replace YEAR placeholder
-         ${pkgs.gnused}/bin/sed -i "s/YEAR/$CURRENT_YEAR/g" LICENSE.md
-         ${pkgs.gum}/bin/gum style --foreground 35 "✓ Created LICENSE.md ($LICENSE_TYPE)"
-       fi
-
-       # Commit and push templates if created
-       if [[ "$ADD_README" == true ]] || [[ "$ADD_LICENSE" == true ]]; then
-         echo
-         ${pkgs.gum}/bin/gum style --foreground 117 "Committing templates..."
-
-         ${pkgs.git}/bin/git add README.md LICENSE.md 2>/dev/null || true
-
-         if ${pkgs.git}/bin/git commit -m "Add project templates" 2>/dev/null; then
-           ${pkgs.gum}/bin/gum style --foreground 35 "✓ Committed templates"
-
-           # Push to remotes if they exist
-           if [[ "$TANGLED" == true ]] && ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
-             if ${pkgs.git}/bin/git push -u origin $BRANCH 2>/dev/null; then
-               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Pushed to origin (knot)"
-             else
-               ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Failed to push to origin"
-             fi
-           fi
-
-           if [[ "$GITHUB" == true ]] && ${pkgs.git}/bin/git remote get-url github &>/dev/null; then
-             if ${pkgs.git}/bin/git push -u github $BRANCH 2>/dev/null; then
-               ${pkgs.gum}/bin/gum style --foreground 35 "✓ Pushed to github"
-             else
-               ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Failed to push to github"
-             fi
-           fi
-         fi
-       fi
-
-       echo
-       ${pkgs.gum}/bin/gum style --foreground 35 --bold "✓ Repository setup complete!"
-
-       # Show summary
-       echo
-       ${pkgs.gum}/bin/gum style --foreground 117 "Summary:"
-       echo "  Name: $NAME"
-       [[ -n "$DESCRIPTION" ]] && echo "  Description: $DESCRIPTION"
-       echo "  Visibility: $VISIBILITY"
-       [[ "$TANGLED" == true ]] && echo "  Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
-       [[ "$GITHUB" == true ]] && echo "  GitHub: https://github.com/$GITHUB_USER/$NAME"
-
-      # Write final directory to fd 3 if open (used by shell wrapper to cd)
-      { echo "$(pwd)" >&3; } 2>/dev/null || true
-         '';
+          # Write final directory to fd 3 if open (used by shell wrapper to cd)
+          { echo "$(pwd)" >&3; } 2>/dev/null || true
+  '';
 
 in
 {

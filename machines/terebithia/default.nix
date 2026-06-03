@@ -529,7 +529,6 @@
     healthUrl = "https://backend.potluck.dunkirk.sh/healthz";
   };
 
-
   atelier.services.tangled = {
     enable = true;
     owner = "did:plc:krxbvxvis5skq7jj6eot23ul";
@@ -568,7 +567,7 @@
       header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
       }
-      
+
       reverse_proxy localhost:8191
     '';
   };
@@ -623,7 +622,12 @@
     '';
   };
 
-  swapDevices = [{ device = "/var/swapfile"; size = 4096; }];
+  swapDevices = [
+    {
+      device = "/var/swapfile";
+      size = 4096;
+    }
+  ];
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;

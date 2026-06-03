@@ -2,7 +2,8 @@
   lib,
   config,
   ...
-}: {
+}:
+{
   options.atelier.apps.halloy.enable = lib.mkEnableOption "Enable halloy config";
   config = lib.mkIf config.atelier.apps.halloy.enable {
     programs.halloy = {
@@ -18,7 +19,10 @@
             realname = "kieran klukas";
             username = "kierank";
             server = "irc.libera.chat";
-            channels = ["#tangled" "#halloy"];
+            channels = [
+              "#tangled"
+              "#halloy"
+            ];
           };
           hackclub = {
             nickname = "krn";

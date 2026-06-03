@@ -1,19 +1,25 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 with lib;
 
 let
   cfg = config.atelier.services.curl-doom;
-in {
+in
+{
   options.atelier.services.curl-doom = {
     enable = mkEnableOption "curl-doom";
-    
+
     port = mkOption {
       type = types.port;
       default = 3300;
       description = "Port to listen on";
     };
-    
+
     domain = mkOption {
       type = types.str;
       default = "doom.dunkirk.sh";
@@ -26,8 +32,11 @@ in {
       description = "curl-doom server";
       wantedBy = [ "multi-user.target" ];
       after = [ "network.target" ];
-      
-      path = [ pkgs.bash pkgs.nodejs ];
+
+      path = [
+        pkgs.bash
+        pkgs.nodejs
+      ];
 
       serviceConfig = {
         ExecStart = "${pkgs.curl-doom}/bin/curl-doom";
@@ -48,7 +57,7 @@ in {
         header {
           Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
         }
-        
+
         @notcurl {
           not header User-Agent *curl*
         }

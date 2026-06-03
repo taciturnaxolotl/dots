@@ -179,14 +179,15 @@
     enable = true;
     allowedTCPPorts = [
       22
-      80    # Media dashboard
-      445   # Samba
-      8096  # Jellyfin
-      9000  # MinIO API
-      9001  # MinIO Console
+      80 # Media dashboard
+      445 # Samba
+      8096 # Jellyfin
+      9000 # MinIO API
+      9001 # MinIO Console
     ];
     allowedUDPPorts = [
-      137 138 # Samba NetBIOS
+      137
+      138 # Samba NetBIOS
     ];
     logRefusedConnections = false;
     rejectPackets = true;
@@ -254,7 +255,10 @@
       enable = true;
       vpn.enable = true;
       peerPort = 51413;
-      extraAllowedIps = [ "192.168.15.0/24" "100.64.0.0/10" ];
+      extraAllowedIps = [
+        "192.168.15.0/24"
+        "100.64.0.0/10"
+      ];
       extraSettings = {
         download-dir = "/storage/torrents";
         incomplete-dir = "/storage/torrents/.incomplete";
@@ -338,8 +342,14 @@
   # and pushes it to Transmission inside the VPN namespace.
   systemd.services.protonvpn-port-forward = {
     description = "NAT-PMP port forwarding through ProtonVPN for Transmission";
-    bindsTo = [ "wg.service" "transmission.service" ];
-    after = [ "wg.service" "transmission.service" ];
+    bindsTo = [
+      "wg.service"
+      "transmission.service"
+    ];
+    after = [
+      "wg.service"
+      "transmission.service"
+    ];
     wantedBy = [ "multi-user.target" ];
     unitConfig.JoinsNamespaceOf = "transmission.service";
     serviceConfig = {

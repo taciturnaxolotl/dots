@@ -4,7 +4,12 @@
 # Pumpkin generates its own TOML config files on first start.
 # Subsequent management via mcrcon or direct config edits.
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.services.pumpkin;

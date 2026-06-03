@@ -2,7 +2,12 @@
 #
 # Images stored in R2, but keeps local stats
 
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   mkService = import ../../lib/mkService.nix;
@@ -30,7 +35,7 @@ let
 in
 {
   imports = [ baseModule ];
-  
+
   # Add LD_LIBRARY_PATH for native dependencies (sharp image processing)
   config = lib.mkIf cfg.enable {
     systemd.services.l4.environment.LD_LIBRARY_PATH = "${pkgs.stdenv.cc.cc.lib}/lib";

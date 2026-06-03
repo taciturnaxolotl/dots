@@ -16,7 +16,11 @@ stdenvNoCC.mkDerivation (finalAttrs: {
   name = "dunkirk-docs";
   src = self + /docs;
 
-  nativeBuildInputs = [ mdbook nixdoc jq ];
+  nativeBuildInputs = [
+    mdbook
+    nixdoc
+    jq
+  ];
 
   buildPhase = ''
     # Set up catppuccin theme
