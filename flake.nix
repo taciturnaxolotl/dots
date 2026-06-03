@@ -60,7 +60,7 @@
     nixvim.url = "github:taciturnaxolotl/nixvim";
 
     terminal-wakatime = {
-      url = "github:taciturnaxolotl/terminal-wakatime";
+      url = "github:hackclub/terminal-wakatime";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 

@@ -1524,15 +1524,15 @@
         ]
       },
       "locked": {
-        "lastModified": 1751031844,
-        "narHash": "sha256-B8cFGcUq25hUEPQYaAAV9EKZ+xaRByDXP85e+xA1n34=",
-        "owner": "taciturnaxolotl",
+        "lastModified": 1780526329,
+        "narHash": "sha256-hDglPhTKF1KByN1WXyNUx9mPhwYz78WbgOVbiy6FT7s=",
+        "owner": "hackclub",
         "repo": "terminal-wakatime",
-        "rev": "dbc9e7ce7f6ace6c883028f8b7c725542ee10c77",
+        "rev": "c2317ca5ed8eec97977620ac5f7d878da0331f53",
         "type": "github"
       },
       "original": {
-        "owner": "taciturnaxolotl",
+        "owner": "hackclub",
         "repo": "terminal-wakatime",
         "type": "github"
       }
