@@ -22,9 +22,10 @@ mkService {
       "DATABASE_PATH=${cfg.dataDir}/data/cachet.db"
     ];
 
-    # Data declarations for automatic backup
+    # Data declarations for automatic backup (online-safe: WAL checkpoint only, no stop)
     atelier.services.cachet.data = {
       sqlite = "${cfg.dataDir}/data/cachet.db";
+      stopForBackup = false;
     };
   };
 }

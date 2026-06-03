@@ -115,6 +115,10 @@
           zmx = true;
         };
 
+        terebithia-raw = {
+          hostname = "terebithia";
+        };
+
         prattle = {
           hostname = "100.105.247.54";
           zmx = true;

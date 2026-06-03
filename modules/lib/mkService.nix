@@ -123,8 +123,14 @@ in
       sqlite = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
-        description = "Path to SQLite database (will checkpoint WAL and stop service for backup)";
+        description = "Path to SQLite database (will checkpoint WAL for backup)";
         example = "/var/lib/myapp/data/app.db";
+      };
+
+      stopForBackup = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether to stop the service during backup. Set to false for WAL-mode SQLite services that can be backed up online.";
       };
 
       postgres = lib.mkOption {

@@ -36,15 +36,22 @@ let
       # Collect all paths to backup
       paths = (lib.optional hasSqlite (builtins.dirOf data.sqlite)) ++ (data.files or [ ]);
 
+      # Whether to stop service during backup (default true, can opt out for online-safe DBs)
+      stopForBackup = data.stopForBackup or true;
+
       # Pre-backup: handle database consistency
       preBackup = lib.concatStringsSep "\n" (
-        # SQLite: checkpoint WAL then stop service
-        (lib.optional hasSqlite ''
-          echo "Checkpointing SQLite WAL for ${name}..."
-          ${pkgs.sqlite}/bin/sqlite3 "${data.sqlite}" "PRAGMA wal_checkpoint(TRUNCATE);" || true
-          echo "Stopping ${name} for backup..."
-          systemctl stop ${name}
-        '')
+        # SQLite: checkpoint WAL, optionally stop service
+        (lib.optional hasSqlite (
+          ''
+            echo "Checkpointing SQLite WAL for ${name}..."
+            ${pkgs.sqlite}/bin/sqlite3 "${data.sqlite}" "PRAGMA wal_checkpoint(TRUNCATE);" || true
+          ''
+          + lib.optionalString stopForBackup ''
+            echo "Stopping ${name} for backup..."
+            systemctl stop ${name}
+          ''
+        ))
         ++
           # PostgreSQL: dump to file
           (lib.optional hasPostgres ''
@@ -56,9 +63,9 @@ let
           [ ]
       );
 
-      # Post-backup: restart service
+      # Post-backup: restart service (only if we stopped it)
       postBackup = lib.concatStringsSep "\n" (
-        (lib.optional hasSqlite ''
+        (lib.optional (hasSqlite && stopForBackup) ''
           echo "Restarting ${name} after backup..."
           systemctl start ${name}
         '')
