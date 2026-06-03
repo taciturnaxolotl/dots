@@ -20,8 +20,9 @@
           email = "kieran@dunkirk.sh";
         };
         ui = {
-          default-command = "log-recent";
-          pager = "delta";
+          default-command = "log";
+          pager = "less -RS";
+          diff.pager = "delta";
         };
         signing = {
           behavior = "force";
@@ -32,8 +33,6 @@
         "revset-aliases" = {
           "mine()" = "author(kieran@dunkirk.sh) | author(me@dunkirk.sh)";
           "closest_bookmark(to)" = "heads(::to & bookmarks())";
-          "default()" = "coalesce(trunk(),root())::present(@) | ancestors(visible_heads() & recent(), 2)";
-          "recent()" = ''committer_date(after:"1 month ago")'';
         };
         aliases = {
           tug = [
@@ -52,11 +51,6 @@
           si = [
             "squash"
             "--interactive"
-          ];
-          log-recent = [
-            "log"
-            "-r"
-            "default() & recent()"
           ];
         };
         "template-aliases" = {

@@ -57,6 +57,9 @@ in
     programs.delta = {
       enable = true;
       enableGitIntegration = true;
+      options = {
+        wrap-max-lines = 0;
+      };
     };
     programs.gh.enable = true;
     home.packages = [ git-prunes ];
