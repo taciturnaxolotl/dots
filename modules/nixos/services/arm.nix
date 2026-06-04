@@ -102,8 +102,6 @@ in
       extraOptions =
         # Optical drives
         (map (dev: "--device=${dev}:${dev}") cfg.devices)
-        # SCSI generic devices (MakeMKV needs these)
-        ++ [ "--device=/dev/sg0:/dev/sg0" ]
         # Privileged for udev/device access
         ++ [ "--privileged" ]
         # NVIDIA GPU passthrough
