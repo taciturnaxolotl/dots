@@ -2,11 +2,59 @@
 #
 # Runs the official ARM Docker image with optical drive passthrough.
 # Rips DVDs/Blu-rays/CDs and outputs to /storage/media for Jellyfin.
+# Expects two secrets in prattle config:
+#   age.secrets.arm-tmdb  → TMDB API key
+#   age.secrets.arm-makemkv → MakeMKV permanent key
 
-{ config, lib, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
   cfg = config.atelier.services.arm;
+
+  armWrapper = pkgs.writeShellScript "arm-docker-wrapper" ''
+    set -euo pipefail
+    DEVNAME="$1"
+    if [[ -z "''${DEVNAME}" ]]; then
+      echo "Usage: arm-docker-wrapper <device>" | ${pkgs.util-linux}/bin/logger -t ARM -s
+      exit 1
+    fi
+    if [[ ! -b "''${DEVNAME}" && -b "/dev/''${DEVNAME}" ]]; then
+      DEVNAME="/dev/''${DEVNAME}"
+    fi
+
+    sleep 5
+    eval "$(${pkgs.systemd}/bin/udevadm info --query=env --export "''${DEVNAME}" 2>/dev/null)" || true
+
+    local_disctype=""
+    if [[ "''${ID_CDROM_MEDIA_DVD:-}" == "1" ]]; then
+      disctype="dvd=1"
+    elif [[ "''${ID_CDROM_MEDIA_BD:-}" == "1" ]]; then
+      disctype="bd=1"
+    elif [[ -n "''${ID_CDROM_MEDIA_TRACK_COUNT_AUDIO:-}" ]]; then
+      disctype="cd=1"
+    else
+      disctype="unknown=1"
+    fi
+
+    label_flag=""
+    if [[ -n "''${ID_FS_LABEL:-}" ]]; then
+      label_flag="-l ID_FS_LABEL=''${ID_FS_LABEL}"
+    fi
+
+    echo "Starting ARM rip on ''${DEVNAME} (type: ''${disctype})" | ${pkgs.util-linux}/bin/logger -t ARM -s
+    ${config.virtualisation.docker.package}/bin/docker exec -i \
+      -u "${toString config.users.users.arm.uid}" \
+      -w /home/arm \
+      arm \
+      python3 /opt/arm/arm/ripper/main.py \
+        -d "''${DEVNAME}" -t "''${disctype}" ''${label_flag} \
+      | ${pkgs.util-linux}/bin/logger -t ARM -s
+  '';
 in
 {
   options.atelier.services.arm = {
@@ -50,17 +98,29 @@ in
       default = config.hardware.nvidia.enabled or false;
       description = "Whether to pass NVIDIA GPU to the container for hardware transcoding";
     };
+
+    tmdbApiKey = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "TMDB API key for metadata lookups";
+    };
+
+    makemkvKey = lib.mkOption {
+      type = lib.types.str;
+      default = "";
+      description = "MakeMKV permanent registration key";
+    };
   };
 
   config = lib.mkIf cfg.enable {
-    # ── Docker runtime ────────────────────────────────────────────────
+    boot.kernelModules = [ "sg" ];
+
     virtualisation.docker = {
       enable = true;
       autoPrune.enable = true;
     };
     virtualisation.oci-containers.backend = "docker";
 
-    # ── User and directories ──────────────────────────────────────────
     users.users.arm = {
       isSystemUser = true;
       uid = 990;
@@ -83,7 +143,6 @@ in
       "d /storage/arm/logs    0755 arm arm -"
     ];
 
-    # ── Container ─────────────────────────────────────────────────────
     virtualisation.oci-containers.containers.arm = {
       image = "automaticrippingmachine/automatic-ripping-machine:latest";
       ports = [ "${toString cfg.port}:8080" ];
@@ -100,24 +159,50 @@ in
         TZ = config.time.timeZone;
       };
       extraOptions =
-        # Optical drives
         (map (dev: "--device=${dev}:${dev}") cfg.devices)
-        # Privileged for udev/device access
         ++ [ "--privileged" ]
-        # NVIDIA GPU passthrough
         ++ lib.optionals cfg.nvidiaGpu [
           "--gpus=all"
           "--env=NVIDIA_DRIVER_CAPABILITIES=all"
         ];
     };
 
-    # Ensure Docker starts before the ARM container
     systemd.services.docker-arm = {
       after = [ "docker.service" ];
       requires = [ "docker.service" ];
     };
 
-    # ── Caddy reverse proxy (optional) ────────────────────────────────
+    # Write arm.yaml with keys and config into the container volume
+    systemd.services.arm-config = {
+      description = "Generate ARM configuration";
+      wantedBy = [ "multi-user.target" ];
+      before = [ "docker-arm.service" ];
+      serviceConfig.Type = "oneshot";
+      script = ''
+        mkdir -p /storage/arm/config
+        cat > /storage/arm/config/arm.yaml << 'EOF'
+        METADATA_PROVIDER: "tmdb"
+        TMDB_API_KEY: "${cfg.tmdbApiKey}"
+        MAKEMKV_PERMA_KEY: "${cfg.makemkvKey}"
+        MANUAL_WAIT: false
+        RIPMETHOD: "mkv"
+        RIPMETHOD_DVD: "mkv"
+        SKIP_TRANSCODE: false
+        EJECT_WHEN_DONE: false
+        COMPLETED_PATH: "/home/arm/media/completed/"
+        LOGPATH: "/home/arm/logs/"
+        LOGLIFE: 7
+        SET_MEDIA_OWNER: false
+        CHMOD_VALUE: 777
+        SET_MEDIA_PERMISSIONS: false
+        EOF
+      '';
+    };
+
+    services.udev.extraRules = ''
+      KERNEL=="sr[0-9]", ACTION=="change", SUBSYSTEM=="block", ENV{ID_CDROM_MEDIA_STATE}!="blank", RUN+="${armWrapper} %k"
+    '';
+
     services.caddy.virtualHosts = lib.mkIf (cfg.domain != null) {
       ${cfg.domain} = {
         extraConfig = ''

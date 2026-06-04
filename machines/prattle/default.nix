@@ -272,6 +272,8 @@
   atelier.services.arm = {
     enable = true;
     nvidiaGpu = false;
+    tmdbApiKey = "d02571bf8c4e4d232a05dc9a764992db";
+    makemkvKey = "T-BSaJ6gwgMx4eIggWkVYXiVP_6zehm7WAO9dEydvzOHFHoZ6YQ82BL5cGpYDxvyRWnS";
   };
 
   # Root folders and hardlinks for Sonarr/Radarr
