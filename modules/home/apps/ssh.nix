@@ -22,6 +22,19 @@ in
       };
     };
 
+    agent = {
+      addKeysToAgent = mkOption {
+        type = types.enum [
+          "yes"
+          "no"
+          "confirm"
+          "ask"
+        ];
+        default = "yes";
+        description = "Automatically add keys to the running agent (maps to AddKeysToAgent)";
+      };
+    };
+
     extraConfig = mkOption {
       type = types.lines;
       default = "";
@@ -94,6 +107,7 @@ in
     programs.ssh = {
       enable = true;
       enableDefaultConfig = false;
+      addKeysToAgent = cfg.agent.addKeysToAgent;
 
       matchBlocks =
         let
