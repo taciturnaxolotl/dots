@@ -125,6 +125,10 @@
       url = "github:neurosnap/zmx";
     };
 
+    impure = {
+      url = "github:taciturnaxolotl/impure";
+    };
+
     tangle-of-trust = {
       url = "github:taciturnaxolotl/tangle-of-trust";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

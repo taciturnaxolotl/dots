@@ -1028,141 +1028,20 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    programs.oh-my-posh = {
-      enable = true;
-      enableZshIntegration = true;
-      settings = {
-        upgrade = {
-          notice = false;
-          interval = "2w";
-          auto = false;
-        };
-        version = 2;
-        final_space = true;
-        console_title_template = "{{ .Shell }} in {{ .Folder }}";
-        blocks = [
-          {
-            type = "prompt";
-            alignment = "left";
-            newline = true;
-            segments = [
-              {
-                type = "session";
-                background = "transparent";
-                foreground = "yellow";
-                template = "{{ if .SSHSession }}{{.HostName}} {{ end }}";
-              }
-              {
-                type = "text";
-                style = "plain";
-                background = "transparent";
-                foreground = "green";
-                template = "{{ if .Env.ZMX_SESSION }}[{{ .Env.ZMX_SESSION }}] {{ end }}";
-              }
-              {
-                type = "path";
-                style = "plain";
-                background = "transparent";
-                foreground = if cfg.ephemeral then "red" else "blue";
-                template = "{{ .Path }} ";
-                properties = {
-                  style = "full";
-                };
-              }
-              {
-                type = "git";
-                style = "plain";
-                foreground = "p:grey";
-                background = "transparent";
-                template = "{{if not .Detached}}{{ .HEAD }}{{else}}@{{ printf \"%.7s\" .Commit.Sha }}{{end}}{{ if .Staging.Changed }} ({{ .Staging.String }}){{ end }}{{ if .Working.Changed }}*{{ end }}{{ if .BranchStatus }}<cyan> {{ .BranchStatus }}</>{{ end }}";
-                properties = {
-                  branch_icon = "";
-                  branch_identical_icon = "";
-                  branch_gone_icon = "";
-                  branch_ahead_icon = "⇡";
-                  branch_behind_icon = "⇣";
-                  commit_icon = "@";
-                  fetch_status = true;
-                  fetch_upstream_icon = false;
-                  disable_with_jj = true;
-                };
-              }
-              {
-                type = "jujutsu";
-                style = "plain";
-                foreground = "p:grey";
-                background = "transparent";
-                template = " <cyan>@{{.Data.ChangeID}}</>{{if .Data.Working.Changed}} {{.Data.Working.String}}{{end}}";
-                properties = {
-                  fetch_status = true;
-                  change_id_min_len = 7;
-                };
-              }
-            ];
-          }
-          {
-            type = "rprompt";
-            overflow = "hidden";
-            segments = [
-              {
-                type = "executiontime";
-                style = "plain";
-                foreground = "yellow";
-                background = "transparent";
-                template = "{{ .FormattedMs }}";
-                properties = {
-                  threshold = 3000;
-                };
-              }
-              {
-                type = "nix-shell";
-                style = "plain";
-                foreground = "red";
-                background = "transparent";
-                template = ''{{if ne .Type "unknown" }} {{ .Type }}{{ end }}'';
-              }
-            ];
-          }
-          {
-            type = "prompt";
-            alignment = "left";
-            newline = true;
-            segments = [
-              {
-                type = "text";
-                style = "plain";
-                foreground_templates = [
-                  "{{if gt .Code 0}}red{{end}}"
-                  "{{if eq .Code 0}}{{if .Env.SSH_CONNECTION}}cyan{{else}}magenta{{end}}{{end}}"
-                ];
-                background = "transparent";
-                template = "❯";
-              }
-            ];
-          }
-        ];
-        transient_prompt = {
-          foreground_templates = [
-            "{{if gt .Code 0}}red{{end}}"
-            "{{if eq .Code 0}}{{if .Env.SSH_CONNECTION}}cyan{{else}}magenta{{end}}{{end}}"
-          ];
-          background = "transparent";
-          template = "❯ ";
-        };
-        secondary_prompt = {
-          foreground = "p:gray";
-          background = "transparent";
-          template = "❯❯ ";
-        };
-        palette = {
-          grey = "#6c6c6c";
-        };
-      };
-    };
-
     programs.zsh = {
       enable = true;
       enableCompletion = true;
+      # Cache compinit: only run full security audit once per day.
+      completionInit = ''
+        autoload -Uz compinit
+        local _compdump="''${ZDOTDIR:-$HOME}/.zcompdump-''${HOST}-''${ZSH_VERSION}"
+        if [[ -n "$_compdump"(#qNmh-24) ]]; then
+          compinit -C
+        else
+          compinit
+        fi
+        unset _compdump
+      '';
       syntaxHighlighting.enable = true;
 
       shellAliases = {
@@ -1170,6 +1049,7 @@ in
         ls = "eza";
         ll = "eza -l";
         la = "eza -la";
+        ga = "git add";
         gc = "git commit";
         gp = "git push";
         rr = "rm -Rf";
@@ -1178,6 +1058,24 @@ in
         vim = "nvim";
       };
       initContent = ''
+                # Impure prompt
+                source ${inputs.impure}/async.zsh
+                IMPURE_CMD_MAX_EXEC_TIME=3
+                source ${inputs.impure}/impure.zsh
+
+                # Colored man pages
+                man() {
+                  env \
+                    LESS_TERMCAP_mb=$(printf "\e[1;31m") \
+                    LESS_TERMCAP_md=$(printf "\e[1;31m") \
+                    LESS_TERMCAP_me=$(printf "\e[0m") \
+                    LESS_TERMCAP_se=$(printf "\e[0m") \
+                    LESS_TERMCAP_so=$(printf "\e[1;44;33m") \
+                    LESS_TERMCAP_ue=$(printf "\e[0m") \
+                    LESS_TERMCAP_us=$(printf "\e[1;32m") \
+                    command man "$@"
+                }
+
                 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
                 zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
                 zstyle ':completion:*' menu no
@@ -1308,6 +1206,7 @@ in
 
                 add-zsh-hook chpwd auto_venv
                 add-zsh-hook chpwd auto_nix
+
       '';
       history = {
         size = 10000;
@@ -1321,17 +1220,7 @@ in
         append = true;
       };
 
-      oh-my-zsh = {
-        enable = true;
-        plugins = [
-          "git"
-          "sudo"
-          "docker"
-          "git"
-          "command-not-found"
-          "colored-man-pages"
-        ];
-      };
+      oh-my-zsh.enable = false;
 
       plugins = [
         {

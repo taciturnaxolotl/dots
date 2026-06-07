@@ -697,6 +697,21 @@
         "type": "github"
       }
     },
+    "impure": {
+      "locked": {
+        "lastModified": 1780813744,
+        "narHash": "sha256-QwDbQWd6VmLhzf5agJUqiH7m/4xZRUhbG65Xr/qazVE=",
+        "owner": "taciturnaxolotl",
+        "repo": "impure",
+        "rev": "1acf4594bce17be9f0c701d2e58aeb0ace738200",
+        "type": "github"
+      },
+      "original": {
+        "owner": "taciturnaxolotl",
+        "repo": "impure",
+        "type": "github"
+      }
+    },
     "indigo": {
       "flake": false,
       "locked": {
@@ -1217,6 +1232,7 @@
         "home-manager": "home-manager_2",
         "hyprland-contrib": "hyprland-contrib",
         "import-tree": "import-tree",
+        "impure": "impure",
         "nix-darwin": "nix-darwin",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixarr": "nixarr",
