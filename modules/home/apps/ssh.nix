@@ -107,7 +107,6 @@ in
     programs.ssh = {
       enable = true;
       enableDefaultConfig = false;
-      addKeysToAgent = cfg.agent.addKeysToAgent;
 
       matchBlocks =
         let
@@ -163,14 +162,12 @@ in
             else
               { };
 
-          # Default match block for extraConfig
-          defaultBlock =
-            if cfg.extraConfig != "" then
-              {
-                "*" = { };
-              }
-            else
-              { };
+          # Default match block for extraConfig and global SSH options
+          defaultBlock = {
+            "*" = {
+              addKeysToAgent = cfg.agent.addKeysToAgent;
+            };
+          };
         in
         defaultBlock // hostConfigs // zmxPatternHosts;
 
