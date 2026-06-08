@@ -983,6 +983,20 @@ let
           { echo "$(pwd)" >&3; } 2>/dev/null || true
   '';
 
+  # Pre-generated shell init scripts to avoid eval "$(cmd)" subprocess overhead at startup.
+  zoxide-init = pkgs.runCommand "zoxide-init.zsh" { } ''
+    ${pkgs.zoxide}/bin/zoxide init zsh > $out
+  '';
+  direnv-hook = pkgs.runCommand "direnv-hook.zsh" { } ''
+    ${pkgs.direnv}/bin/direnv hook zsh > $out
+  '';
+  fzf-init = pkgs.runCommand "fzf-init.zsh" { } ''
+    ${pkgs.fzf}/bin/fzf --zsh > $out
+  '';
+  atuin-init = pkgs.runCommand "atuin-init.zsh" { HOME = "/tmp"; } ''
+    ${pkgs.atuin}/bin/atuin init zsh --disable-up-arrow > $out
+  '';
+
 in
 {
   options.atelier.shell = {
@@ -1039,29 +1053,29 @@ in
         () {
           emulate -L zsh
           [[ -o interactive ]] || return
-          setopt extendedglob
           autoload -Uz compinit complist
-          local -a fpp
-          fpp=(''${^fpath}/**/*(N.))
-          local zcd="''${ZDOTDIR:-$HOME}/.zcompdump-''${ZSH_VERSION}-''${#fpp}"
+          # Use fpath directory count as cache key (sub-ms vs 89ms for full file glob).
+          local zcd="''${ZDOTDIR:-$HOME}/.zcompdump-''${ZSH_VERSION}-''${#fpath}"
           local zcdc=$zcd.zwc
           local zcda=$zcd.last
-          local zcdl=$zcd.lock
-          local attempts=30
-          : >> $zcd
-          while (( attempts-- > 0 )) && ! ln -s $zcd $zcdl 2> /dev/null; do sleep 0.1; done
-          {
-            if [[ ! -e $zcda || -n $zcda(#qN.mh+24) ]]; then
-              \rm -f "''${ZDOTDIR:-$HOME}"/.zcompdump*(N.mM+6)
-              compinit -u -d $zcd
-              : > $zcda
-            else
-              compinit -C -d $zcd
-            fi
-            [[ ! -f $zcdc || $zcd -nt $zcdc ]] && rm -f $zcdc && zcompile $zcd &!
-          } always {
-            \rm -f $zcdl
-          }
+          if [[ -e $zcda && -n $zcda(#qN.mh+24) ]]; then
+            # Stale: rebuild synchronously (background zcompile produces corrupt files),
+            # but source the old dump first so this shell isn't blocked.
+            source $zcdc 2>/dev/null || source $zcd
+            { compinit -u -d $zcd; : > $zcda; rm -f $zcdc; zcompile $zcd } &!
+          elif [[ -f $zcdc ]]; then
+            # Fast path: source compiled dump directly (5ms vs 24ms for compinit -C)
+            source $zcdc 2>/dev/null || { rm -f $zcdc; source $zcd; }
+          elif [[ -f $zcd ]]; then
+            source $zcd
+            # Compile synchronously on first run to avoid corrupt zwc
+            zcompile $zcd
+          else
+            # First run or missing dump: full init
+            compinit -u -d $zcd
+            : > $zcda
+            zcompile $zcd
+          fi
         }
       '';
       syntaxHighlighting.enable = true;
@@ -1081,6 +1095,8 @@ in
         vim = "nvim";
       };
       initContent = ''
+                bindkey -e
+
                 # Impure prompt
                 source ${inputs.impure}/async.zsh
                 IMPURE_CMD_MAX_EXEC_TIME=3
@@ -1105,7 +1121,17 @@ in
                 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
                 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
-                eval "$(terminal-wakatime init)"
+                source ${zoxide-init}
+                source ${fzf-init}
+                source ${direnv-hook}
+                source ${atuin-init}
+
+                # Lazy-load wakatime (saves ~50ms at startup)
+                terminal-wakatime() {
+                  unfunction terminal-wakatime
+                  eval "$(command terminal-wakatime init)"
+                  terminal-wakatime "$@"
+                }
 
                 # Edit command buffer in $EDITOR (Ctrl+X, Ctrl+E)
                 autoload -Uz edit-command-line
@@ -1264,7 +1290,6 @@ in
           };
         }
         {
-          # will source zsh-sytax-highlighting
           name = "zsh-sytax-highlighting";
           src = pkgs.fetchFromGitHub {
             owner = "zsh-users";
@@ -1273,6 +1298,7 @@ in
             sha256 = "sha256-iJdWopZwHpSyYl5/FQXEW7gl/SrKaYDEtTH9cGP7iPo=";
           };
         }
+
         {
           # fzf tab completion
           name = "fzf-tab";
@@ -1288,17 +1314,23 @@ in
 
     programs.zoxide = {
       enable = true;
-      enableZshIntegration = true;
+      enableZshIntegration = false;
+    };
+    programs.direnv = {
+      enable = true;
+      enableZshIntegration = false;
+      nix-direnv.enable = true;
     };
     programs.fzf = {
       enable = true;
-      enableZshIntegration = true;
+      enableZshIntegration = false;
       colors = {
         bg = lib.mkForce "";
       };
     };
     programs.atuin = {
       enable = true;
+      enableZshIntegration = false;
       settings = {
         auto_sync = true;
         sync_frequency = "5m";
@@ -1344,7 +1376,21 @@ in
     home.sessionPath = [
       "$HOME/go/bin"
       "$HOME/.local/bin"
+    ] ++ lib.optionals pkgs.stdenv.isDarwin [
+      "/opt/homebrew/bin"
+      "/opt/homebrew/sbin"
+      "/opt/local/bin"
+      "/opt/local/sbin"
+      "$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
     ];
+
+    home.sessionVariables = {
+    } // lib.optionalAttrs pkgs.stdenv.isDarwin {
+      HOMEBREW_PREFIX = "/opt/homebrew";
+      HOMEBREW_CELLAR = "/opt/homebrew/Cellar";
+      HOMEBREW_REPOSITORY = "/opt/homebrew";
+      INFOPATH = "/opt/homebrew/share/info:\${INFOPATH:-}";
+    };
 
     atelier.shell.git.enable = lib.mkDefault true;
     atelier.shell.jj.enable = lib.mkDefault true;

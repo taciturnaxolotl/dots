@@ -100,6 +100,10 @@
 
   programs.direnv.enable = true;
 
+  # Disable system /etc/zshrc to avoid double compinit.
+  # Home-manager handles history, direnv, completion, and keybindings.
+  environment.etc."zshrc".enable = false;
+
   # import the secret
   age.identityPaths = [
     "/Users/kierank/.ssh/id_rsa"
