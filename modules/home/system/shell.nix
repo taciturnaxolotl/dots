@@ -1097,6 +1097,9 @@ in
       initContent = ''
                 bindkey -e
 
+                # Instant prompt: print cached prompt before heavy init
+                [[ -r "${inputs.impure}/instant-prompt.zsh" ]] && source ${inputs.impure}/instant-prompt.zsh
+
                 # Impure prompt
                 source ${inputs.impure}/async.zsh
                 IMPURE_CMD_MAX_EXEC_TIME=3
