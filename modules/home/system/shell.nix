@@ -1049,6 +1049,7 @@ in
         ls = "eza";
         ll = "eza -l";
         la = "eza -la";
+        g = "git";
         ga = "git add";
         gc = "git commit";
         gp = "git push";
