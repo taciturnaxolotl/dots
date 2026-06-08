@@ -1193,12 +1193,19 @@ in
                   while [[ "$dir" != "/" ]]; do
                     if [[ -f "$dir/flake.nix" ]]; then
                       if [[ ! -f "$dir/.envrc" ]]; then
-                        cat > "$dir/.envrc" <<'EOF'
+                        local arch
+                        arch="$(nix eval --impure --expr 'builtins.currentSystem' 2>/dev/null | tr -d '"')"
+                        if nix flake show --json "$dir" 2>/dev/null \
+                             | command jq -e ".devShells.\"$arch\" // empty" >/dev/null 2>&1; then
+                          cat > "$dir/.envrc" <<'EOF'
         use flake
         EOF
-                        command direnv allow "$dir" >/dev/null 2>&1
+                          command direnv allow "$dir" >/dev/null 2>&1
+                        fi
                       fi
-                      command direnv reload >/dev/null 2>&1
+                      if [[ -f "$dir/.envrc" ]]; then
+                        command direnv reload >/dev/null 2>&1
+                      fi
                       return
                     fi
                     dir="''${dir:h}"
