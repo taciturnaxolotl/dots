@@ -994,7 +994,14 @@ let
     ${pkgs.fzf}/bin/fzf --zsh > $out
   '';
   atuin-init = pkgs.runCommand "atuin-init.zsh" { HOME = "/tmp"; } ''
-    ${pkgs.atuin}/bin/atuin init zsh --disable-up-arrow > $out
+    ${pkgs.atuin}/bin/atuin init zsh > $out
+  '';
+
+  # Pre-compiled instant prompt (zsh auto-uses .zwc next to .zsh).
+  instant-prompt = pkgs.runCommand "instant-prompt" { } ''
+    mkdir -p $out
+    cp ${inputs.impure}/instant-prompt.zsh $out/instant-prompt.zsh
+    ${pkgs.zsh}/bin/zsh -c 'zcompile "$1"' _ $out/instant-prompt.zsh
   '';
 
 in
@@ -1059,22 +1066,16 @@ in
           local zcdc=$zcd.zwc
           local zcda=$zcd.last
           if [[ -e $zcda && -n $zcda(#qN.mh+24) ]]; then
-            # Stale: rebuild synchronously (background zcompile produces corrupt files),
-            # but source the old dump first so this shell isn't blocked.
-            source $zcdc 2>/dev/null || source $zcd
-            { compinit -u -d $zcd; : > $zcda; rm -f $zcdc; zcompile $zcd } &!
-          elif [[ -f $zcdc ]]; then
-            # Fast path: source compiled dump directly (5ms vs 24ms for compinit -C)
-            source $zcdc 2>/dev/null || { rm -f $zcdc; source $zcd; }
+            # Stale: rebuild in background, use cached dump this session.
+            { compinit -u -d $zcd; : > $zcda; rm -f $zcdc && zcompile $zcd } &!
+            compinit -C -d $zcd
           elif [[ -f $zcd ]]; then
-            source $zcd
-            # Compile synchronously on first run to avoid corrupt zwc
-            zcompile $zcd
+            compinit -C -d $zcd
           else
             # First run or missing dump: full init
             compinit -u -d $zcd
             : > $zcda
-            zcompile $zcd
+            [[ ! -f $zcdc || $zcd -nt $zcdc ]] && rm -f $zcdc && zcompile $zcd &!
           fi
         }
       '';
@@ -1097,8 +1098,8 @@ in
       initContent = ''
                 bindkey -e
 
-                # Instant prompt: print cached prompt before heavy init
-                [[ -r "${inputs.impure}/instant-prompt.zsh" ]] && source ${inputs.impure}/instant-prompt.zsh
+                # Instant prompt: print minimal prompt before heavy init (pre-compiled)
+                source ${instant-prompt}/instant-prompt.zsh
 
                 # Impure prompt
                 source ${inputs.impure}/async.zsh
@@ -1301,9 +1302,7 @@ in
             sha256 = "sha256-iJdWopZwHpSyYl5/FQXEW7gl/SrKaYDEtTH9cGP7iPo=";
           };
         }
-
         {
-          # fzf tab completion
           name = "fzf-tab";
           src = pkgs.fetchFromGitHub {
             owner = "aloxaf";
@@ -1398,5 +1397,6 @@ in
     atelier.shell.git.enable = lib.mkDefault true;
     atelier.shell.jj.enable = lib.mkDefault true;
     atelier.shell.wut.enable = lib.mkDefault true;
+
   };
 }

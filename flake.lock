@@ -699,11 +699,11 @@
     },
     "impure": {
       "locked": {
-        "lastModified": 1780943896,
-        "narHash": "sha256-RhnxPrmFyEO7GCj9xxkx4q9OfREnXOEMPdPMMvh4dW8=",
+        "lastModified": 1780972966,
+        "narHash": "sha256-5sIB5c7tVX5rjiyVxylaAEmlngNwHxnQROQiHxajOeY=",
         "owner": "taciturnaxolotl",
         "repo": "impure",
-        "rev": "d16e8a6c9c9ef3c1af0a5310147e465dcd0f9114",
+        "rev": "3d44bcf50401afe64f919cd8c8bfbd70f037aedf",
         "type": "github"
       },
       "original": {
