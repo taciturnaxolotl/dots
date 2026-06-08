@@ -1031,16 +1031,38 @@ in
     programs.zsh = {
       enable = true;
       enableCompletion = true;
-      # Cache compinit: only run full security audit once per day.
+      # Cache compinit using fpath hash for accurate invalidation.
+      # https://lobste.rs/s/k0sbbv/life_is_too_short_for_slow_terminal#c_mmuxpd
+      # Based on dullmirror's approach: cache key includes completion file count,
+      # uses locking for parallel shell safety, and zcompile for faster loading.
       completionInit = ''
-        autoload -Uz compinit
-        local _compdump="''${ZDOTDIR:-$HOME}/.zcompdump-''${HOST}-''${ZSH_VERSION}"
-        if [[ -n "$_compdump"(#qNmh-24) ]]; then
-          compinit -C
-        else
-          compinit
-        fi
-        unset _compdump
+        () {
+          emulate -L zsh
+          [[ -o interactive ]] || return
+          setopt extendedglob
+          autoload -Uz compinit complist
+          local -a fpp
+          fpp=(''${^fpath}/**/*(N.))
+          local zcd="''${ZDOTDIR:-$HOME}/.zcompdump-''${ZSH_VERSION}-''${#fpp}"
+          local zcdc=$zcd.zwc
+          local zcda=$zcd.last
+          local zcdl=$zcd.lock
+          local attempts=30
+          : >> $zcd
+          while (( attempts-- > 0 )) && ! ln -s $zcd $zcdl 2> /dev/null; do sleep 0.1; done
+          {
+            if [[ ! -e $zcda || -n $zcda(#qN.mh+24) ]]; then
+              \rm -f "''${ZDOTDIR:-$HOME}"/.zcompdump*(N.mM+6)
+              compinit -u -d $zcd
+              : > $zcda
+            else
+              compinit -C -d $zcd
+            fi
+            [[ ! -f $zcdc || $zcd -nt $zcdc ]] && rm -f $zcdc && zcompile $zcd &!
+          } always {
+            \rm -f $zcdl
+          }
+        }
       '';
       syntaxHighlighting.enable = true;
 
