@@ -1354,6 +1354,7 @@ in
       pkgs.unstable.wakatime-cli
       inputs.terminal-wakatime.packages.${pkgs.stdenv.hostPlatform.system}.default
       inputs.zsh-patina.packages.${pkgs.stdenv.hostPlatform.system}.default
+      pkgs.gitstatus
       unzip
       dog
       dust
@@ -1383,6 +1384,7 @@ in
     ];
 
     home.sessionVariables = {
+      GITSTATUS_DIR = "${pkgs.gitstatus}/share/gitstatus";
     } // lib.optionalAttrs pkgs.stdenv.isDarwin {
       HOMEBREW_PREFIX = "/opt/homebrew";
       HOMEBREW_CELLAR = "/opt/homebrew/Cellar";
