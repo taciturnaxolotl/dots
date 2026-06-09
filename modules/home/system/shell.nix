@@ -1396,5 +1396,10 @@ in
     atelier.shell.jj.enable = lib.mkDefault true;
     atelier.shell.wut.enable = lib.mkDefault true;
 
+    xdg.configFile."direnv/direnv.toml".text = ''
+      [global]
+      hide_env_diff = true
+      warn_timeout = "10s"
+    '';
   };
 }
