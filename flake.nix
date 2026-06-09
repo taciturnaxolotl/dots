@@ -129,6 +129,11 @@
       url = "github:taciturnaxolotl/impure";
     };
 
+    zsh-patina = {
+      url = "github:michel-kraemer/zsh-patina";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     tangle-of-trust = {
       url = "github:taciturnaxolotl/tangle-of-trust";
       inputs.nixpkgs.follows = "nixpkgs-unstable";

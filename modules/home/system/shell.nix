@@ -1079,7 +1079,7 @@ in
           fi
         }
       '';
-      syntaxHighlighting.enable = true;
+      syntaxHighlighting.enable = false;
 
       shellAliases = {
         cat = "bat";
@@ -1267,6 +1267,9 @@ in
                 add-zsh-hook chpwd auto_venv
                 add-zsh-hook chpwd auto_nix
 
+                # zsh-patina: Rust-based syntax highlighting (must be last)
+                eval "$(${inputs.zsh-patina.packages.${pkgs.stdenv.hostPlatform.system}.default}/bin/zsh-patina activate)"
+
       '';
       history = {
         size = 10000;
@@ -1293,15 +1296,7 @@ in
             sha256 = "sha256-KLUYpUu4DHRumQZ3w59m9aTW6TBKMCXl2UcKi4uMd7w=";
           };
         }
-        {
-          name = "zsh-sytax-highlighting";
-          src = pkgs.fetchFromGitHub {
-            owner = "zsh-users";
-            repo = "zsh-syntax-highlighting";
-            rev = "0.8.0";
-            sha256 = "sha256-iJdWopZwHpSyYl5/FQXEW7gl/SrKaYDEtTH9cGP7iPo=";
-          };
-        }
+
         {
           name = "fzf-tab";
           src = pkgs.fetchFromGitHub {
@@ -1358,6 +1353,7 @@ in
       ghostty-setup
       pkgs.unstable.wakatime-cli
       inputs.terminal-wakatime.packages.${pkgs.stdenv.hostPlatform.system}.default
+      inputs.zsh-patina.packages.${pkgs.stdenv.hostPlatform.system}.default
       unzip
       dog
       dust
