@@ -22,8 +22,16 @@
         ui = {
           default-command = "log";
           pager = "less -RS";
-          diff.pager = "delta";
         };
+        "--scope" = [
+          {
+            "--when".commands = [ "diff" "show" ];
+            ui = {
+              pager = "delta";
+              diff-formatter = ":git";
+            };
+          }
+        ];
         signing = {
           behavior = "force";
           backend = "ssh";
