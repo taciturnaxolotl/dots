@@ -1187,7 +1187,7 @@ in
                       fi
                     done < "$1"
                   else
-                    builtin source "$@"
+                    builtin source "$1"
                   fi
                 }
 
