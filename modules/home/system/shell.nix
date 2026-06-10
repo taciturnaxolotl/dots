@@ -1090,6 +1090,7 @@ in
         ga = "git add";
         gc = "git commit";
         gp = "git push";
+        gb = "git branch";
         rr = "rm -Rf";
         goops = "git commit --amend --no-edit && git push --force-with-lease";
         vi = "nvim";
