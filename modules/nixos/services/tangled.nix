@@ -74,7 +74,7 @@ in
 
   config = lib.mkIf cfg.enable {
 
-    services.tangled-knot = {
+    services.tangled.knot = {
       enable = cfg.knot.enable;
       server = {
         owner = cfg.owner;
@@ -85,7 +85,7 @@ in
       motd = cfg.knot.motd;
     };
 
-    services.tangled-spindle = {
+    services.tangled.spindle = {
       enable = cfg.spindle.enable;
       server = {
         owner = cfg.owner;

@@ -117,7 +117,7 @@
     };
 
     tangled = {
-      url = "git+https://tangled.org/tangled.org/core?rev=218b13d4e7e7cb4e96a0e8f20f71bb0b93afabf4";
+      url = "git+https://tangled.org/tangled.org/core?rev=96a52c9e2fdf6ff2f979afd1c5301cf004da33fb";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
