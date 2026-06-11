@@ -105,9 +105,6 @@
     protonvpn-wg = {
       file = ../../secrets/protonvpn-wg.age;
     };
-    minio = {
-      file = ../../secrets/minio.age;
-    };
   };
 
   programs.nh = {
@@ -299,7 +296,9 @@
     "d /storage/torrents 2775 root media -"
     "d /storage/torrents/.incomplete 2775 root media -"
     "d /storage/.trash 2775 root media -"
-    "d /storage/s3 0750 minio minio -"
+    "d /storage/s3 0750 root root -"
+    "d /storage/s3/meta 0750 garage garage -"
+    "d /storage/s3/data 0750 garage garage -"
   ];
 
   # ── Recyclarr (TRaSH Guides sync) ─────────────────────────────────────
@@ -422,8 +421,11 @@
         handle /transmission/* {
           reverse_proxy localhost:9091
         }
-        handle /minio/* {
-          reverse_proxy localhost:9001
+        handle /garage/* {
+          reverse_proxy localhost:3902
+        }
+        handle /garage-ui/* {
+          reverse_proxy localhost:3909
         }
       '';
     };
@@ -473,12 +475,104 @@
     openFirewall = true;
   };
 
-  # ── MinIO (S3-compatible) ─────────────────────────────────────────────
-  services.minio = {
+  # ── Garage (S3-compatible object store) ─────────────────────────────
+  services.garage = {
     enable = true;
-    dataDir = [ "/storage/s3" ];
-    rootCredentialsFile = config.age.secrets.minio.path;
+    package = pkgs.garage_2;
+    settings = {
+      metadata_dir = "/storage/s3/meta";
+      data_dir = "/storage/s3/data";
+      db_engine = "lmdb";
+      replication_factor = 1;
+      consistency_mode = "none";
+      rpc_bind_addr = "[::]:3901";
+      rpc_public_addr = "127.0.0.1:3901";
+      s3_api = {
+        s3_region = "garage";
+        api_bind_addr = "[::]:3900";
+        root_domain = ".s3.garage.localhost";
+      };
+      s3_web = {
+        bind_addr = "[::]:3902";
+        root_domain = ".web.garage.localhost";
+      };
+      admin = {
+        api_bind_addr = "127.0.0.1:3903";
+      };
+    };
   };
+
+  # Bootstrap garage: generate RPC secret, assign layout, create default key/bucket
+  systemd.services.garage-bootstrap = {
+    description = "Bootstrap Garage cluster (one-time setup)";
+    after = [ "garage.service" ];
+    requires = [ "garage.service" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+      EnvironmentFile = config.services.garage.environmentFile or null;
+    };
+    script = ''
+      set -euo pipefail
+      GARAGE="${config.services.garage.package}/bin/garage"
+      MARKER="/var/lib/garage/.bootstrapped"
+
+      if [ -f "$MARKER" ]; then
+        echo "Garage already bootstrapped"
+        exit 0
+      fi
+
+      # Wait for garage to be ready
+      for i in $(seq 1 30); do
+        if $GARAGE status 2>/dev/null; then break; fi
+        sleep 1
+      done
+
+      # Get or generate node ID
+      NODE_ID=$($GARAGE node id 2>/dev/null | head -1 || true)
+      if [ -z "$NODE_ID" ]; then
+        echo "Waiting for node ID..."
+        sleep 2
+        NODE_ID=$($GARAGE node id 2>/dev/null | head -1)
+      fi
+
+      # Assign layout
+      $GARAGE layout assign -z dc1 -c 1G "$NODE_ID" || true
+      $GARAGE layout apply --version 1 || true
+
+      # Create default bucket and key
+      $GARAGE bucket create default || true
+      $GARAGE key create default || true
+      $GARAGE bucket allow --read --write --owner default --key default || true
+
+      touch "$MARKER"
+      echo "Garage bootstrap complete"
+    '';
+  };
+
+  # Garage Web UI
+  systemd.services.garage-webui = {
+    description = "Garage Web UI";
+    after = [ "garage-bootstrap.service" ];
+    wants = [ "garage.service" ];
+    wantedBy = [ "multi-user.target" ];
+    environment = {
+      API_BASE_URL = "http://127.0.0.1:3903";
+      PORT = "3909";
+      BASE_PATH = "/";
+    };
+    serviceConfig = {
+      Type = "simple";
+      ExecStart = "${pkgs.garage-webui}/bin/garage-webui";
+      Restart = "on-failure";
+      RestartSec = "5s";
+      PrivateTmp = true;
+      NoNewPrivileges = true;
+    };
+  };
+
+  boot.zfs.forceImportRoot = false;
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;

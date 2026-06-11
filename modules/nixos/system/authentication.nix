@@ -92,7 +92,7 @@ in
         session required pam_env.so conffile=/etc/pam/environment readenv=0 # env (order 10100)
         session required pam_unix.so # unix (order 10200)
         session required pam_unix.so # unix (order 10200)
-        session optional pam_xauth.so systemuser=99 xauthpath=${pkgs.xorg.xauth}/bin/xauth # xauth (order 12100)
+        session optional pam_xauth.so systemuser=99 xauthpath=${pkgs.xauth}/bin/xauth # xauth (order 12100)
       '';
     };
   };

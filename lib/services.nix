@@ -201,12 +201,12 @@
               health_url = "https://${config.services.n8n.environment.N8N_HOST or "n8n.dunkirk.sh"}/healthz";
             }
           ))
-          (lib.optional (config.services.minio.enable or false) (
-            mkCustom "minio" {
+          (lib.optional (config.services.garage.enable or false) (
+            mkCustom "garage" {
               description = "S3-compatible object storage";
               domain = "s3.dunkirk.sh";
-              port = 9001;
-              runtime = "go";
+              port = 3900;
+              runtime = "rust";
               repository = null;
               health_url = null;
             }

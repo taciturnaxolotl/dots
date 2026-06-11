@@ -288,7 +288,7 @@
         "github.com/caddy-dns/cloudflare@v0.2.2"
         "github.com/mholt/caddy-ratelimit@v0.1.0"
       ];
-      hash = "sha256-IZv06ZFUUDSa+Oj4De5F1Nq9+EAC9HXlhcA0r+Qwmqg=";
+      hash = "sha256-gthp6bGn6QJImbuz9C2KSXrXQqvRxbFr/YcGr0VoEIU=";
     };
     email = "kieran@dunkirk.sh";
     globalConfig = ''
@@ -618,7 +618,7 @@
       header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
       }
-      reverse_proxy prattle:9001
+      reverse_proxy prattle:3900
     '';
   };
 
