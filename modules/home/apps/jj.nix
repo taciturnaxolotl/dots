@@ -60,6 +60,49 @@
             "squash"
             "--interactive"
           ];
+          track-github-PR = [
+            "util"
+            "exec"
+            "--"
+            "sh"
+            "-euxc"
+            ''
+              PR=$1
+              gh pr view --json headRepository,headRefName,headRepositoryOwner $PR --jq '"
+                set_remote() {
+                  jj 2>/dev/null git remote add \"$1\" \"$2\" ||
+                  jj git remote set-url \"$1\" \"$2\";
+                }
+                set_remote \(.headRepositoryOwner.login) git@github.com:\(.headRepositoryOwner.login)/\(.headRepository.name)
+                jj git fetch --remote \(.headRepositoryOwner.login) --branch \(.headRefName)
+                jj bookmark track \(.headRefName) --remote=\(.headRepositoryOwner.login)
+              "' |
+              bash -euxs
+            ''
+            "jj-track-github-PR"
+          ];
+          push-pr = [
+            "util"
+            "exec"
+            "--"
+            "sh"
+            "-euxc"
+            ''
+              INFO=$(jj bookmark list --color never --all-remotes \
+                -r 'closest_bookmark(@-)' \
+                -T 'if(remote && remote != "git" && remote != "origin", name ++ "\t" ++ remote ++ "\n", "")')
+              if [ -z "$INFO" ]; then
+                echo "No non-origin tracked bookmark found on @-, falling back to origin" >&2
+                BRANCH=$(jj bookmark list --color never -r 'closest_bookmark(@-)' -T 'name ++ "\n"' | head -1)
+                jj git push --bookmark "$BRANCH"
+              else
+                BRANCH=$(echo "$INFO" | head -1 | cut -f1)
+                REMOTE=$(echo "$INFO" | head -1 | cut -f2)
+                jj git push --bookmark "$BRANCH" --remote "$REMOTE"
+              fi
+            ''
+            "jj-push-pr"
+          ];
         };
         "template-aliases" = {
           "format_short_change_id(id)" = "id.shortest()";
