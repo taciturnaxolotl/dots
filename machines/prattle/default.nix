@@ -208,14 +208,6 @@
     useRoutingFeatures = "client";
   };
 
-  # ── NVIDIA (GT 1030 — Pascal GP108) ──────────────────────────────────
-  hardware.nvidia = {
-    open = false;
-    package = config.boot.kernelPackages.nvidiaPackages.production;
-  };
-  hardware.graphics.enable = true;
-  services.xserver.videoDrivers = [ "nvidia" ];
-
   # ── Nixarr ───────────────────────────────────────────────────────────
   nixarr = {
     enable = true;
