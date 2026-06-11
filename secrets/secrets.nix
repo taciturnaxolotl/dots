@@ -99,4 +99,7 @@ in
   "minio.age".publicKeys = [
     kierank
   ];
+  "garage-env.age".publicKeys = [
+    kierank
+  ];
 }

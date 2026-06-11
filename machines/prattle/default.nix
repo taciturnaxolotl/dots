@@ -105,6 +105,11 @@
     protonvpn-wg = {
       file = ../../secrets/protonvpn-wg.age;
     };
+    garage-env = {
+      file = ../../secrets/garage-env.age;
+      owner = "garage";
+      group = "garage";
+    };
   };
 
   programs.nh = {
@@ -304,7 +309,7 @@
     "d /storage/torrents 2775 root media -"
     "d /storage/torrents/.incomplete 2775 root media -"
     "d /storage/.trash 2775 root media -"
-    "d /storage/s3 0750 root root -"
+    "d /storage/s3 0750 garage garage -"
     "d /storage/s3/meta 0750 garage garage -"
     "d /storage/s3/data 0750 garage garage -"
   ];
@@ -492,7 +497,7 @@
       data_dir = "/storage/s3/data";
       db_engine = "lmdb";
       replication_factor = 1;
-      consistency_mode = "none";
+      consistency_mode = "consistent";
       rpc_bind_addr = "[::]:3901";
       rpc_public_addr = "127.0.0.1:3901";
       s3_api = {
@@ -511,11 +516,18 @@
   };
 
   # Custom paths need a static user; disable DynamicUser so tmpfiles ownership works
-  systemd.services.garage.serviceConfig = {
-    DynamicUser = lib.mkForce false;
-    User = "garage";
-    Group = "garage";
+  systemd.services.garage = {
+    serviceConfig = {
+      DynamicUser = lib.mkForce false;
+      User = "garage";
+      Group = "garage";
+      ExecStartPre = "!${pkgs.bash}/bin/bash -c 'mkdir -p /storage/s3/meta /storage/s3/data && chown garage:garage /storage/s3 && chown -R garage:garage /storage/s3/meta /storage/s3/data'";
+    };
+    after = [ "storage.mount" ];
+    requires = [ "storage.mount" ];
   };
+
+  services.garage.environmentFile = config.age.secrets.garage-env.path;
 
   # Bootstrap garage: generate RPC secret, assign layout, create default key/bucket
   systemd.services.garage-bootstrap = {
@@ -528,10 +540,11 @@
       RemainAfterExit = true;
       EnvironmentFile = config.services.garage.environmentFile or null;
     };
+    path = [ config.services.garage.package pkgs.coreutils ];
     script = ''
       set -euo pipefail
       GARAGE="${config.services.garage.package}/bin/garage"
-      MARKER="/var/lib/garage/.bootstrapped"
+      MARKER="/storage/s3/.bootstrapped"
 
       if [ -f "$MARKER" ]; then
         echo "Garage already bootstrapped"
@@ -544,13 +557,14 @@
         sleep 1
       done
 
-      # Get or generate node ID
-      NODE_ID=$($GARAGE node id 2>/dev/null | head -1 || true)
+      # Get node ID (first field only)
+      NODE_ID=$($GARAGE node id 2>/dev/null | cut -d' ' -f1 | head -1)
       if [ -z "$NODE_ID" ]; then
         echo "Waiting for node ID..."
         sleep 2
-        NODE_ID=$($GARAGE node id 2>/dev/null | head -1)
+        NODE_ID=$($GARAGE node id 2>/dev/null | cut -d' ' -f1 | head -1)
       fi
+      echo "Node ID: $NODE_ID"
 
       # Assign layout
       $GARAGE layout assign -z dc1 -c 1G "$NODE_ID" || true
