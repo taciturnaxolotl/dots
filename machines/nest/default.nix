@@ -17,7 +17,7 @@
     homeDirectory = "/home/kierank";
 
     packages = with pkgs; [
-      neofetch
+      fastfetch
       inputs.nixvim.packages.${system}.default
     ];
   };

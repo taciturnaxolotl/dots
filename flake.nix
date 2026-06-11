@@ -3,7 +3,7 @@
 
   inputs = {
     # Nixpkgs
-    nixpkgs.url = "github:nixos/nixpkgs/nixos-25.11";
+    nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
     nixpkgs-unstable-small.url = "github:nixos/nixpkgs/nixos-unstable-small";
 
@@ -11,11 +11,11 @@
     hardware.url = "github:NixOS/nixos-hardware/master";
 
     # Home manager
-    home-manager.url = "github:nix-community/home-manager/release-25.11";
+    home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
     # Nix-Darwin
-    nix-darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-25.11";
+    nix-darwin.url = "github:nix-darwin/nix-darwin/nix-darwin-26.05";
     nix-darwin.inputs.nixpkgs.follows = "nixpkgs";
 
     disko.url = "github:nix-community/disko";
@@ -117,7 +117,7 @@
     };
 
     tangled = {
-      url = "git+https://tangled.org/tangled.org/core?ref=v1.14.0-alpha";
+      url = "git+https://tangled.org/tangled.org/core?rev=218b13d4e7e7cb4e96a0e8f20f71bb0b93afabf4";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -140,7 +140,7 @@
     };
 
     nixarr = {
-      url = "github:nix-media-server/nixarr/3bde55fe657ee3ec1c2b2c05294ff381cb8f2d43";
+      url = "github:nix-media-server/nixarr";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -171,16 +171,6 @@
               system = final.stdenv.hostPlatform.system;
               config.allowUnfree = true;
             };
-
-            bambu-studio = prev.bambu-studio.overrideAttrs (oldAttrs: {
-              version = "01.00.01.50";
-              src = prev.fetchFromGitHub {
-                owner = "bambulab";
-                repo = "BambuStudio";
-                rev = "v01.00.01.50";
-                hash = "sha256-7mkrPl2CQSfc1lRjl1ilwxdYcK5iRU//QGKmdCicK30=";
-              };
-            });
 
             zmx-binary = prev.callPackage ./packages/zmx.nix { };
             bore-auth = prev.callPackage ./packages/bore-auth.nix { };

@@ -68,7 +68,7 @@
     # nix stuff
     pkgs.nixd
     pkgs.nil
-    pkgs.nixfmt-rfc-style
+    pkgs.nixfmt
     inputs.agenix.packages.aarch64-darwin.default
     # dev_langs
     pkgs.nodejs_22
@@ -85,7 +85,7 @@
     pkgs.cmake
     pkgs.unstable.biome
     pkgs.unstable.apktool
-    pkgs.nodePackages_latest.prisma
+    pkgs.prisma
     pkgs.unstable.zola
     pkgs.mill
     pkgs.clang

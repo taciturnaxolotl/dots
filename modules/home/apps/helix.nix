@@ -25,12 +25,12 @@
         unstable.biome
         lua-language-server
         nil # nix
-        nodePackages.intelephense
+        intelephense
         python313Packages.python-lsp-server # pylsp
         ruby-lsp
         rust-analyzer
-        nodePackages.bash-language-server
-        nodePackages.svelte-language-server
+        bash-language-server
+        svelte-language-server
         taplo
         vscode-langservers-extracted
         kotlin-language-server

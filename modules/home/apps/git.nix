@@ -59,6 +59,7 @@ in
       enableGitIntegration = true;
       options = {
         wrap-max-lines = 0;
+        pager = "less --mouse -RS";
       };
     };
     programs.gh.enable = true;

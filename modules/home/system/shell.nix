@@ -1343,6 +1343,7 @@ in
     programs.yazi = {
       enable = true;
       enableZshIntegration = true;
+      shellWrapperName = "yy";
     };
 
     home.packages = with pkgs; [
@@ -1367,7 +1368,7 @@ in
       bat
       ripgrep
       ripgrep-all
-      neofetch
+      fastfetch
       glow
       tree
       jless

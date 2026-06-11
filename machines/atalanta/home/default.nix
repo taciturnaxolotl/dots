@@ -136,8 +136,8 @@
         remarkable = {
           hostname = "10.11.99.01";
           user = "root";
-          extraOptions = {
-            SetEnv = "TERM=xterm-256color";
+          setEnv = {
+            TERM = "xterm-256color";
           };
         };
 

@@ -81,7 +81,7 @@
     pkgs.xh
     pkgs.curl
     pkgs.wget
-    pkgs.dogdns
+    pkgs.doggo
     pkgs.inetutils
     pkgs.mosh
     pkgs.ngrok
@@ -92,7 +92,7 @@
     inputs.nixvim.packages.x86_64-linux.default
     pkgs.nixd
     pkgs.nil
-    pkgs.nixfmt-rfc-style
+    pkgs.nixfmt
     inputs.agenix.packages.x86_64-linux.default
     pkgs.lix
     # security
@@ -153,7 +153,7 @@
     pkgs.cmake
     pkgs.unstable.biome
     pkgs.unstable.apktool
-    pkgs.nodePackages_latest.prisma
+    pkgs.prisma
     pkgs.unstable.zola
     pkgs.mill
     pkgs.clang
@@ -201,7 +201,7 @@
     pkgs.unstable.ollama
     pkgs.unstable.claude-code
     pkgs.udiskie
-    pkgs.neofetch
+    pkgs.fastfetch
     pkgs.unstable.kicad-testing
     pkgs.zenity
     pkgs.atproto-goat

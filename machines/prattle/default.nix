@@ -64,14 +64,14 @@
     xh
     curl
     wget
-    dogdns
+    doggo
     inetutils
     mosh
     # nix_tools
     inputs.nixvim.packages.x86_64-linux.default
     nixd
     nil
-    nixfmt-rfc-style
+    nixfmt
     inputs.agenix.packages.x86_64-linux.default
     # security
     openssl
@@ -88,7 +88,7 @@
     gcc
     jre
     # misc
-    neofetch
+    fastfetch
     git
   ];
 

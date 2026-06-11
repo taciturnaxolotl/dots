@@ -2,7 +2,6 @@
   config,
   lib,
   pkgs,
-  inputs,
   ...
 }:
 with lib;
@@ -75,10 +74,40 @@ in
               description = "Enable SSH agent forwarding";
             };
 
-            extraOptions = mkOption {
-              type = types.attrsOf types.str;
+            setEnv = mkOption {
+              type = types.attrsOf (types.oneOf [types.str types.path types.int types.float]);
               default = { };
-              description = "Additional SSH options for this host";
+              description = "Environment variables to set (maps to SetEnv)";
+            };
+
+            remoteCommand = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = "Remote command to execute (maps to RemoteCommand)";
+            };
+
+            requestTTY = mkOption {
+              type = types.nullOr (types.enum ["yes" "no" "force" "auto"]);
+              default = null;
+              description = "Request a pseudo-terminal (maps to RequestTTY)";
+            };
+
+            controlMaster = mkOption {
+              type = types.nullOr (types.enum ["yes" "no" "ask" "auto" "autoask"]);
+              default = null;
+              description = "Control master setting";
+            };
+
+            controlPath = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = "Control socket path";
+            };
+
+            controlPersist = mkOption {
+              type = types.nullOr types.str;
+              default = null;
+              description = "Control persist duration";
             };
 
             zmx = mkOption {
@@ -108,53 +137,58 @@ in
       enable = true;
       enableDefaultConfig = false;
 
-      matchBlocks =
+      settings =
         let
-          # Convert atelier.ssh.hosts to SSH matchBlocks
-          hostConfigs = mapAttrs (name: hostCfg: {
-            hostname = mkIf (hostCfg.hostname != null) hostCfg.hostname;
-            port = mkIf (hostCfg.port != null) hostCfg.port;
-            user = mkIf (hostCfg.user != null) hostCfg.user;
-            identityFile = mkIf (hostCfg.identityFile != null) hostCfg.identityFile;
-            forwardAgent = mkIf (hostCfg.forwardAgent != null) hostCfg.forwardAgent;
-            extraOptions =
-              hostCfg.extraOptions
-              // (
-                if hostCfg.zmx then
-                  {
-                    RemoteCommand = "export PATH=$HOME/.nix-profile/bin:$PATH; zmx attach %n";
-                    RequestTTY = "yes";
-                    ControlPath = "~/.ssh/cm-%r@%h:%p";
-                    ControlMaster = "auto";
-                    ControlPersist = "10m";
-                  }
-                else
-                  { }
-              );
-          }) cfg.hosts;
+          # Build settings entries from atelier.ssh.hosts
+          hostSettings = filterAttrs (_: v: v != { }) (
+            mapAttrs (name: hostCfg:
+              let
+                base = filterAttrs (_: v: v != null) {
+                  HostName = hostCfg.hostname;
+                  Port = hostCfg.port;
+                  User = hostCfg.user;
+                  IdentityFile = hostCfg.identityFile;
+                  ForwardAgent = hostCfg.forwardAgent;
+                  RemoteCommand = hostCfg.remoteCommand;
+                  RequestTTY = hostCfg.requestTTY;
+                  ControlMaster = hostCfg.controlMaster;
+                  ControlPath = hostCfg.controlPath;
+                  ControlPersist = hostCfg.controlPersist;
+                };
+                envBlock = optionalAttrs (hostCfg.setEnv != { }) {
+                  SetEnv = hostCfg.setEnv;
+                };
+                zmxBlock = optionalAttrs hostCfg.zmx {
+                  RemoteCommand = "export PATH=$HOME/.nix-profile/bin:$PATH; zmx attach %n";
+                  RequestTTY = "yes";
+                  ControlPath = "~/.ssh/cm-%r@%h:%p";
+                  ControlMaster = "auto";
+                  ControlPersist = "10m";
+                };
+              in
+              base // envBlock // zmxBlock
+            ) cfg.hosts
+          );
 
-          # Create zmx pattern hosts if enabled
-          zmxPatternHosts =
+          # Zmx pattern host settings
+          zmxSettings =
             if cfg.zmx.enable then
               listToAttrs (
-                map (
-                  pattern:
+                map (pattern:
                   let
                     patternHost = cfg.hosts.${pattern} or { };
                   in
                   {
                     name = pattern;
-                    value = {
-                      hostname = mkIf (patternHost.hostname or null != null) patternHost.hostname;
-                      port = mkIf (patternHost.port or null != null) patternHost.port;
-                      user = mkIf (patternHost.user or null != null) patternHost.user;
-                      extraOptions = {
-                        RemoteCommand = "export PATH=$HOME/.nix-profile/bin:$PATH; zmx attach %k";
-                        RequestTTY = "yes";
-                        ControlPath = "~/.ssh/cm-%r@%h:%p";
-                        ControlMaster = "auto";
-                        ControlPersist = "10m";
-                      };
+                    value = filterAttrs (_: v: v != null) {
+                      HostName = patternHost.hostname or null;
+                      Port = patternHost.port or null;
+                      User = patternHost.user or null;
+                      RemoteCommand = "export PATH=$HOME/.nix-profile/bin:$PATH; zmx attach %k";
+                      RequestTTY = "yes";
+                      ControlPath = "~/.ssh/cm-%r@%h:%p";
+                      ControlMaster = "auto";
+                      ControlPersist = "10m";
                     };
                   }
                 ) cfg.zmx.hosts
@@ -162,14 +196,14 @@ in
             else
               { };
 
-          # Default match block for extraConfig and global SSH options
+          # Default block for global SSH options
           defaultBlock = {
             "*" = {
-              addKeysToAgent = cfg.agent.addKeysToAgent;
+              AddKeysToAgent = cfg.agent.addKeysToAgent;
             };
           };
         in
-        defaultBlock // hostConfigs // zmxPatternHosts;
+        defaultBlock // hostSettings // zmxSettings;
 
       extraConfig = cfg.extraConfig;
     };
