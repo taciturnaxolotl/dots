@@ -142,6 +142,14 @@
   programs.zsh.enable = true;
   programs.direnv.enable = true;
 
+  users.groups.garage = { };
+  users.users.garage = {
+    isSystemUser = true;
+    group = "garage";
+    home = "/var/lib/garage";
+    createHome = false;
+  };
+
   users.users = {
     kierank = {
       initialPassword = "changeme";
@@ -500,6 +508,13 @@
         api_bind_addr = "127.0.0.1:3903";
       };
     };
+  };
+
+  # Custom paths need a static user; disable DynamicUser so tmpfiles ownership works
+  systemd.services.garage.serviceConfig = {
+    DynamicUser = lib.mkForce false;
+    User = "garage";
+    Group = "garage";
   };
 
   # Bootstrap garage: generate RPC secret, assign layout, create default key/bucket
