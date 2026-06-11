@@ -14,10 +14,14 @@
     homeDirectory = "/Users/kierank";
     packages = [
       inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
+      pkgs.libiconv
     ];
     sessionPath = [
       "$HOME/.embedder/bin"
     ];
+    sessionVariables = {
+      LIBRARY_PATH = "${pkgs.libiconv}/lib";
+    };
   };
 
   atelier.wm.yabai = {
