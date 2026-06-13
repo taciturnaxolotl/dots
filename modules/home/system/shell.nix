@@ -1440,6 +1440,7 @@ in
 
     home.sessionVariables = {
       GITSTATUS_DIR = "${pkgs.gitstatus}/share/gitstatus";
+      CRUSH_ALGORITHMIC_COMPACT = "1";
     } // lib.optionalAttrs pkgs.stdenv.isDarwin {
       HOMEBREW_PREFIX = "/opt/homebrew";
       HOMEBREW_CELLAR = "/opt/homebrew/Cellar";
