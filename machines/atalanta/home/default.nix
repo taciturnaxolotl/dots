@@ -32,7 +32,15 @@
         focus_follows_mouse = "autofocus";
       };
       rules = [
-        "app=\"^Dia$\" space=1"
+        # 1Password / extension popup in Dia: empty-title floating window.
+        # Unmanage it and stop yabai from warping the cursor to it (which
+        # lands the pointer off-window and instantly closes the popup).
+        "app=\"^Dia$\" title=\"^$\" manage=off mouse_follows_focus=off"
+        # Route Dia windows by title prefix so a space-2 window doesn't get
+        # dragged to space 1 (a blanket app rule would catch every window).
+        "app=\"^Dia$\" title=\"^Personal:\" space=1"
+        "app=\"^Dia$\" title=\"^Charm\" space=2"
+        "app=\"^Dia$\" title=\"^Cedarville\" space=2"
         "app=\"^Slack$\" space=8"
         "app=\"^Vesktop$\" space=7"
         "app=\"^Notion$\" space=9"
