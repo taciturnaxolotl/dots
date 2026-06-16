@@ -1131,12 +1131,7 @@ in
                 source ${direnv-hook}
                 source ${atuin-init}
 
-                # Lazy-load wakatime (saves ~50ms at startup)
-                terminal-wakatime() {
-                  unfunction terminal-wakatime
-                  eval "$(command terminal-wakatime init)"
-                  terminal-wakatime "$@"
-                }
+                eval "$(command terminal-wakatime init)"
 
                 # Edit command buffer in $EDITOR (Ctrl+X, Ctrl+E)
                 autoload -Uz edit-command-line
