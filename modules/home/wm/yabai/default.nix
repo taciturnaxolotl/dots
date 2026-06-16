@@ -207,6 +207,7 @@ in
         hidpi = "on";
         active_color = "0xff394E9A";
         inactive_color = "0x33394E9A";
+        blacklist = "Alcove";
       };
       description = "JankyBorders settings (passed directly to bordersrc)";
     };
