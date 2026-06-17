@@ -1,75 +1,21 @@
 # Services
 
-Services are grouped by machine in the services manifest. Machines with Tailscale enabled automatically expose their hostname for reachability checks via `atelier.machine.tailscaleHost`.
+All services run behind Caddy with Cloudflare DNS TLS. Most use the [mkService](../mkservice.md) factory which provides systemd units, dedicated users, reverse proxy, backup integration, and port conflict detection.
 
-## Machines
+## Live status
 
-| Machine | Platform | Tailscale |
-|---------|----------|-----------|
-| terebithia | Oracle Cloud aarch64 | `terebithia` |
-| moonlark | — | — |
-| prattle | — | — |
+- **Dashboard:** [infra.dunkirk.sh](https://infra.dunkirk.sh)
+- **Machine manifest:** `nix eval --json .#services-manifest` or [`/services.json`](../services.json)
 
-## terebithia
+## Service documentation
 
-All services run behind Caddy with Cloudflare DNS TLS.
+These services have detailed option references and architecture notes:
 
-### mkService-based
+- [bore](./bore.md) — HTTP/TCP/UDP tunnel proxy with optional OAuth
+- [cedarlogic](./cedarlogic.md) — circuit simulator with WebSocket collaboration
+- [control](./control.md) — admin dashboard for Caddy feature toggles
+- [emojibot](./emojibot.md) — multi-instance Slack emoji management
+- [herald](./herald.md) — git SSH hosting with email via SMTP/DKIM
+- [knot-sync](./knot-sync.md) — mirrors Tangled knot repos to GitHub on cron
 
-| Service | Domain | Port | Runtime | Description |
-|---------|--------|------|---------|-------------|
-| cachet | cachet.dunkirk.sh | 3000 | bun | Slack emoji/profile cache |
-| hn-alerts | hn.dunkirk.sh | 3001 | bun | Hacker News monitoring |
-| indiko | indiko.dunkirk.sh | 3003 | bun | IndieAuth/OAuth2 server |
-| l4 | l4.dunkirk.sh | 3004 | bun | Image CDN — Slack image optimizer |
-| canvas-mcp | canvas.dunkirk.sh | 3006 | bun | Canvas MCP server |
-| control | control.dunkirk.sh | 3010 | bun | Admin dashboard for Caddy toggles |
-| traverse | traverse.dunkirk.sh | 4173 | bun | Code walkthrough diagram server |
-| cedarlogic | cedarlogic.dunkirk.sh | 3100 | custom | Circuit simulator |
-
-### Multi-instance
-
-| Service | Domain | Port | Description |
-|---------|--------|------|-------------|
-| emojibot-hackclub | hc.emojibot.dunkirk.sh | 3002 | Emojibot for Hack Club |
-| emojibot-df1317 | df.emojibot.dunkirk.sh | 3005 | Emojibot for df1317 |
-
-### Custom / external
-
-| Service | Domain | Description |
-|---------|--------|-------------|
-| bore (frps) | bore.dunkirk.sh | HTTP/TCP/UDP tunnel proxy |
-| herald | herald.dunkirk.sh | Git SSH hosting + email |
-| knot | knot.dunkirk.sh | Tangled git hosting |
-| spindle | spindle.dunkirk.sh | Tangled CI |
-| n8n | n8n.dunkirk.sh | Workflow automation |
-
-## Services manifest
-
-The manifest is now grouped by machine. Evaluate with:
-
-```sh
-nix eval --json .#services-manifest
-```
-
-Output shape:
-
-```json
-{
-  "terebithia": {
-    "hostname": "terebithia",
-    "tailscale_host": "terebithia",
-    "services": [{ "name": "cachet", "health_url": "https://cachet.dunkirk.sh/health", ... }]
-  }
-}
-```
-
-## Architecture
-
-Each mkService module provides:
-
-- **Systemd service** — initial git clone for scaffolding, subsequent deploys via GitHub Actions
-- **Caddy reverse proxy** — TLS via Cloudflare DNS challenge, optional rate limiting
-- **Data declarations** — `sqlite`, `postgres`, `files` feed into automatic backups
-- **Dedicated user** — sudo for restart/stop/start, per-user Tailscale SSH ACLs
-- **Port conflict detection** — assertions prevent two services binding the same port
+For all other services, check the manifest or the module source in `modules/nixos/services/`.

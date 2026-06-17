@@ -1,6 +1,5 @@
 {
   stdenvNoCC,
-  lib,
   mdbook,
   nixdoc,
   fetchurl,

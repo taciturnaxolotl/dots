@@ -1,47 +1,14 @@
 # dunkirk.sh
 
-Kieran's opinionated NixOS infrastructure — declarative server config, self-hosted services, and automated deployments.
+Kieran's opinionated NixOS infrastructure. Declarative server config, self-hosted services, automated deployments.
 
-## Layout
+For machine inventory, apply commands, repo layout, and conventions see [AGENTS.md](https://github.com/taciturnaxolotl/dots/blob/main/AGENTS.md).
 
-```
-~/dots
-├── .github/workflows  # CI/CD (deploy-rs + per-service reusable workflow)
-├── dots               # config files symlinked by home-manager
-│   └── wallpapers
-├── machines
-│   ├── atalanta       # macOS M4 (nix-darwin)
-│   ├── ember          # dell r210 server (basement)
-│   ├── moonlark       # framework 13 (dead)
-│   ├── nest           # shared tilde server (home-manager only)
-│   ├── prattle        # oracle cloud x86_64
-│   ├── tacyon         # rpi 5
-│   └── terebithia     # oracle cloud aarch64 (main server)
-├── modules
-│   ├── lib
-│   │   └── mkService.nix  # service factory (see Deployment section)
-│   ├── home           # home-manager modules
-│   │   ├── aesthetics # theming and wallpapers
-│   │   ├── apps       # app configs (ghostty, helix, git, ssh, etc.)
-│   │   ├── system     # shell, environment
-│   │   └── wm/hyprland
-│   └── nixos          # nixos modules
-│       ├── apps       # system-level app configs
-│       ├── services   # self-hosted services (mkService-based + custom)
-│       │   ├── restic # backup system with CLI
-│       │   └── bore   # tunnel proxy
-│       └── system     # pam, wifi
-├── packages           # custom nix packages
-└── secrets            # agenix-encrypted secrets
-```
+- [Installation](./installation.md) — getting started on macOS, NixOS, or home-manager
+- [Deployment](./deployment.md) — CI/CD workflows for infrastructure and application code
+- [Services](./services/README.md) — architecture overview and service documentation
+- [Secrets](./secrets.md) — agenix workflow
+- [mkService](./mkservice.md) — the service factory reference
+- [Modules](./modules/README.md) — custom NixOS and home-manager modules
 
-## Machines
-
-| Name | Platform | Role |
-|------|----------|------|
-| **terebithia** | Oracle Cloud aarch64 | Main server — runs all services |
-| **prattle** | Oracle Cloud x86_64 | Secondary server |
-| **atalanta** | macOS M4 | Development laptop (nix-darwin) |
-| **ember** | Dell R210 | Basement server |
-| **tacyon** | Raspberry Pi 5 | Edge device |
-| **nest** | Shared tilde | Home-manager only |
+Live status at [infra.dunkirk.sh](https://infra.dunkirk.sh). Machine manifest: `nix eval --json .#services-manifest`.
