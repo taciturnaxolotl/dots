@@ -1296,8 +1296,8 @@ in
                       if [[ ! -f "$dir/.envrc" ]]; then
                         local arch
                         arch="$(nix eval --impure --expr 'builtins.currentSystem' 2>/dev/null | tr -d '"')"
-                        if nix flake show --json "$dir" 2>/dev/null \
-                             | command jq -e ".devShells.\"$arch\" // empty" >/dev/null 2>&1; then
+                        if nix eval --json "$dir#devShells.$arch" \
+                             --apply 'x: true' >/dev/null 2>&1; then
                           cat > "$dir/.envrc" <<'EOF'
         use flake
         EOF
