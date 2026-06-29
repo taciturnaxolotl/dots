@@ -42,7 +42,7 @@
   ];
 
   # switch to lix
-  nix.package = pkgs.lixPackageSets.stable.lix;
+  nix.package = pkgs.lixPackageSets.latest.lix;
 
   # Auto GC old generations and optimise store
   nix.gc = {
