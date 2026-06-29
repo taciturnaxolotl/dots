@@ -44,6 +44,18 @@
   # switch to lix
   nix.package = pkgs.lixPackageSets.stable.lix;
 
+  # Auto GC old generations and optimise store
+  nix.gc = {
+    automatic = true;
+    interval = {
+      Weekday = 0;
+      Hour = 2;
+      Minute = 0;
+    };
+    options = "--delete-older-than 14d";
+  };
+  nix.optimise.automatic = true;
+
   # Set hostname
   networking.hostName = "atalanta";
 
@@ -62,6 +74,14 @@
   system.primaryUser = "kierank";
 
   ids.gids.nixbld = 350;
+
+  # Homebrew casks managed declaratively
+  homebrew = {
+    enable = true;
+    casks = [
+      "orbstack"
+    ];
+  };
 
   # Install packages
   environment.systemPackages = [
