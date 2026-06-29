@@ -993,9 +993,7 @@ let
   fzf-init = pkgs.runCommand "fzf-init.zsh" { } ''
     ${pkgs.fzf}/bin/fzf --zsh > $out
   '';
-  atuin-init = pkgs.runCommand "atuin-init.zsh" { HOME = "/tmp"; } ''
-    ${pkgs.atuin}/bin/atuin init zsh > $out
-  '';
+  # atuin init is handled by programs.atuin.enableZshIntegration
 
   # Pre-compiled instant prompt (zsh auto-uses .zwc next to .zsh).
   instant-prompt = pkgs.runCommand "instant-prompt" { } ''
@@ -1129,7 +1127,6 @@ in
                 source ${zoxide-init}
                 source ${fzf-init}
                 source ${direnv-hook}
-                source ${atuin-init}
 
                 eval "$(command terminal-wakatime init)"
 
@@ -1376,7 +1373,7 @@ in
     };
     programs.atuin = {
       enable = true;
-      enableZshIntegration = false;
+      enableZshIntegration = true;
       settings = {
         auto_sync = true;
         sync_frequency = "5m";
