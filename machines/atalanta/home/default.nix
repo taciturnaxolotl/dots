@@ -28,14 +28,21 @@
     enable = true;
     config = {
       global = {
-        mouse_follows_focus = true;
+        # mouse_follows_focus warps the cursor to the newly focused window.
+        # For Dia's level-3 AXSystemDialog overlays (mini player, 1Password
+        # popup) the per-rule override is ignored (yabai #1622), so clicking
+        # them flung the cursor to a screen corner. Off globally is simplest.
+        mouse_follows_focus = false;
         focus_follows_mouse = "autofocus";
       };
       rules = [
-        # 1Password / extension popup in Dia: empty-title floating window.
-        # Unmanage it and stop yabai from warping the cursor to it (which
-        # lands the pointer off-window and instantly closes the popup).
-        "app=\"^Dia$\" title=\"^$\" manage=off mouse_follows_focus=off"
+        # Dia's floating overlays (1Password / extension popup and the mini
+        # player) come in as AXSystemDialog. Unmanage them so yabai leaves
+        # them floating instead of trying to tile them. Match on subrole,
+        # not title: the title is empty only after creation, so a title="^$"
+        # rule misses the window at creation time. Dia's normal windows are
+        # AXStandardWindow, so this only catches the overlays.
+        "app=\"^Dia$\" subrole=\"^AXSystemDialog$\" manage=off"
         # Route Dia windows by title prefix so a space-2 window doesn't get
         # dragged to space 1 (a blanket app rule would catch every window).
         "app=\"^Dia$\" title=\"^Personal:\" space=1"
