@@ -57,6 +57,8 @@
         "app=\"^Screen Sharing$\" manage=off"
         "app=\"^Antinote$\" manage=off"
         "app=\"^hw05$\" manage=off"
+        "app=\"^Freerouting$\" manage=off"
+        "app=\"^KiCad$\" title=\"KiCad Freerouting Plugin\" manage=off"
         "app=\"^Finder$\" subrole=\"AXDialog\" manage=off"
         "app=\"^Finder$\" title=\"^Copy$\" manage=off"
         "app=\"^Finder$\" title=\"^Trash$\" manage=off"
