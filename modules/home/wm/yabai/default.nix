@@ -248,5 +248,22 @@ in
       enable = true;
       settings = cfg.borders;
     };
+
+    # JankyBorders accumulates stale window handles over time, causing
+    # WindowServer to spam _CGXPackagesSetWindowConstraints: Invalid window
+    # errors and periodic UI stutters. Kill the process every 12h; KeepAlive
+    # restarts it automatically. Workaround until the memory leak fix lands:
+    # https://github.com/FelixKratz/JankyBorders/pull/191
+    launchd.agents.jankyborders-restart = {
+      enable = true;
+      config = {
+        ProgramArguments = [
+          "/usr/bin/pkill"
+          "-x"
+          "borders"
+        ];
+        StartInterval = 43200; # 12 hours
+      };
+    };
   };
 }
