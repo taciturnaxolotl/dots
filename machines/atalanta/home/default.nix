@@ -61,6 +61,7 @@
         "app=\"^KiCad$\" title=\"KiCad Freerouting Plugin\" manage=off"
         "app=\"^drive$\" title=\"SITL\" manage=off"
         "app=\"^Alcove$\" manage=off"
+        "app=\"^qemu-system\" manage=off"
         "app=\"^Finder$\" subrole=\"AXDialog\" manage=off"
         "app=\"^Finder$\" title=\"^Copy$\" manage=off"
         "app=\"^Finder$\" title=\"^Trash$\" manage=off"
