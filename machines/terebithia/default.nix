@@ -497,11 +497,6 @@
     environment.FLARESOLVERR_URL = "http://localhost:8191";
   };
 
-  atelier.services.curl-doom = {
-    enable = true;
-    domain = "doom.dunkirk.sh";
-  };
-
   atelier.services.paperless = {
     enable = true;
     domain = "paperless.dunkirk.sh";

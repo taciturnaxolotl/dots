@@ -174,7 +174,6 @@
 
             zmx-binary = prev.callPackage ./packages/zmx.nix { };
             bore-auth = prev.callPackage ./packages/bore-auth.nix { };
-            curl-doom = prev.callPackage ./packages/curl-doom.nix { };
             pear = inputs.pear.packages.${prev.stdenv.hostPlatform.system}.default;
             herald = inputs.herald.packages.${prev.stdenv.hostPlatform.system}.default;
             potluck = inputs.potluck.packages.${prev.stdenv.hostPlatform.system}.default;

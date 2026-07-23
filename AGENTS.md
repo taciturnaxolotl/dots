@@ -76,7 +76,7 @@ lib/
 secrets/
   secrets.nix          — agenix public key declarations
   *.age                — encrypted secrets
-packages/              — custom derivations (bore-auth, curl-doom, docs, zmx)
+packages/              — custom derivations (bore-auth, docs, zmx)
 dots/                  — raw config files (hyprland, yabai/skhd, wallpapers, scripts)
 docs/                  — mdBook source; built by nix build .#packages.*.docs
 ```
@@ -144,7 +144,7 @@ The home config for atalanta (`machines/atalanta/home/default.nix`) uses `import
 
 A single `unstable-overlays` attrset is defined at the top of `flake.nix` and threaded into every configuration. It:
 - Adds `pkgs.unstable` (nixpkgs-unstable) — access unstable packages via `pkgs.unstable.<name>`
-- Adds `pkgs.zmx-binary`, `pkgs.bore-auth`, `pkgs.curl-doom`, `pkgs.pear`, `pkgs.herald`, `pkgs.tangle-of-trust`
+- Adds `pkgs.zmx-binary`, `pkgs.bore-auth`, `pkgs.pear`, `pkgs.herald`, `pkgs.tangle-of-trust`
 - Overrides `bambu-studio` to a pinned version
 - Darwin-only: disables `direnv` test suite (sandbox SIGKILL issue on macOS with libarchive >= 3.8.5)
 
