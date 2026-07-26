@@ -306,7 +306,7 @@ let
       
       # Prompt for auth if not already set
       if [ "$require_auth" != "true" ]; then
-        if ${pkgs.gum}/bin/gum confirm "Require authentication (Indiko)?"; then
+        if ${pkgs.gum}/bin/gum confirm --default=false "Require authentication (Indiko)?"; then
           require_auth="true"
         fi
       fi
