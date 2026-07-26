@@ -677,6 +677,11 @@ let
            if [[ "$GITHUB" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
              gh_args=("$GITHUB_USER/$NAME" "--$VISIBILITY")
              [[ -n "$DESCRIPTION" ]] && gh_args+=("--description" "$DESCRIPTION")
+             # When tangled is also enabled, gh's remote must be named "github"
+             # so it doesn't claim "origin" (which belongs to the knot).
+             if [[ "$TANGLED" == true ]]; then
+               gh_args+=("--remote" "github")
+             fi
 
              if ${pkgs.gh}/bin/gh repo create "''${gh_args[@]}" 2>/tmp/gh-error-$$.log; then
                ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"
@@ -1314,7 +1319,9 @@ in
                 add-zsh-hook chpwd auto_nix
 
                 # zsh-patina: Rust-based syntax highlighting (must be last)
-                eval "$(${inputs.zsh-patina.packages.${pkgs.stdenv.hostPlatform.system}.default}/bin/zsh-patina activate)"
+                eval "$(${
+                  inputs.zsh-patina.packages.${pkgs.stdenv.hostPlatform.system}.default
+                }/bin/zsh-patina activate)"
 
       '';
       history = {
@@ -1422,7 +1429,8 @@ in
     home.sessionPath = [
       "$HOME/go/bin"
       "$HOME/.local/bin"
-    ] ++ lib.optionals pkgs.stdenv.isDarwin [
+    ]
+    ++ lib.optionals pkgs.stdenv.isDarwin [
       "/opt/homebrew/bin"
       "/opt/homebrew/sbin"
       "/opt/local/bin"
@@ -1433,7 +1441,8 @@ in
     home.sessionVariables = {
       GITSTATUS_DIR = "${pkgs.gitstatus}/share/gitstatus";
       CRUSH_ALGORITHMIC_COMPACT = "1";
-    } // lib.optionalAttrs pkgs.stdenv.isDarwin {
+    }
+    // lib.optionalAttrs pkgs.stdenv.isDarwin {
       HOMEBREW_PREFIX = "/opt/homebrew";
       HOMEBREW_CELLAR = "/opt/homebrew/Cellar";
       HOMEBREW_REPOSITORY = "/opt/homebrew";

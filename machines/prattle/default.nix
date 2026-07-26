@@ -533,7 +533,10 @@
       RemainAfterExit = true;
       EnvironmentFile = config.services.garage.environmentFile or null;
     };
-    path = [ config.services.garage.package pkgs.coreutils ];
+    path = [
+      config.services.garage.package
+      pkgs.coreutils
+    ];
     script = ''
       set -euo pipefail
       GARAGE="${config.services.garage.package}/bin/garage"

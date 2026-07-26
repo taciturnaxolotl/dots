@@ -32,7 +32,13 @@ let
 
     # Ensure required binaries resolve even when this script is re-run by the
     # home-manager onChange hook, which uses a minimal PATH.
-    export PATH="${lib.makeBinPath [ cfg.package pkgs.jq pkgs.coreutils ]}:/usr/bin:/bin:$PATH"
+    export PATH="${
+      lib.makeBinPath [
+        cfg.package
+        pkgs.jq
+        pkgs.coreutils
+      ]
+    }:/usr/bin:/bin:$PATH"
 
     # Re-load scripting addition after dock restarts
     yabai -m signal --add event=dock_did_restart action="sudo ${yabaiExe} --load-sa"

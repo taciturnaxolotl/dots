@@ -25,7 +25,10 @@
         };
         "--scope" = [
           {
-            "--when".commands = [ "diff" "show" ];
+            "--when".commands = [
+              "diff"
+              "show"
+            ];
             ui = {
               pager = "delta";
               diff-formatter = ":git";

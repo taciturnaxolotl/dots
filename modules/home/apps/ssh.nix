@@ -75,7 +75,14 @@ in
             };
 
             setEnv = mkOption {
-              type = types.attrsOf (types.oneOf [types.str types.path types.int types.float]);
+              type = types.attrsOf (
+                types.oneOf [
+                  types.str
+                  types.path
+                  types.int
+                  types.float
+                ]
+              );
               default = { };
               description = "Environment variables to set (maps to SetEnv)";
             };
@@ -87,13 +94,28 @@ in
             };
 
             requestTTY = mkOption {
-              type = types.nullOr (types.enum ["yes" "no" "force" "auto"]);
+              type = types.nullOr (
+                types.enum [
+                  "yes"
+                  "no"
+                  "force"
+                  "auto"
+                ]
+              );
               default = null;
               description = "Request a pseudo-terminal (maps to RequestTTY)";
             };
 
             controlMaster = mkOption {
-              type = types.nullOr (types.enum ["yes" "no" "ask" "auto" "autoask"]);
+              type = types.nullOr (
+                types.enum [
+                  "yes"
+                  "no"
+                  "ask"
+                  "auto"
+                  "autoask"
+                ]
+              );
               default = null;
               description = "Control master setting";
             };
@@ -141,7 +163,8 @@ in
         let
           # Build settings entries from atelier.ssh.hosts
           hostSettings = filterAttrs (_: v: v != { }) (
-            mapAttrs (name: hostCfg:
+            mapAttrs (
+              name: hostCfg:
               let
                 base = filterAttrs (_: v: v != null) {
                   HostName = hostCfg.hostname;
@@ -174,7 +197,8 @@ in
           zmxSettings =
             if cfg.zmx.enable then
               listToAttrs (
-                map (pattern:
+                map (
+                  pattern:
                   let
                     patternHost = cfg.hosts.${pattern} or { };
                   in
