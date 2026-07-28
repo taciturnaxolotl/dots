@@ -643,32 +643,83 @@ let
              [[ -z "$VISIBILITY" ]] && VISIBILITY="public"
            fi
 
-           # Create on Tangled
+           # Create on Tangled via XRPC API
            if [[ "$TANGLED" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
-             tangled_cookie=""
-             if [[ -f "/run/agenix/tangled-session" ]]; then
-               tangled_cookie=$(cat /run/agenix/tangled-session)
-             fi
-
-             if [[ -z "$tangled_cookie" ]]; then
-               ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Warning: No tangled session cookie found"
-               ${pkgs.gum}/bin/gum style --foreground 117 "  Expected: /run/agenix/tangled-session"
+             if [[ ! -f "/run/agenix/bluesky" ]]; then
+               ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Warning: No atproto credentials found"
+               ${pkgs.gum}/bin/gum style --foreground 117 "  Expected: /run/agenix/bluesky"
              else
-               encoded_desc=$(printf '%s' "$DESCRIPTION" | ${pkgs.gnused}/bin/sed 's| |%20|g; s|!|%21|g; s|"|%22|g; s|#|%23|g; s|\$|%24|g; s|&|%26|g; s|'"'"'|%27|g; s|(|%28|g; s|)|%29|g; s|\*|%2A|g; s|+|%2B|g; s|,|%2C|g; s|/|%2F|g; s|:|%3A|g; s|;|%3B|g; s|=|%3D|g; s|\?|%3F|g; s|@|%40|g; s|\[|%5B|g; s|\]|%5D|g')
+               source "/run/agenix/bluesky"
 
-               response=$(${pkgs.curl}/bin/curl -sf 'https://tangled.org/repo/new' \
-                 -H 'Accept: */*' \
-                 -H 'Content-Type: application/x-www-form-urlencoded' \
-                 -b "appview-session-v2=$tangled_cookie" \
-                 -H 'HX-Request: true' \
-                 -H 'Origin: https://tangled.org' \
-                 --data-raw "name=$NAME&description=$encoded_desc&branch=$BRANCH&domain=$TANGLED_DOMAIN" 2>&1)
+               # Resolve PDS endpoint from PLC directory
+               pds_endpoint=$(${pkgs.curl}/bin/curl -s "https://plc.directory/$PLC_ID" | ${pkgs.jq}/bin/jq -r '.service[] | select(.type == "AtprotoPersonalDataServer") | .serviceEndpoint' | head -n1)
 
-               if [[ $? -ne 0 ]] || echo "$response" | grep -qi "error\|failed"; then
-                 ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create Tangled repository"
-                 [[ -n "$response" ]] && echo "$response" | head -n 3
+               if [[ -z "$pds_endpoint" ]]; then
+                 ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to resolve PDS for $PLC_ID"
                else
-                 ${pkgs.gum}/bin/gum style --foreground 35 "✓ Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
+                 # Create atproto session
+                 session_response=$(${pkgs.curl}/bin/curl -s -X POST \
+                   -H "Content-Type: application/json" \
+                   -d "{\"identifier\": \"$ACCOUNT1\", \"password\": \"$ACCOUNT1_PASSWORD\"}" \
+                   "$pds_endpoint/xrpc/com.atproto.server.createSession")
+
+                 access_jwt=$(echo "$session_response" | ${pkgs.jq}/bin/jq -r '.accessJwt // empty')
+                 user_did=$(echo "$session_response" | ${pkgs.jq}/bin/jq -r '.did // empty')
+
+                 if [[ -z "$access_jwt" ]]; then
+                   ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to authenticate with PDS"
+                   echo "$session_response" | ${pkgs.jq}/bin/jq -r '.message // empty' 2>/dev/null | head -n1
+                 else
+                   # Get service auth token for the knot
+                   expiry=$(( $(${pkgs.coreutils}/bin/date +%s) + 60 ))
+                   service_auth_response=$(${pkgs.curl}/bin/curl -s \
+                     -H "Authorization: Bearer $access_jwt" \
+                     "$pds_endpoint/xrpc/com.atproto.server.getServiceAuth?aud=did:web:$KNOT_HOST&exp=$expiry&lxm=sh.tangled.repo.create")
+
+                   service_jwt=$(echo "$service_auth_response" | ${pkgs.jq}/bin/jq -r '.token // empty')
+
+                   if [[ -z "$service_jwt" ]]; then
+                     ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to get service auth token"
+                     echo "$service_auth_response" | ${pkgs.jq}/bin/jq -r '.message // empty' 2>/dev/null | head -n1
+                   else
+                     # Step 1: Create repo on the knot
+                     rkey=$(echo "$NAME" | ${pkgs.coreutils}/bin/tr '[:upper:]' '[:lower:]')
+                     knot_response=$(${pkgs.curl}/bin/curl -s -X POST \
+                       -H "Content-Type: application/json" \
+                       -H "Authorization: Bearer $service_jwt" \
+                       -d "{\"rkey\": \"$rkey\", \"name\": \"$NAME\", \"defaultBranch\": \"$BRANCH\"}" \
+                       "https://$KNOT_HOST/xrpc/sh.tangled.repo.create")
+
+                     repo_did=$(echo "$knot_response" | ${pkgs.jq}/bin/jq -r '.repoDid // empty')
+
+                     if [[ -z "$repo_did" ]]; then
+                       ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to create repo on knot"
+                       echo "$knot_response" | ${pkgs.jq}/bin/jq -r '.message // empty' 2>/dev/null | head -n1
+                     else
+                       # Step 2: Write record to PDS
+                       created_at=$(${pkgs.coreutils}/bin/date -u +"%Y-%m-%dT%H:%M:%SZ")
+                       record="{\"\$type\": \"sh.tangled.repo\", \"knot\": \"$KNOT_HOST\", \"repoDid\": \"$repo_did\", \"name\": \"$NAME\", \"createdAt\": \"$created_at\""
+                       if [[ -n "$DESCRIPTION" ]]; then
+                         record="$record, \"description\": \"$DESCRIPTION\""
+                       fi
+                       record="$record}"
+
+                       pds_response=$(${pkgs.curl}/bin/curl -s -X POST \
+                         -H "Content-Type: application/json" \
+                         -H "Authorization: Bearer $access_jwt" \
+                         -d "{\"repo\": \"$user_did\", \"collection\": \"sh.tangled.repo\", \"rkey\": \"$rkey\", \"record\": $record}" \
+                         "$pds_endpoint/xrpc/com.atproto.repo.createRecord")
+
+                       pds_error=$(echo "$pds_response" | ${pkgs.jq}/bin/jq -r '.error // empty')
+                       if [[ -n "$pds_error" ]]; then
+                         ${pkgs.gum}/bin/gum style --foreground 196 "✗ Failed to write record to PDS"
+                         echo "$pds_response" | ${pkgs.jq}/bin/jq -r '.message // empty' 2>/dev/null | head -n1
+                       else
+                         ${pkgs.gum}/bin/gum style --foreground 35 "✓ Tangled: https://tangled.org/$TANGLED_DOMAIN/$NAME"
+                       fi
+                     fi
+                   fi
+                 fi
                fi
              fi
            fi
@@ -677,11 +728,6 @@ let
            if [[ "$GITHUB" == true ]] && [[ "$SKIP_REMOTE_CREATION" == false ]]; then
              gh_args=("$GITHUB_USER/$NAME" "--$VISIBILITY")
              [[ -n "$DESCRIPTION" ]] && gh_args+=("--description" "$DESCRIPTION")
-             # When tangled is also enabled, gh's remote must be named "github"
-             # so it doesn't claim "origin" (which belongs to the knot).
-             if [[ "$TANGLED" == true ]]; then
-               gh_args+=("--remote" "github")
-             fi
 
              if ${pkgs.gh}/bin/gh repo create "''${gh_args[@]}" 2>/tmp/gh-error-$$.log; then
                ${pkgs.gum}/bin/gum style --foreground 35 "✓ GitHub: https://github.com/$GITHUB_USER/$NAME"

@@ -63,9 +63,6 @@ in
   "pbnj.age".publicKeys = [
     kierank
   ];
-  "tangled-session.age".publicKeys = [
-    kierank
-  ];
   "herald.age".publicKeys = [
     kierank
   ];
