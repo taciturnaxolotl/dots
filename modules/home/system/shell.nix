@@ -1201,6 +1201,16 @@ in
                 alias -s ts='$EDITOR'
                 ${if pkgs.stdenv.isDarwin then "alias -s html=open" else ""}
 
+                ${lib.optionalString pkgs.stdenv.isDarwin ''
+                # Use Apple's toolchain for native builds. nix's cc/clang
+                # don't wire in the macOS SDK, so cgo/cargo/cmake links fail
+                # with "library not found" (e.g. -lresolv). Apple's cc
+                # handles SDK, frameworks, and code signing natively.
+                # Respected by cgo ($CC), cargo, cmake, etc.
+                export CC=/usr/bin/cc
+                export CXX=/usr/bin/c++
+                ''}
+
                 # Global aliases
                 alias -g NE='2>/dev/null'
                 alias -g NO='>/dev/null'

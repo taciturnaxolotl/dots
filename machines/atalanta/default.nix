@@ -98,7 +98,6 @@
     pkgs.gopls
     pkgs.gotools
     pkgs.go-tools
-    pkgs.gcc
     pkgs.cargo
     pkgs.jdk
     pkgs.ruby
@@ -108,7 +107,6 @@
     pkgs.prisma
     pkgs.unstable.zola
     pkgs.mill
-    pkgs.clang
     pkgs.clang-tools
     pkgs.ninja
     # tools
