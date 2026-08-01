@@ -79,6 +79,11 @@
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
+    lard = {
+      url = "github:taciturnaxolotl/lard";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+
     flare = {
       url = "github:ByteAtATime/flare/feat/nix";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -177,6 +182,7 @@
             pear = inputs.pear.packages.${prev.stdenv.hostPlatform.system}.default;
             herald = inputs.herald.packages.${prev.stdenv.hostPlatform.system}.default;
             potluck = inputs.potluck.packages.${prev.stdenv.hostPlatform.system}.default;
+            lard = inputs.lard.packages.${prev.stdenv.hostPlatform.system}.default;
             tangle-of-trust = inputs.tangle-of-trust.packages.${prev.stdenv.hostPlatform.system}.default;
           })
         ];

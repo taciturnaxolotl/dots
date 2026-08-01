@@ -90,6 +90,9 @@ in
   "potluck.age".publicKeys = [
     kierank
   ];
+  "lard.age".publicKeys = [
+    kierank
+  ];
   "protonvpn-wg.age".publicKeys = [
     kierank
   ];

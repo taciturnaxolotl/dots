@@ -807,6 +807,26 @@
         "type": "github"
       }
     },
+    "lard": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs-unstable"
+        ]
+      },
+      "locked": {
+        "lastModified": 1785561652,
+        "narHash": "sha256-6Fz6Rp/fl1frafpWFZM022/MR0T+a4LDkdEh5NdRoZ0=",
+        "owner": "taciturnaxolotl",
+        "repo": "lard",
+        "rev": "efa4251641867c3982a5638d83c141736846bdb3",
+        "type": "github"
+      },
+      "original": {
+        "owner": "taciturnaxolotl",
+        "repo": "lard",
+        "type": "github"
+      }
+    },
     "lucide-src": {
       "flake": false,
       "locked": {
@@ -997,11 +1017,11 @@
     },
     "nixpkgs-unstable": {
       "locked": {
-        "lastModified": 1784497964,
-        "narHash": "sha256-vlHUuqAcbcH2RKmHbPiuQzbv1pnzzavXnI62RD0bqCU=",
+        "lastModified": 1785454630,
+        "narHash": "sha256-LQy14TZp77TwbQf40gg1V3jo8FwJG0jGDkAH+zRHqg8=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "241313f4e8e508cb9b13278c2b0fa25b9ca27163",
+        "rev": "1559d3daa3ecc813a650b79375ea61b6741b8746",
         "type": "github"
       },
       "original": {
@@ -1315,6 +1335,7 @@
         "hyprland-contrib": "hyprland-contrib",
         "import-tree": "import-tree",
         "impure": "impure",
+        "lard": "lard",
         "nix-darwin": "nix-darwin",
         "nix-vscode-extensions": "nix-vscode-extensions",
         "nixarr": "nixarr",

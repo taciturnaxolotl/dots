@@ -177,6 +177,10 @@
       file = ../../secrets/potluck.age;
       owner = "potluck";
     };
+    lard = {
+      file = ../../secrets/lard.age;
+      owner = "lard";
+    };
     paperless-oidc = {
       file = ../../secrets/paperless-oidc.age;
       owner = "paperless";
@@ -522,6 +526,16 @@
     domain = "backend.potluck.dunkirk.sh";
     secretsFile = config.age.secrets.potluck.path;
     healthUrl = "https://backend.potluck.dunkirk.sh/healthz";
+  };
+
+  atelier.services.lard = {
+    enable = true;
+    domain = "lard.dunkirk.sh";
+    secretsFile = config.age.secrets.lard.path;
+    healthUrl = "https://lard.dunkirk.sh/healthz";
+    allowedClientIds = [ "ikc_NEil8GK01UX2O9AvbcDrv" ];
+    allowedUsers = [ "https://dunkirk.sh/" ];
+    collectorClientId = "ikc_NEil8GK01UX2O9AvbcDrv";
   };
 
   atelier.services.tangled = {
