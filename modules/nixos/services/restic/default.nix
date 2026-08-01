@@ -93,6 +93,9 @@ let
       postBackup = if postBackup != "" then postBackup else null;
     };
 
+  # Backup jobs that should actually run
+  enabledBackups = lib.filterAttrs (n: v: v.enable) allBackups;
+
   # Create a restic backup job for a service
   mkBackupJob = name: serviceCfg: {
     inherit (serviceCfg) paths exclude;
@@ -109,15 +112,10 @@ let
       "--verbose"
     ];
 
-    # Retention policy
-    pruneOpts = [
-      "--verbose"
-      "--keep-last 3"
-      "--keep-daily 7"
-      "--keep-weekly 5"
-      "--keep-monthly 12"
-      "--tag service:${name}" # Only prune this service's snapshots
-    ];
+    # Prune is handled by separate weekly restic-prune-<name> units, so
+    # nightly backups don't also fire a prune storm. Empty pruneOpts tells the
+    # upstream module to skip the inline `forget --prune` step entirely.
+    pruneOpts = [ ];
 
     # Backup schedule (nightly at 2 AM + random delay)
     timerConfig = {
@@ -211,7 +209,59 @@ in
     ];
 
     # Create restic backup jobs for each service (auto + manual)
-    services.restic.backups = lib.mapAttrs mkBackupJob (lib.filterAttrs (n: v: v.enable) allBackups);
+    services.restic.backups = lib.mapAttrs mkBackupJob enabledBackups;
+
+    # Scattered weekly prune: one oneshot service + timer per backup, each
+    # pinned to a day-of-week derived from the service name so all 17 services
+    # don't prune (and hammer B2 Class B transactions) at the same time.
+    systemd.services = lib.mapAttrs' (
+      name: _:
+      lib.nameValuePair "restic-prune-${name}" {
+        description = "Restic forget/prune for ${name}";
+        serviceConfig = {
+          Type = "oneshot";
+          EnvironmentFile = config.age.secrets."restic/env".path;
+        };
+        script = ''
+          ${pkgs.restic}/bin/restic \
+            --repository-file ${config.age.secrets."restic/repo".path} \
+            --password-file ${config.age.secrets."restic/password".path} \
+            forget --prune --verbose \
+            --keep-last 3 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 \
+            --tag service:${name}
+        '';
+      }
+    ) enabledBackups;
+
+    systemd.timers =
+      let
+        backupNames = lib.attrNames enabledBackups;
+        days = [
+          "Mon"
+          "Tue"
+          "Wed"
+          "Thu"
+          "Fri"
+          "Sat"
+          "Sun"
+        ];
+      in
+      lib.mapAttrs' (
+        name: _:
+        let
+          idx = lib.lists.findFirstIndex (n: n == name) 0 backupNames;
+          day = builtins.elemAt days (lib.mod idx 7);
+        in
+        lib.nameValuePair "restic-prune-${name}" {
+          description = "Weekly restic prune for ${name} (${day})";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = "${day} *-*-* 03:00:00";
+            RandomizedDelaySec = "2h";
+            Persistent = true;
+          };
+        }
+      ) enabledBackups;
 
     # Add restic and sqlite to system packages for manual operations
     environment.systemPackages = [

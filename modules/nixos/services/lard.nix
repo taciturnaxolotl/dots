@@ -61,7 +61,8 @@ let
         LARD_PUBLIC_URL = "https://${cfg.domain}";
         LARD_OAUTH_CLIENT_IDS = lib.concatStringsSep "," cfg.allowedClientIds;
         LARD_OAUTH_USERS = lib.concatStringsSep "," cfg.allowedUsers;
-      } // lib.optionalAttrs (cfg.collectorClientId != "") {
+      }
+      // lib.optionalAttrs (cfg.collectorClientId != "") {
         LARD_COLLECTOR_CLIENT_ID = cfg.collectorClientId;
       };
 
