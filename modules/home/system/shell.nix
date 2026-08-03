@@ -999,7 +999,9 @@ let
              if ${pkgs.git}/bin/git commit -m "Add project templates" 2>/dev/null; then
                ${pkgs.gum}/bin/gum style --foreground 35 "✓ Committed templates"
 
-               # Push to remotes if they exist
+               # Push to remotes if they exist. origin gets -u so main tracks
+               # it; the secondary github remote gets a plain push so it can
+               # never steal main's upstream.
                if [[ "$TANGLED" == true ]] && ${pkgs.git}/bin/git remote get-url origin &>/dev/null; then
                  if ${pkgs.git}/bin/git push -u origin $BRANCH 2>/dev/null; then
                    ${pkgs.gum}/bin/gum style --foreground 35 "✓ Pushed to origin (knot)"
@@ -1008,11 +1010,21 @@ let
                  fi
                fi
 
-               if [[ "$GITHUB" == true ]] && ${pkgs.git}/bin/git remote get-url github &>/dev/null; then
-                 if ${pkgs.git}/bin/git push -u github $BRANCH 2>/dev/null; then
-                   ${pkgs.gum}/bin/gum style --foreground 35 "✓ Pushed to github"
-                 else
-                   ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Failed to push to github"
+               if [[ "$GITHUB" == true ]]; then
+                 # Mirror the remote naming above: "github" alongside tangled,
+                 # "origin" for github-only repos.
+                 github_remote_name="github"
+                 github_push_flags=""
+                 if [[ "$TANGLED" == false ]]; then
+                   github_remote_name="origin"
+                   github_push_flags="-u"
+                 fi
+                 if ${pkgs.git}/bin/git remote get-url "$github_remote_name" &>/dev/null; then
+                   if ${pkgs.git}/bin/git push $github_push_flags "$github_remote_name" $BRANCH 2>/dev/null; then
+                     ${pkgs.gum}/bin/gum style --foreground 35 "✓ Pushed to $github_remote_name"
+                   else
+                     ${pkgs.gum}/bin/gum style --foreground 214 "⚠ Failed to push to $github_remote_name"
+                   fi
                  fi
                fi
              fi
