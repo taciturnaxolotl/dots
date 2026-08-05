@@ -280,6 +280,11 @@
     rejectPackets = true;
   };
 
+  # Public IP, so sshd takes constant scanner traffic (~25k failed auths/week
+  # from ~380 distinct hosts). Key-only auth already makes those unwinnable;
+  # this just stops them burning CPU and filling the journal.
+  atelier.security.fail2ban.enable = true;
+
   services.tailscale = {
     enable = true;
     useRoutingFeatures = "client";
