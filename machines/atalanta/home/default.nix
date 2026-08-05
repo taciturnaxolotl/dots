@@ -175,6 +175,10 @@
     };
   };
 
+  programs.zsh.shellAliases = {
+    claude = "claude --append-system-prompt-file ~/.claude/append-system-prompt.md";
+  };
+
   programs.zsh.initContent = ''
     export HYPER_URL="https://hyper.charmcli.dev"
     export PATH="$HOME/.cargo/bin:$PATH"
