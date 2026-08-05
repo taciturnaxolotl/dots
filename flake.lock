@@ -814,11 +814,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1785729020,
-        "narHash": "sha256-C3D3xb9HQojG2QQkgzDX5frgoJFFqrHvGqyMZsEa7Qg=",
+        "lastModified": 1785946252,
+        "narHash": "sha256-uDLD1/jq9W+z/3f6LWFVzEdwpZNWDHrvZwFO58ErJp4=",
         "owner": "taciturnaxolotl",
         "repo": "lard",
-        "rev": "6fabc5ddcbb099be8d6765b040f7155d4fd56403",
+        "rev": "cfab0c402990dc2974e9617f6ea8b1507ac19811",
         "type": "github"
       },
       "original": {
