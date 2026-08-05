@@ -594,11 +594,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1780079032,
-        "narHash": "sha256-Uu0pHqyjIynIWZ0QvGO4S1dR7k4bwYVk6zRzyectsAY=",
+        "lastModified": 1785941561,
+        "narHash": "sha256-po6pnTDC2DQ2tt0PjL40NKOk039wi+Wk55eAM8Uel2o=",
         "owner": "taciturnaxolotl",
         "repo": "herald",
-        "rev": "63f47095dad067238caa616eeaaa7fcf98cf3a2f",
+        "rev": "6fd87b41d058dded45129643daf7f1dd63386f77",
         "type": "github"
       },
       "original": {
