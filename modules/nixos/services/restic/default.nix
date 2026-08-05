@@ -39,6 +39,25 @@ let
       # Whether to stop service during backup (default true, can opt out for online-safe DBs)
       stopForBackup = data.stopForBackup or true;
 
+      # Units to stop/start around the backup. Falls back to the service name,
+      # which is right for single-unit services but wrong for ones that split
+      # (paperless, etc.) -- those declare data.stopUnits explicitly.
+      stopUnits = if (data.stopUnits or [ ]) != [ ] then data.stopUnits else [ name ];
+
+      # These run as ExecStartPre/ExecStopPost. A non-zero ExecStartPre makes
+      # systemd skip ExecStart entirely, so a bad unit name here means the
+      # backup silently never runs. Degrade to a hot backup instead: warn
+      # loudly, but never let the stop abort the run.
+      stopCmds = lib.concatMapStringsSep "\n" (u: ''
+        echo "Stopping ${u} for backup..."
+        systemctl stop ${u} || echo "WARNING: failed to stop ${u}; backing up hot"
+      '') stopUnits;
+
+      startCmds = lib.concatMapStringsSep "\n" (u: ''
+        echo "Restarting ${u} after backup..."
+        systemctl start ${u} || echo "WARNING: failed to restart ${u}"
+      '') stopUnits;
+
       # Pre-backup: handle database consistency
       preBackup = lib.concatStringsSep "\n" (
         # SQLite: checkpoint WAL, optionally stop service
@@ -47,10 +66,7 @@ let
             echo "Checkpointing SQLite WAL for ${name}..."
             ${pkgs.sqlite}/bin/sqlite3 "${data.sqlite}" "PRAGMA wal_checkpoint(TRUNCATE);" || true
           ''
-          + lib.optionalString stopForBackup ''
-            echo "Stopping ${name} for backup..."
-            systemctl stop ${name}
-          ''
+          + lib.optionalString stopForBackup stopCmds
         ))
         ++
           # PostgreSQL: dump to file
@@ -65,10 +81,7 @@ let
 
       # Post-backup: restart service (only if we stopped it)
       postBackup = lib.concatStringsSep "\n" (
-        (lib.optional (hasSqlite && stopForBackup) ''
-          echo "Restarting ${name} after backup..."
-          systemctl start ${name}
-        '')
+        (lib.optional (hasSqlite && stopForBackup) startCmds)
         ++ (lib.optional hasPostgres ''
           rm -f /tmp/${name}-pg-dump.sql
         '')
@@ -211,57 +224,58 @@ in
     # Create restic backup jobs for each service (auto + manual)
     services.restic.backups = lib.mapAttrs mkBackupJob enabledBackups;
 
-    # Scattered weekly prune: one oneshot service + timer per backup, each
-    # pinned to a day-of-week derived from the service name so all 17 services
-    # don't prune (and hammer B2 Class B transactions) at the same time.
-    systemd.services = lib.mapAttrs' (
-      name: _:
-      lib.nameValuePair "restic-prune-${name}" {
-        description = "Restic forget/prune for ${name}";
-        serviceConfig = {
-          Type = "oneshot";
-          EnvironmentFile = config.age.secrets."restic/env".path;
-        };
-        script = ''
+    # ONE weekly prune for the whole repository.
+    #
+    # This used to be one prune per service, scattered across the week, on the
+    # theory that spreading them out eased the load on B2. It did the opposite.
+    # `forget --prune --tag service:X` only uses the tag to pick which
+    # *snapshots to forget*; the prune that follows still walks and repacks the
+    # entire repository. So N services meant N full-repo repacks per week, and
+    # the Class B transaction cap got blown -- which then wedged a prune
+    # mid-run and left an exclusive lock that blocked every backup for days.
+    #
+    # `--group-by host,tags` applies the retention policy independently to each
+    # host/tag group, so per-service retention is preserved exactly, but the
+    # repository is only repacked once.
+    systemd.services.restic-prune = {
+      description = "Weekly restic forget/prune for all services";
+      serviceConfig = {
+        Type = "oneshot";
+        EnvironmentFile = config.age.secrets."restic/env".path;
+        # A prune that hangs holds the repo's exclusive lock and blocks every
+        # backup until someone notices. Bound it; restic releases its lock on
+        # SIGTERM.
+        TimeoutStartSec = "6h";
+      };
+      script = ''
+        set -euo pipefail
+
+        restic() {
           ${pkgs.restic}/bin/restic \
             --repository-file ${config.age.secrets."restic/repo".path} \
             --password-file ${config.age.secrets."restic/password".path} \
-            forget --prune --verbose \
-            --keep-last 3 --keep-daily 7 --keep-weekly 5 --keep-monthly 12 \
-            --tag service:${name}
-        '';
-      }
-    ) enabledBackups;
-
-    systemd.timers =
-      let
-        backupNames = lib.attrNames enabledBackups;
-        days = [
-          "Mon"
-          "Tue"
-          "Wed"
-          "Thu"
-          "Fri"
-          "Sat"
-          "Sun"
-        ];
-      in
-      lib.mapAttrs' (
-        name: _:
-        let
-          idx = lib.lists.findFirstIndex (n: n == name) 0 backupNames;
-          day = builtins.elemAt days (lib.mod idx 7);
-        in
-        lib.nameValuePair "restic-prune-${name}" {
-          description = "Weekly restic prune for ${name} (${day})";
-          wantedBy = [ "timers.target" ];
-          timerConfig = {
-            OnCalendar = "${day} *-*-* 03:00:00";
-            RandomizedDelaySec = "2h";
-            Persistent = true;
-          };
+            "$@"
         }
-      ) enabledBackups;
+
+        # Clear locks whose owning process is gone (e.g. a prune killed
+        # mid-run). This only removes *stale* locks, never a live one.
+        restic unlock || true
+
+        restic forget --prune --verbose \
+          --group-by host,tags \
+          --keep-last 3 --keep-daily 7 --keep-weekly 5 --keep-monthly 12
+      '';
+    };
+
+    systemd.timers.restic-prune = {
+      description = "Weekly restic prune (Sun)";
+      wantedBy = [ "timers.target" ];
+      timerConfig = {
+        OnCalendar = "Sun *-*-* 05:00:00";
+        RandomizedDelaySec = "1h";
+        Persistent = true;
+      };
+    };
 
     # Add restic and sqlite to system packages for manual operations
     environment.systemPackages = [

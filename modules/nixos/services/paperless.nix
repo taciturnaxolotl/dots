@@ -59,6 +59,16 @@ in
         default = [ "*.log" ];
         description = "Glob patterns to exclude from backup";
       };
+      stopForBackup = lib.mkOption {
+        type = lib.types.bool;
+        default = true;
+        description = "Whether to stop the service during backup.";
+      };
+      stopUnits = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = "Systemd units to stop during backup (defaults to the service name).";
+      };
     };
 
     ocrLanguages = lib.mkOption {
@@ -122,6 +132,15 @@ in
     atelier.services.paperless.data = {
       sqlite = "/var/lib/paperless/db.sqlite3";
       files = [ "/var/lib/paperless/media" ];
+      # Paperless has no `paperless.service` -- it ships as four separate
+      # units. Without this the backup's pre-stop hook targets a unit that
+      # does not exist.
+      stopUnits = [
+        "paperless-web.service"
+        "paperless-consumer.service"
+        "paperless-scheduler.service"
+        "paperless-task-queue.service"
+      ];
     };
 
     services.caddy.virtualHosts.${cfg.domain} = {

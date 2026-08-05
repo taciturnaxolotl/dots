@@ -133,6 +133,22 @@ in
         description = "Whether to stop the service during backup. Set to false for WAL-mode SQLite services that can be backed up online.";
       };
 
+      stopUnits = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+        description = ''
+          Systemd units to stop during backup. Defaults to the service name
+          itself, which is only correct when the service ships a single unit
+          named after it. Set this for services that split across several units
+          (e.g. paperless), otherwise the stop is a no-op against a unit that
+          does not exist.
+        '';
+        example = [
+          "paperless-web.service"
+          "paperless-consumer.service"
+        ];
+      };
+
       postgres = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
         default = null;
