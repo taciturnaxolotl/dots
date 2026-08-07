@@ -602,14 +602,10 @@
     '';
   };
 
-  services.caddy.virtualHosts."kieran.westerville.oh.us" = {
+  # HTTP-only: westerville.oh.us isn't a Cloudflare zone, so DNS-01 can never
+  # solve. The http:// prefix tells caddy to skip automatic HTTPS for this site.
+  services.caddy.virtualHosts."http://kieran.westerville.oh.us" = {
     extraConfig = ''
-      tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-      }
-      header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-      }
       redir https://dunkirk.sh?from=westerville permanent
     '';
   };
