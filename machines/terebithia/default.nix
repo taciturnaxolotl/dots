@@ -627,6 +627,23 @@
     '';
   };
 
+  # Spindle (Tangled CI) runs on prattle for KVM microVMs; terebithia is the
+  # public front. Proxy over Tailscale to prattle's spindle HTTP port.
+  services.caddy.virtualHosts."spindle.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
+      reverse_proxy prattle:6555 {
+        header_up X-Forwarded-Proto {scheme}
+        header_up X-Forwarded-For {remote}
+      }
+    '';
+  };
+
   services.caddy.virtualHosts."s3.dunkirk.sh" = {
     extraConfig = ''
       tls {

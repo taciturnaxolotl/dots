@@ -281,8 +281,17 @@
     spindle = {
       enable = true;
       hostname = "spindle.dunkirk.sh";
+      # Bind all interfaces so terebithia (the public front) can reach it over
+      # Tailscale; the port is restricted to tailscale0 in the firewall below,
+      # so it isn't exposed on the LAN.
+      bindAddr = "0.0.0.0";
     };
   };
+
+  # spindle's HTTP port, reachable only over Tailscale (terebithia fronts the
+  # public spindle.dunkirk.sh and reverse-proxies here). Not in the global
+  # allowedTCPPorts, so the default-deny firewall blocks it on the LAN.
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 6555 ];
 
   # microVM host prerequisite the spindle module doesn't provide: the vsock
   # transport for the in-guest agent. (The image is dropped into the spindle

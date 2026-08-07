@@ -63,6 +63,17 @@ in
         default = 6555;
       };
 
+      bindAddr = lib.mkOption {
+        type = lib.types.str;
+        default = "127.0.0.1";
+        description = ''
+          Address the spindle HTTP server binds to. Default is loopback.
+          Set to "0.0.0.0" when a separate public host reverse-proxies the
+          spindle over Tailscale (restrict the port to tailscale0 in the
+          firewall so it isn't exposed on other interfaces).
+        '';
+      };
+
       hostname = lib.mkOption {
         type = lib.types.str;
         default = "";
@@ -84,7 +95,7 @@ in
         server = {
           owner = cfg.owner;
           hostname = cfg.spindle.hostname;
-          listenAddr = "127.0.0.1:${toString cfg.spindle.port}";
+          listenAddr = "${cfg.spindle.bindAddr}:${toString cfg.spindle.port}";
         };
       };
 
@@ -99,18 +110,10 @@ in
         postBackup = "systemctl start spindle";
       };
 
-      services.caddy.virtualHosts."${cfg.spindle.hostname}".extraConfig = ''
-        tls {
-          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-        }
-        header {
-          Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        }
-        reverse_proxy localhost:${toString cfg.spindle.port} {
-          header_up X-Forwarded-Proto {scheme}
-          header_up X-Forwarded-For {remote}
-        }
-      '';
+      # The public endpoint (hostname over HTTPS) is served by whichever host
+      # fronts the internet, reverse-proxying to this spindle over Tailscale.
+      # That host is often not the spindle host (e.g. a NAT'd KVM box), so the
+      # caddy vhost lives there, not here.
     })
 
     (lib.mkIf cfg.knot.enable {
