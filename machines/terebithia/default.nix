@@ -553,7 +553,10 @@
       hostname = "knot.dunkirk.sh";
       syncSecretsFile = config.age.secrets.github-knot-sync.path;
     };
+    # Spindle moved to prattle (bare-metal x86_64 with KVM → real microVMs).
+    # terebithia is a nested VM without EL2, so it has no /dev/kvm.
     spindle = {
+      enable = false;
       hostname = "spindle.dunkirk.sh";
     };
   };

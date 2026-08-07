@@ -271,6 +271,24 @@
     };
   };
 
+  # ── Tangled spindle (CI) ──────────────────────────────────────────
+  # Runs the spindle workflow server here (bare-metal x86_64 with KVM), so CI
+  # can use real microVMs. The knot stays on terebithia.
+  atelier.services.tangled = {
+    enable = true;
+    owner = "did:plc:krxbvxvis5skq7jj6eot23ul";
+    knot.enable = false;
+    spindle = {
+      enable = true;
+      hostname = "spindle.dunkirk.sh";
+    };
+  };
+
+  # microVM host prerequisite the spindle module doesn't provide: the vsock
+  # transport for the in-guest agent. (The image is dropped into the spindle
+  # image dir via the systemd.tmpfiles.rules block further down.)
+  boot.kernelModules = [ "vhost_vsock" ];
+
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
   atelier.services.arm = {
     enable = true;
@@ -297,6 +315,9 @@
 
   # Media/torrent directory structure (hardlinks require same filesystem)
   systemd.tmpfiles.rules = [
+    # spindle microVM image (spindle resolves <name>/spec.json under imageDir)
+    "d /var/lib/spindle/images 0755 root root -"
+    "L+ /var/lib/spindle/images/nixos - - - - ${inputs.tangled.packages.${pkgs.system}.spindle-nixos-image}"
     "d /storage/media/movies 2775 root media -"
     "d /storage/media/tv 2775 root media -"
     "d /storage/torrents 2775 root media -"
