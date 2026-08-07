@@ -300,8 +300,11 @@
       hash = "sha256-5d+U7sdSIUuwj6OK8WutZGsfvshtDj0FKRjkMDNfbxU=";
     };
     email = "kieran@dunkirk.sh";
+    # No global acme_dns: every vhost sets its own "dns cloudflare" inline (see
+    # mkService.nix and the vhosts below), and a global default would force the
+    # DNS challenge onto kieran.westerville.oh.us too, which isn't a Cloudflare
+    # zone. Leaving it off lets that one site fall back to HTTP-01.
     globalConfig = ''
-      acme_dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       order rate_limit before basicauth
     '';
     virtualHosts."map.dunkirk.sh" = {
@@ -602,14 +605,11 @@
     '';
   };
 
-  # Direct A record to terebithia's public IP (not a Cloudflare zone), so the
-  # global DNS-01 challenge can't solve it. Override with a per-site ACME issuer
-  # that has no DNS challenge, so caddy falls back to HTTP-01 (port 80 is public).
+  # Direct A record to terebithia's public IP (not a Cloudflare zone). With no
+  # DNS challenge configured for it, caddy provisions this cert via HTTP-01
+  # (port 80 is public), so the redirect works over HTTPS.
   services.caddy.virtualHosts."kieran.westerville.oh.us" = {
     extraConfig = ''
-      tls {
-        issuer acme
-      }
       header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
       }
