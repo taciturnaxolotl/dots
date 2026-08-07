@@ -602,10 +602,17 @@
     '';
   };
 
-  # HTTP-only: westerville.oh.us isn't a Cloudflare zone, so DNS-01 can never
-  # solve. The http:// prefix tells caddy to skip automatic HTTPS for this site.
-  services.caddy.virtualHosts."http://kieran.westerville.oh.us" = {
+  # Direct A record to terebithia's public IP (not a Cloudflare zone), so the
+  # global DNS-01 challenge can't solve it. Override with a per-site ACME issuer
+  # that has no DNS challenge, so caddy falls back to HTTP-01 (port 80 is public).
+  services.caddy.virtualHosts."kieran.westerville.oh.us" = {
     extraConfig = ''
+      tls {
+        issuer acme
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
       redir https://dunkirk.sh?from=westerville permanent
     '';
   };
