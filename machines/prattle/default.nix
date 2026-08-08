@@ -320,6 +320,11 @@
   # it is the upstream-blessed workaround (kata-containers#13080).
   virtualisation.docker.daemon.settings.features.time-namespaces = false;
 
+  # gVisor (runsc): a userspace-kernel sandbox — lighter than Kata's full VM and
+  # far more robust with docker's resource/interactive flags (Kata's runtime-rs
+  # wedges on them). A plain path-based OCI runtime, so `--runtime runsc`.
+  virtualisation.docker.daemon.settings.runtimes.runsc.path = "${pkgs.gvisor}/bin/runsc";
+
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
   atelier.services.arm = {
     enable = true;
