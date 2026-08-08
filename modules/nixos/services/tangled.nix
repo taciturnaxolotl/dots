@@ -78,6 +78,18 @@ in
         type = lib.types.str;
         default = "";
       };
+
+      maxJobCount = lib.mkOption {
+        type = lib.types.int;
+        default = 2;
+        description = ''
+          Max pipelines running concurrently. Each microVM job is 4 GiB / 2
+          vCPU (the nixos image spec), so size this to the host: leave RAM and
+          CPU headroom for anything else the machine runs. Aggregate microVM
+          and nixery caps below are derived from this so a burst can't
+          over-allocate.
+        '';
+      };
     };
   };
 
@@ -96,6 +108,21 @@ in
           owner = cfg.owner;
           hostname = cfg.spindle.hostname;
           listenAddr = "${cfg.spindle.bindAddr}:${toString cfg.spindle.port}";
+          maxJobCount = cfg.spindle.maxJobCount;
+        };
+
+        pipelines = {
+          # Aggregate ceilings so a workflow requesting a larger-than-default VM
+          # (or a burst) can't exceed the job-count budget. Mirror the nixos
+          # image spec: 4 GiB / 2 vCPU per microVM.
+          microvm.limits.total = {
+            memoryMiB = cfg.spindle.maxJobCount * 4096;
+            vcpus = cfg.spindle.maxJobCount * 2;
+          };
+
+          # Keep nixery workflow concurrency in line with the job budget too
+          # (6 GiB per container; the default of 8 could otherwise over-commit).
+          nixery.maxConcurrentWorkflows = cfg.spindle.maxJobCount;
         };
       };
 
