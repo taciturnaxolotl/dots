@@ -297,10 +297,23 @@
   # allowedTCPPorts, so the default-deny firewall blocks it on the LAN.
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 6555 ];
 
-  # microVM host prerequisite the spindle module doesn't provide: the vsock
-  # transport for the in-guest agent. (The image is dropped into the spindle
-  # image dir via the systemd.tmpfiles.rules block further down.)
-  boot.kernelModules = [ "vhost_vsock" ];
+  # microVM host prerequisites: vsock (spindle's in-guest agent) and vhost_net
+  # (Kata's VM networking — `kata-runtime check` fails without it).
+  boot.kernelModules = [
+    "vhost_vsock"
+    "vhost_net"
+  ];
+
+  # ── Kata Containers: microVM isolation via the docker runtime ─────────
+  # kloe's sandbox runs its shell tool in a per-conversation container here
+  # over Tailscale; `--runtime kata` boots each in a lightweight VM (qemu +
+  # KVM) instead of sharing the host kernel. The nixpkgs config is already
+  # patched to nix-store qemu/kernel/image paths; the shim just needs to find
+  # it at the conventional /etc location.
+  environment.etc."kata-containers/configuration.toml".source =
+    "${pkgs.kata-runtime}/share/defaults/kata-containers/configuration.toml";
+  virtualisation.docker.daemon.settings.runtimes.kata.runtimeType =
+    "${pkgs.kata-runtime}/bin/containerd-shim-kata-v2";
 
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
   atelier.services.arm = {
