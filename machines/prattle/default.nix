@@ -168,6 +168,7 @@
         "wheel"
         "media"
         "cdrom"
+        "docker" # drive the daemon over DOCKER_HOST=ssh (kloe's kata sandbox)
       ];
     };
     root.openssh.authorizedKeys.keys = [
