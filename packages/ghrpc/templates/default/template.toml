@@ -1,0 +1,9 @@
+# The plain one: a README and a licence, nothing else.
+
+type = "software"
+order = 1
+description = "README and a license, nothing else"
+
+[[licence]]
+key = "project"
+options = ["MIT", "Apache-2.0", "GPL-3.0", "BSD-3-Clause", "ISC", "OSaasy", "Unlicense"]

@@ -1,0 +1,13 @@
+# Build output
+build/
+build-*/
+.pio/
+.cache/
+compile_commands.json
+
+# Firmware images and debug artifacts
+*.elf
+*.bin
+*.uf2
+*.hex
+*.map

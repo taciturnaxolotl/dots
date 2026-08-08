@@ -76,7 +76,13 @@ lib/
 secrets/
   secrets.nix          — agenix public key declarations
   *.age                — encrypted secrets
-packages/              — custom derivations (bore-auth, docs, zmx)
+packages/              — custom derivations (bore-auth, docs, zmx, ghrpc)
+  ghrpc/               — Go source for the repo-creation CLI (cobra + fang + huh).
+                         templates/ is embedded in the binary, so a new directory
+                         there is a new scaffold; its template.json declares the
+                         project type and one licenseSlot per thing that needs
+                         licensing (hardware/firmware/docs), which the form asks
+                         about and LICENSE.md is composed from
 dots/                  — raw config files (hyprland, yabai/skhd, wallpapers, scripts)
 docs/                  — mdBook source; built by nix build .#packages.*.docs
 ```

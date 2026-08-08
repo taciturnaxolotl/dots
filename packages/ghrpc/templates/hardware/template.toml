@@ -1,0 +1,32 @@
+# An open hardware repo: board, firmware, mechanical and docs, each licensed
+# on its own terms.
+
+type = "hardware"
+order = 2
+description = "KiCad, firmware, CAD and docs layout"
+
+[[licence]]
+key = "hardware"
+section = "Hardware"
+covers = "Hardware design files (schematics, PCB layouts, gerbers, BOM, CAD)"
+path = "hardware/LICENSE.md"
+options = [
+  "CERN-OHL-S-2.0", # strong copyleft, the default for a finished board
+  "CERN-OHL-W-2.0", # weak copyleft, for a module meant to be embedded
+  "CERN-OHL-P-2.0", # permissive
+  "CC-BY-SA-4.0",
+]
+
+[[licence]]
+key = "firmware"
+section = "Firmware & software"
+covers = "Firmware and software"
+path = "firmware/LICENSE.md"
+options = ["MIT", "Apache-2.0", "GPL-3.0", "BSD-3-Clause", "ISC"]
+
+[[licence]]
+key = "docs"
+section = "Documentation"
+covers = "Documentation"
+path = "docs/LICENSE.md"
+options = ["CC-BY-4.0", "CC-BY-SA-4.0", "CC0-1.0", "MIT"]

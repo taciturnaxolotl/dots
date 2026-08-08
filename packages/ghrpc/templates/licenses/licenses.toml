@@ -1,0 +1,84 @@
+# Every licence ghrpc can write. `body` is the matching <id>.md.tmpl in this
+# directory; `text` is a full licence text shipped alongside LICENSE.md, for
+# the licences whose terms are not canonically hosted elsewhere.
+
+[[licence]]
+id = "MIT"
+name = "MIT License"
+description = "short and permissive"
+badge = "MIT"
+
+[[licence]]
+id = "Apache-2.0"
+name = "Apache License 2.0"
+description = "permissive, with an explicit patent grant"
+badge = "Apache-2.0"
+
+[[licence]]
+id = "GPL-3.0"
+name = "GNU General Public License v3.0"
+description = "copyleft; derivatives stay GPL"
+badge = "GPL-3.0"
+
+[[licence]]
+id = "BSD-3-Clause"
+name = "BSD 3-Clause License"
+description = "permissive, plus a no-endorsement clause"
+badge = "BSD-3-Clause"
+
+[[licence]]
+id = "ISC"
+name = "ISC License"
+description = "permissive; MIT without the boilerplate"
+badge = "ISC"
+
+[[licence]]
+id = "OSaasy"
+name = "The O'Saasy License"
+description = "MIT, minus running it as a competing service"
+badge = "O'Saasy"
+
+[[licence]]
+id = "Unlicense"
+name = "The Unlicense"
+description = "public domain dedication"
+badge = "Unlicense"
+
+[[licence]]
+id = "CERN-OHL-S-2.0"
+name = "CERN Open Hardware Licence v2 - Strongly Reciprocal"
+description = "strong copyleft; products built from it stay open"
+badge = "CERN-OHL-S+v2"
+text = "cern_ohl_s_v2.txt"
+
+[[licence]]
+id = "CERN-OHL-W-2.0"
+name = "CERN Open Hardware Licence v2 - Weakly Reciprocal"
+description = "weak copyleft; fine as a module inside a closed product"
+badge = "CERN-OHL-W+v2"
+text = "cern_ohl_w_v2.txt"
+
+[[licence]]
+id = "CERN-OHL-P-2.0"
+name = "CERN Open Hardware Licence v2 - Permissive"
+description = "permissive; no obligation to share changes"
+badge = "CERN-OHL-P+v2"
+text = "cern_ohl_p_v2.txt"
+
+[[licence]]
+id = "CC-BY-4.0"
+name = "Creative Commons Attribution 4.0 International"
+description = "credit required, nothing else"
+badge = "CC-BY-4.0"
+
+[[licence]]
+id = "CC-BY-SA-4.0"
+name = "Creative Commons Attribution-ShareAlike 4.0 International"
+description = "credit required, derivatives share alike"
+badge = "CC-BY-SA-4.0"
+
+[[licence]]
+id = "CC0-1.0"
+name = "CC0 1.0 Universal"
+description = "public domain dedication"
+badge = "CC0-1.0"
