@@ -1,0 +1,44 @@
+{
+  "type": "hardware",
+  "order": 2,
+  "description": "KiCad, firmware, CAD and docs layout",
+  "licenseSlots": [
+    {
+      "key": "hardware",
+      "covers": "Hardware design files (schematics, PCB layouts, gerbers, BOM, CAD)",
+      "licenses": [
+        "CERN-OHL-S-2.0",
+        "CERN-OHL-W-2.0",
+        "CERN-OHL-P-2.0",
+        "CC-BY-SA-4.0"
+      ],
+      "section": "Hardware",
+      "path": "hardware/LICENSE.md"
+    },
+    {
+      "key": "firmware",
+      "covers": "Firmware and software",
+      "licenses": [
+        "MIT",
+        "Apache-2.0",
+        "GPL-3.0",
+        "BSD-3-Clause",
+        "ISC"
+      ],
+      "section": "Firmware & software",
+      "path": "firmware/LICENSE.md"
+    },
+    {
+      "key": "docs",
+      "covers": "Documentation",
+      "licenses": [
+        "CC-BY-4.0",
+        "CC-BY-SA-4.0",
+        "CC0-1.0",
+        "MIT"
+      ],
+      "section": "Documentation",
+      "path": "docs/LICENSE.md"
+    }
+  ]
+}
