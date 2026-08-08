@@ -285,6 +285,10 @@
       # Tailscale; the port is restricted to tailscale0 in the firewall below,
       # so it isn't exposed on the LAN.
       bindAddr = "0.0.0.0";
+      # 8 logical CPUs / 31 GiB here, shared with the media stack. At 4 GiB +
+      # 2 vCPU per microVM, 4 jobs is ~16 GiB / 8 vCPU worst case, leaving RAM
+      # (+ swap) and CPU headroom for jellyfin/nixarr/minio.
+      maxJobCount = 4;
     };
   };
 
