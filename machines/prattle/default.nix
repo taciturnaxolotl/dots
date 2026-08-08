@@ -314,6 +314,10 @@
     "${pkgs.kata-runtime}/share/defaults/kata-containers/configuration.toml";
   virtualisation.docker.daemon.settings.runtimes.kata.runtimeType =
     "${pkgs.kata-runtime}/bin/containerd-shim-kata-v2";
+  # Docker 29.5+ gives containers a private `time` namespace by default, which
+  # Kata's guest agent doesn't understand ("invalid namespace type"). Disabling
+  # it is the upstream-blessed workaround (kata-containers#13080).
+  virtualisation.docker.daemon.settings.features.time-namespaces = false;
 
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
   atelier.services.arm = {
