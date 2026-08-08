@@ -1,0 +1,14 @@
+.DS_Store
+*~
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+
+# direnv / nix
+.direnv/
+result
+result-*
+
+crush.json
