@@ -298,32 +298,20 @@
   # allowedTCPPorts, so the default-deny firewall blocks it on the LAN.
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 6555 ];
 
-  # microVM host prerequisites: vsock (spindle's in-guest agent) and vhost_net
-  # (Kata's VM networking — `kata-runtime check` fails without it).
-  boot.kernelModules = [
-    "vhost_vsock"
-    "vhost_net"
-  ];
+  # microVM host prerequisite: the vsock transport for the spindle's in-guest agent.
+  boot.kernelModules = [ "vhost_vsock" ];
 
-  # ── Kata Containers: microVM isolation via the docker runtime ─────────
-  # kloe's sandbox runs its shell tool in a per-conversation container here
-  # over Tailscale; `--runtime kata` boots each in a lightweight VM (qemu +
-  # KVM) instead of sharing the host kernel. The nixpkgs config is already
-  # patched to nix-store qemu/kernel/image paths; the shim just needs to find
-  # it at the conventional /etc location.
-  environment.etc."kata-containers/configuration.toml".source =
-    "${pkgs.kata-runtime}/share/defaults/kata-containers/configuration.toml";
-  virtualisation.docker.daemon.settings.runtimes.kata.runtimeType =
-    "${pkgs.kata-runtime}/bin/containerd-shim-kata-v2";
-  # Docker 29.5+ gives containers a private `time` namespace by default, which
-  # Kata's guest agent doesn't understand ("invalid namespace type"). Disabling
-  # it is the upstream-blessed workaround (kata-containers#13080).
-  virtualisation.docker.daemon.settings.features.time-namespaces = false;
-
-  # gVisor (runsc): a userspace-kernel sandbox — lighter than Kata's full VM and
-  # far more robust with docker's resource/interactive flags (Kata's runtime-rs
-  # wedges on them). A plain path-based OCI runtime, so `--runtime runsc`.
+  # ── gVisor (runsc): sandbox runtime for kloe's shell tool ─────────────
+  # kloe runs its per-conversation sandbox in a docker container here over
+  # Tailscale with `--runtime runsc`, so untrusted commands execute in gVisor's
+  # userspace kernel instead of sharing the host kernel. Plain path-based OCI
+  # runtime. (Kata was tried for full-VM isolation but its runtime-rs wedges the
+  # daemon on docker's resource/interactive flags on this stack, so gVisor it is.)
   virtualisation.docker.daemon.settings.runtimes.runsc.path = "${pkgs.gvisor}/bin/runsc";
+  # Docker 29.5+ adds a private `time` namespace to containers by default; some
+  # sandbox runtimes don't implement it. Harmless to disable (containers just
+  # share the host clock) and keeps such a runtime from choking on it.
+  virtualisation.docker.daemon.settings.features.time-namespaces = false;
 
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
   atelier.services.arm = {
