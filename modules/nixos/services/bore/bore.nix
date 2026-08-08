@@ -165,6 +165,18 @@ in
           # Logging
           log.to = "console"
           log.level = "info"
+
+          # Must stay last: in TOML every key after a table header belongs to
+          # that table, so anything below would be read as plugin config.
+          ${lib.optionalString cfg.auth.enable ''
+            # Tell bore-auth about proxies as they come and go, so it never has
+            # to poll the admin API to find out what is gated.
+            [[httpPlugins]]
+            name = "bore-auth"
+            addr = "127.0.0.1:8401"
+            path = "/.frp/hook"
+            ops = ["NewProxy", "CloseProxy"]
+          ''}
         '';
       in
       {
@@ -242,9 +254,12 @@ in
             }
           ''}
 
-          # Proxy /api/* to frps dashboard
-          handle /api/* {
-            reverse_proxy localhost:7400
+          # The dashboard's data. bore-auth serves the handful of fields the
+          # page renders; the frps admin API stays on localhost, where it can
+          # keep its unauthenticated proxy list and its DELETE endpoints to
+          # itself.
+          handle /tunnels {
+            reverse_proxy localhost:8401
           }
 
           # Serve dashboard HTML

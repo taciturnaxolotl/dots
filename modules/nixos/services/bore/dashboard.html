@@ -398,14 +398,15 @@
 
     async function fetchStats() {
       try {
-        // Fetch server info
-        const serverResponse = await fetch('/api/serverinfo');
-        if (!serverResponse.ok) throw new Error('API unavailable');
-        const serverData = await serverResponse.json();
-
-        // Fetch HTTP proxies (tunnels)
-        const proxiesResponse = await fetch('/api/proxy/http');
-        const proxiesData = await proxiesResponse.json();
+        // One filtered endpoint from bore-auth, rather than the frps admin
+        // API proxied to the world.
+        const response = await fetch('/tunnels');
+        if (!response.ok) throw new Error('API unavailable');
+        const data = await response.json();
+        const serverData = data.server;
+        // The page renders subdomains, so it shows http tunnels; tcp and udp
+        // are in the payload for the CLI.
+        const proxiesData = { proxies: (data.proxies || []).filter(p => p.type === 'http') };
 
         // Reset fail count on success
         fetchFailCount = 0;

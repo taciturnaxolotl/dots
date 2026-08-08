@@ -24,15 +24,21 @@ let
       ${pkgs.gum}/bin/gum style --bold --foreground 212 "Active tunnels"
       echo
       
-      tunnels=$(${pkgs.curl}/bin/curl -s https://${cfg.domain}/api/proxy/http)
+      # --fail so a 5xx or an error page is reported as one, rather than
+      # rendering as "no tunnels".
+      if ! tunnels=$(${pkgs.curl}/bin/curl -fsS https://${cfg.domain}/tunnels 2>&1); then
+        ${pkgs.gum}/bin/gum style --foreground 196 "Could not reach ${cfg.domain}: $tunnels"
+        exit 1
+      fi
       
       if ! echo "$tunnels" | ${pkgs.jq}/bin/jq -e '.proxies | length > 0' >/dev/null 2>&1; then
         ${pkgs.gum}/bin/gum style --foreground 117 "No active tunnels"
         exit 0
       fi
       
-      # Filter only online tunnels with valid conf
-      echo "$tunnels" | ${pkgs.jq}/bin/jq -r '.proxies[] | select(.status == "online" and .conf != null) | if .type == "http" then "\(.name) → https://\(.conf.subdomain).${cfg.domain} [http]" elif .type == "tcp" then "\(.name) → tcp://\(.conf.remotePort) → localhost:\(.conf.localPort) [tcp]" elif .type == "udp" then "\(.name) → udp://\(.conf.remotePort) → localhost:\(.conf.localPort) [udp]" else "\(.name) [\(.type)]" end' | while read -r line; do
+      # Every type, not just http: tcp and udp tunnels were invisible here
+      # because this used to read the http-only endpoint.
+      echo "$tunnels" | ${pkgs.jq}/bin/jq -r '.proxies[] | select(.status == "online") | if .type == "http" then "\(.name) → https://\(.conf.subdomain).${cfg.domain} [http]" elif .type == "tcp" then "\(.name) → tcp://${cfg.domain}:\(.conf.remotePort) [tcp]" elif .type == "udp" then "\(.name) → udp://${cfg.domain}:\(.conf.remotePort) [udp]" else "\(.name) [\(.type)]" end' | while read -r line; do
         ${pkgs.gum}/bin/gum style --foreground 35 "✓ $line"
       done
       exit 0

@@ -19,17 +19,17 @@ import (
 )
 
 type Config struct {
-	ListenAddr     string
-	FrpsAPIURL     string
-	IndikoURL      string
-	ClientID       string
-	ClientSecret   string
-	RedirectURI    string
-	CookieDomain   string
-	CookieSecure   bool
-	SessionMaxAge  int
-	HashKey        []byte
-	BlockKey       []byte
+	ListenAddr    string
+	FrpsAPIURL    string
+	IndikoURL     string
+	ClientID      string
+	ClientSecret  string
+	RedirectURI   string
+	CookieDomain  string
+	CookieSecure  bool
+	SessionMaxAge int
+	HashKey       []byte
+	BlockKey      []byte
 }
 
 type Session struct {
@@ -43,21 +43,6 @@ type PKCEState struct {
 	CodeVerifier string
 	RedirectTo   string
 	CreatedAt    time.Time
-}
-
-type ProxyInfo struct {
-	Name   string          `json:"name"`
-	Status string          `json:"status"`
-	Conf   json.RawMessage `json:"conf"`
-}
-
-type ProxyConf struct {
-	Subdomain string            `json:"subdomain"`
-	Metadatas map[string]string `json:"metadatas"`
-}
-
-type ProxyListResponse struct {
-	Proxies []ProxyInfo `json:"proxies"`
 }
 
 type TokenResponse struct {
@@ -80,9 +65,6 @@ var (
 	secureCookie *securecookie.SecureCookie
 	pkceStates   = make(map[string]PKCEState)
 	pkceStatesMu sync.Mutex
-	proxyCache   = make(map[string]*ProxyConf)
-	proxyCacheMu sync.RWMutex
-	proxyCacheAt time.Time
 )
 
 func main() {
@@ -114,17 +96,33 @@ func main() {
 	secureCookie = securecookie.New(config.HashKey, config.BlockKey)
 	secureCookie.MaxAge(config.SessionMaxAge)
 
-	// Start background cache refresh
-	go refreshProxyCachePeriodically()
+	// What exists and what is gated, learned from frps as it happens.
+	proxies := newRegistry()
+	go proxies.sync()
 
-	http.HandleFunc("/.auth/check", handleAuthCheck)
+	// What the status page shows. Separate on purpose: if this falls behind,
+	// the dashboard is stale and nothing else is affected.
+	status := &statusCache{}
+	go status.run()
+
+	http.HandleFunc("/.frp/hook", proxies.handleHook)
+	http.HandleFunc("/.auth/check", proxies.handleAuthCheck)
 	http.HandleFunc("/.auth/login", handleLogin)
 	http.HandleFunc("/.auth/callback", handleCallback)
 	http.HandleFunc("/.auth/logout", handleLogout)
+	http.HandleFunc("/tunnels", status.handle)
 	http.HandleFunc("/healthz", handleHealthz)
 
+	server := &http.Server{
+		Addr:              config.ListenAddr,
+		ReadHeaderTimeout: 10 * time.Second,
+		ReadTimeout:       30 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       120 * time.Second,
+	}
+
 	log.Printf("bore-auth listening on %s", config.ListenAddr)
-	log.Fatal(http.ListenAndServe(config.ListenAddr, nil))
+	log.Fatal(server.ListenAndServe())
 }
 
 func handleHealthz(w http.ResponseWriter, r *http.Request) {
@@ -132,60 +130,52 @@ func handleHealthz(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("ok"))
 }
 
-func handleAuthCheck(w http.ResponseWriter, r *http.Request) {
-	host := r.Header.Get("X-Forwarded-Host")
-	if host == "" {
-		host = r.Host
+// redirectToLogin sends an unauthenticated visitor to the login flow, keeping
+// the URL they were trying to reach.
+func redirectToLogin(w http.ResponseWriter, r *http.Request, host string) {
+	originalURL := r.Header.Get("X-Forwarded-Uri")
+	if originalURL == "" {
+		originalURL = r.URL.RequestURI()
+	}
+	scheme := r.Header.Get("X-Forwarded-Proto")
+	if scheme == "" {
+		scheme = "https"
 	}
 
-	subdomain := extractSubdomain(host)
-	if subdomain == "" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
+	redirectTo := fmt.Sprintf("%s://%s%s", scheme, host, originalURL)
+	loginURL := fmt.Sprintf("https://%s/.auth/login?redirect=%s",
+		baseDomain(), url.QueryEscape(redirectTo))
 
-	proxyConf := getProxyConf(subdomain)
-	if proxyConf == nil {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	authType := proxyConf.Metadatas["auth"]
-	if authType != "indiko" {
-		w.WriteHeader(http.StatusOK)
-		return
-	}
-
-	session, err := getSession(r)
-	if err != nil || session == nil || time.Now().After(session.ExpiresAt) {
-		originalURL := r.Header.Get("X-Forwarded-Uri")
-		if originalURL == "" {
-			originalURL = r.URL.RequestURI()
-		}
-		scheme := r.Header.Get("X-Forwarded-Proto")
-		if scheme == "" {
-			scheme = "https"
-		}
-
-		redirectTo := fmt.Sprintf("%s://%s%s", scheme, host, originalURL)
-		loginURL := fmt.Sprintf("https://%s/.auth/login?redirect=%s", config.CookieDomain[1:], url.QueryEscape(redirectTo))
-
-		w.Header().Set("Location", loginURL)
-		w.WriteHeader(http.StatusTemporaryRedirect)
-		return
-	}
-
-	w.Header().Set("X-Auth-User", session.UserID)
-	w.Header().Set("X-Auth-Name", session.Name)
-	w.Header().Set("X-Auth-Email", session.Email)
-	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Location", loginURL)
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func handleLogin(w http.ResponseWriter, r *http.Request) {
-	redirectTo := r.URL.Query().Get("redirect")
-	if redirectTo == "" {
-		redirectTo = "https://" + config.CookieDomain[1:]
+// safeRedirect keeps ?redirect= pointing inside our own domain.
+//
+// Taken verbatim it is an open redirect: an attacker sends someone to a real
+// login on a real domain and chooses where they land afterwards, which is a
+// phishing primitive wearing our certificate.
+func safeRedirect(target string) string {
+	home := "https://" + baseDomain()
+	if target == "" {
+		return home
 	}
+	parsed, err := url.Parse(target)
+	if err != nil || parsed.Scheme != "https" {
+		return home
+	}
+	host := parsed.Hostname()
+	if host != baseDomain() && !strings.HasSuffix(host, config.CookieDomain) {
+		return home
+	}
+	return parsed.String()
+}
+
+// baseDomain is the cookie domain without its leading dot.
+func baseDomain() string { return strings.TrimPrefix(config.CookieDomain, ".") }
+
+func handleLogin(w http.ResponseWriter, r *http.Request) {
+	redirectTo := safeRedirect(r.URL.Query().Get("redirect"))
 
 	codeVerifier := generateCodeVerifier()
 	codeChallenge := generateCodeChallenge(codeVerifier)
@@ -273,12 +263,7 @@ func handleLogout(w http.ResponseWriter, r *http.Request) {
 		SameSite: http.SameSiteLaxMode,
 	})
 
-	redirectTo := r.URL.Query().Get("redirect")
-	if redirectTo == "" {
-		redirectTo = "https://" + config.CookieDomain[1:]
-	}
-
-	http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
+	http.Redirect(w, r, safeRedirect(r.URL.Query().Get("redirect")), http.StatusTemporaryRedirect)
 }
 
 func exchangeCode(code, codeVerifier string) (*TokenResponse, error) {
@@ -358,72 +343,6 @@ func extractSubdomain(host string) string {
 	return subdomain
 }
 
-func getProxyConf(subdomain string) *ProxyConf {
-	proxyCacheMu.RLock()
-	conf, ok := proxyCache[subdomain]
-	proxyCacheMu.RUnlock()
-
-	if ok {
-		return conf
-	}
-
-	refreshProxyCache()
-
-	proxyCacheMu.RLock()
-	conf = proxyCache[subdomain]
-	proxyCacheMu.RUnlock()
-
-	return conf
-}
-
-func refreshProxyCache() {
-	proxyCacheMu.Lock()
-	defer proxyCacheMu.Unlock()
-
-	if time.Since(proxyCacheAt) < 5*time.Second {
-		return
-	}
-
-	resp, err := http.Get(config.FrpsAPIURL + "/api/proxy/http")
-	if err != nil {
-		log.Printf("Failed to fetch proxy list: %v", err)
-		return
-	}
-	defer resp.Body.Close()
-
-	var proxyList ProxyListResponse
-	if err := json.NewDecoder(resp.Body).Decode(&proxyList); err != nil {
-		log.Printf("Failed to decode proxy list: %v", err)
-		return
-	}
-
-	newCache := make(map[string]*ProxyConf)
-	for _, p := range proxyList.Proxies {
-		if p.Status != "online" {
-			continue
-		}
-
-		var conf ProxyConf
-		if err := json.Unmarshal(p.Conf, &conf); err != nil {
-			continue
-		}
-
-		if conf.Subdomain != "" {
-			newCache[conf.Subdomain] = &conf
-		}
-	}
-
-	proxyCache = newCache
-	proxyCacheAt = time.Now()
-}
-
-func refreshProxyCachePeriodically() {
-	ticker := time.NewTicker(30 * time.Second)
-	for range ticker.C {
-		refreshProxyCache()
-	}
-}
-
 func generateCodeVerifier() string {
 	b := make([]byte, 32)
 	rand.Read(b)
@@ -461,28 +380,28 @@ func getEnv(key, defaultVal string) string {
 
 func decodeKey(keyStr string) []byte {
 	keyStr = strings.TrimSpace(keyStr)
-	
+
 	// Try standard base64
 	if decoded, err := base64.StdEncoding.DecodeString(keyStr); err == nil && len(decoded) >= 32 {
 		return decoded[:32]
 	}
-	
+
 	// Try URL-safe base64
 	if decoded, err := base64.URLEncoding.DecodeString(keyStr); err == nil && len(decoded) >= 32 {
 		return decoded[:32]
 	}
-	
+
 	// Try raw base64 (no padding)
 	if decoded, err := base64.RawStdEncoding.DecodeString(keyStr); err == nil && len(decoded) >= 32 {
 		return decoded[:32]
 	}
-	
+
 	// Use raw bytes, pad or truncate to 32
 	raw := []byte(keyStr)
 	if len(raw) >= 32 {
 		return raw[:32]
 	}
-	
+
 	// Pad with zeros if too short
 	padded := make([]byte, 32)
 	copy(padded, raw)
