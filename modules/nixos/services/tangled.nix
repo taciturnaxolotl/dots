@@ -112,6 +112,13 @@ in
         };
 
         pipelines = {
+          # No S3 log archival: only the bucket name can be set here (creds,
+          # region, endpoint would come from AWS_* env we don't provide), so
+          # uploads just error out. Logs are written to /var/log/spindle and
+          # the UI streams them from there, so an empty bucket disables the
+          # broken S3 path cleanly (NewS3 short-circuits on "").
+          logBucket = "";
+
           # Aggregate ceilings so a workflow requesting a larger-than-default VM
           # (or a burst) can't exceed the job-count budget. Mirror the nixos
           # image spec: 4 GiB / 2 vCPU per microVM.
