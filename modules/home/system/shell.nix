@@ -210,6 +210,28 @@ let
     ' "$summary"
   '';
 
+  crush-wakatime = pkgs.writeShellScriptBin "crush-wakatime" ''
+    # Heartbeat for Crush, fired from its PreToolUse hook. wakatime-cli
+    # already reads Claude's transcripts on its own; Crush keeps its
+    # sessions in sqlite, so nothing sees them unless we say so.
+    entity="''${CRUSH_TOOL_INPUT_FILE_PATH:-''${CRUSH_PROJECT_DIR:-$CRUSH_CWD}}"
+    [[ -n "$entity" ]] || exit 0
+
+    args=(
+      --entity "$entity"
+      --plugin "crush/1.0.0 crush-wakatime/1.0.0"
+      --category "ai coding"
+    )
+    [[ -n "$CRUSH_PROJECT_DIR" ]] && args+=(--project-folder "$CRUSH_PROJECT_DIR")
+
+    case "$CRUSH_TOOL_NAME" in
+      write | edit | multiedit) args+=(--write) ;;
+    esac
+
+    # Never block a tool call over time tracking.
+    ${pkgs.unstable.wakatime-cli}/bin/wakatime-cli "''${args[@]}" >/dev/null 2>&1 || true
+  '';
+
   now = pkgs.writeShellScriptBin "now" ''
         # Post AtProto status updates
         message=""
@@ -841,6 +863,7 @@ in
       ghrpc
       assh
       hackatime-summary
+      crush-wakatime
       now
       ghostty-setup
       pkgs.unstable.wakatime-cli
