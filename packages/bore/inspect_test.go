@@ -1,0 +1,80 @@
+package main
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"net/http/httptest"
+	"strconv"
+	"strings"
+	"testing"
+)
+
+// TestInspectorForwards is the property that matters: the hop must be
+// invisible to both ends.
+func TestInspectorForwards(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			switch r.URL.Path {
+			case "/boom":
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, "no")
+			case "/echo":
+				w.Header().Set("X-Seen-Host", r.Host)
+				body, _ := io.ReadAll(r.Body)
+				fmt.Fprintf(w, "got %s %s", r.Method, body)
+			default:
+				fmt.Fprint(w, "hello")
+			}
+		}))
+	defer upstream.Close()
+
+	target, err := strconv.Atoi(strings.TrimPrefix(upstream.URL, "http://127.0.0.1:"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	in, err := startInspector(target, func(request) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	base := fmt.Sprintf("http://127.0.0.1:%d", in.port)
+
+	resp, err := http.Get(base + "/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != "hello" {
+		t.Errorf("body through the proxy: %q", body)
+	}
+
+	// The upstream must see the host the visitor asked for, not our listener.
+	req, _ := http.NewRequest("POST", base+"/echo", nil)
+	req.Host = "myapp.bore.dunkirk.sh"
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := resp.Header.Get("X-Seen-Host"); got != "myapp.bore.dunkirk.sh" {
+		t.Errorf("upstream saw Host %q, want the original", got)
+	}
+
+	// Status codes pass through unchanged.
+	resp, _ = http.Get(base + "/boom")
+	if resp.StatusCode != 500 {
+		t.Errorf("status through the proxy: %d", resp.StatusCode)
+	}
+
+	// A dead upstream becomes a 502 rather than a hang.
+	dead, err := startInspector(19999, func(request) {})
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err = http.Get(fmt.Sprintf("http://127.0.0.1:%d/", dead.port))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusBadGateway {
+		t.Errorf("unreachable upstream: got %d, want 502", resp.StatusCode)
+	}
+}
