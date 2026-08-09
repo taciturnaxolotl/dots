@@ -78,6 +78,15 @@ func (s *section) line(style lipgloss.Style, label, value string) {
 
 func dim(text string) string { return dimStyle.Render(text) }
 
+// plural counts a noun without a table of exceptions, which works because
+// every noun a tunnel carries is regular.
+func plural(n int, noun string) string {
+	if n == 1 {
+		return "1 " + strings.TrimSuffix(noun, "s")
+	}
+	return fmt.Sprintf("%d %s", n, noun)
+}
+
 // link makes a URL clickable where the terminal supports it.
 func link(url string) string {
 	if !stdoutIsTerminal() {

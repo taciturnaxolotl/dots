@@ -45,7 +45,7 @@ The tunnel lasts as long as the command runs. Stop it with ctrl-c.
 : List the tunnels saved in this directory's **bore.toml**.
 
 **--no-inspect**
-: Point the tunnel straight at the local port instead of through bore. Requests stop being listed; use it if the extra hop is in the way.
+: Point the tunnel straight at the local port instead of through bore. Traffic stops being listed; use it if the extra hop is in the way.
 
 **-v**, **--verbose**
 : Pass frpc's own logs through untouched. Without it bore keeps frpc at warning level and reports what happens in its own words.
@@ -56,9 +56,9 @@ The tunnel lasts as long as the command runs. Stop it with ctrl-c.
 **--version**
 : Show the version and exit.
 
-# INSPECTING REQUESTS
+# INSPECTING TRAFFIC
 
-For an http tunnel, bore sits between the tunnel and the service and prints a line per request as it arrives:
+bore sits between the tunnel and the service and reports what goes through. For an http tunnel that is a line per request:
 
     15:04:12  GET     /                        200  4ms  1.2 kB
     15:04:12  GET     /static/app.css          200  1ms  14.0 kB
@@ -66,7 +66,14 @@ For an http tunnel, bore sits between the tunnel and the service and prints a li
 
 Status codes are coloured by class. The lines are printed into normal scrollback with the tunnel's details pinned below them, so scrolling back through a session works as it would for any other command. Requests are only visible to something on the path, which is why the tunnel points at bore rather than at the service; **--no-inspect** removes the hop and the listing with it.
 
-tcp and udp tunnels carry bytes with no requests in them, so there is nothing to list.
+tcp and udp carry bytes with no requests in them, so what gets reported is the shape of the traffic rather than its content: one line per conversation, with how long it lasted and how much went each way.
+
+    15:04:12  tcp     ↑ 1.4 kB  ↓ 22.0 kB       ok   1.2s   23.4 kB
+    15:04:31  udp     18 datagrams               ok   4.0s    2.1 kB
+
+A tcp conversation ends when either side hangs up. udp has no such thing, so a conversation is one source address until it goes quiet for thirty seconds. While conversations are held open the status line counts them, which for a database or an ssh session is most of what there is to say.
+
+A tcp or udp tunnel is published on a port the server picks, so the **public** row arrives once the tunnel is up rather than with the rest of the details.
 
 # CONFIGURATION
 

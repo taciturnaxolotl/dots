@@ -18,9 +18,14 @@ import (
 // That means you can scroll back through a session afterwards, and whatever
 // was in the terminal before is still there.
 type tunnelUI struct {
-	header   []headerRow
-	notes    []notice
+	header []headerRow
+	notes  []notice
+	// noun is what this tunnel carries: requests over http, connections over
+	// tcp, callers over udp. Counting them all as "requests" would be a small
+	// lie that makes a tcp tunnel read like an http one.
+	noun     string
 	count    int
+	open     int
 	bytes    int64
 	started  time.Time
 	quitting bool
@@ -33,8 +38,14 @@ type headerRow struct {
 
 type (
 	requestMsg request
+	flowMsg    flow
 	noticeMsg  notice
-	doneMsg    struct{ err error }
+	// headerMsg adds or replaces a detail. The server does not hand out a tcp
+	// or udp port until the tunnel is up, so that row arrives late.
+	headerMsg headerRow
+	// openMsg counts conversations in flight: +1 on connect, -1 on close.
+	openMsg int
+	doneMsg struct{ err error }
 )
 
 func (m tunnelUI) Init() tea.Cmd { return nil }
@@ -53,6 +64,22 @@ func (m tunnelUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.bytes += msg.bytes
 		// Printed rather than stored: the terminal keeps the history.
 		return m, tea.Println(request(msg).render())
+
+	case flowMsg:
+		m.count++
+		m.bytes += msg.up + msg.down
+		return m, tea.Println(flow(msg).render())
+
+	case openMsg:
+		m.open += int(msg)
+
+	case headerMsg:
+		row := headerRow(msg)
+		if i := slices.IndexFunc(m.header, func(o headerRow) bool { return o.label == row.label }); i >= 0 {
+			m.header[i] = row
+			break
+		}
+		m.header = append(m.header, row)
 
 	case noticeMsg:
 		n := notice(msg)
@@ -105,10 +132,20 @@ func (m tunnelUI) status() string {
 		out.WriteString(n.style().Render(n.label) + gap + "  " + n.text + "\n")
 	}
 
-	summary := "waiting for requests"
-	if m.count > 0 {
-		summary = fmt.Sprintf("%d requests · %s", m.count, size(m.bytes))
+	// A tunnel is either holding conversations open, has finished some, or is
+	// waiting. Saying "waiting for callers" with one on the line was a small
+	// untruth. http rarely holds anything open long enough to show.
+	var parts []string
+	if m.open > 0 {
+		parts = append(parts, fmt.Sprintf("%d open", m.open))
 	}
-	out.WriteString(dim(summary + " · q to close the tunnel"))
+	switch {
+	case m.count > 0:
+		parts = append(parts, plural(m.count, m.noun)+" · "+size(m.bytes))
+	case m.open == 0:
+		parts = append(parts, "waiting for "+m.noun)
+	}
+	parts = append(parts, "q to close the tunnel")
+	out.WriteString(dim(strings.Join(parts, " · ")))
 	return out.String()
 }

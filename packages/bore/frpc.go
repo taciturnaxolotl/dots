@@ -185,7 +185,7 @@ var frpcLine = regexp.MustCompile(`^\S+ \S+ \[([IWED])\] \[[^\]]+\] (.*)$`)
 // run starts frpc and reports what happens in bore's own words. Verbose mode
 // passes frpc's output through untouched, for when the translation is hiding
 // the thing you need.
-func run(ctx context.Context, t *Tunnel, configPath string, adminPort int, verbose bool, note func(notice)) error {
+func run(ctx context.Context, t *Tunnel, configPath string, adminPort int, verbose bool, ev events) error {
 	cmd := exec.CommandContext(ctx, frpcBin, "-c", configPath)
 	cmd.Stdin = os.Stdin
 
@@ -198,7 +198,19 @@ func run(ctx context.Context, t *Tunnel, configPath string, adminPort int, verbo
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	go narrate(out, t, adminPort, verbose, note)
+	go narrate(out, t, verbose, ev)
+
+	// tcp and udp get their port from the server, so the row saying where the
+	// tunnel actually is arrives after it is up. Asking frpc directly rather
+	// than watching for a log line, because quiet is the normal log level and
+	// the line announcing success is not printed at it.
+	if adminPort != 0 {
+		go func() {
+			if addr, err := remoteAddr(ctx, adminPort, t); err == nil {
+				ev.header(headerRow{"public", addr})
+			}
+		}()
+	}
 
 	// ctrl-c reaches frpc too, and closing a tunnel on purpose is not a
 	// failure. Neither is us stopping it because the view was closed.
@@ -218,7 +230,7 @@ func stoppedBySignal(exit *exec.ExitError) bool {
 	return ok && status.Signaled()
 }
 
-func narrate(out io.Reader, t *Tunnel, adminPort int, verbose bool, note func(notice)) {
+func narrate(out io.Reader, t *Tunnel, verbose bool, ev events) {
 	scanner := bufio.NewScanner(out)
 
 	var lastProblem string
@@ -241,14 +253,6 @@ func narrate(out io.Reader, t *Tunnel, adminPort int, verbose bool, note func(no
 		level, message := match[1], stripIDs(match[2])
 
 		switch {
-		case strings.Contains(message, "start proxy success"):
-			if adminPort == 0 {
-				continue // the header already says where it is
-			}
-			if addr, err := remoteAddr(adminPort, t); err == nil {
-				note(notice{label: "remote", text: addr})
-			}
-
 		case level == "E" || level == "W":
 			label, message, fatal := translate(message, t)
 			// frpc retries a failing connection every second or so; saying it
@@ -258,14 +262,14 @@ func narrate(out io.Reader, t *Tunnel, adminPort int, verbose bool, note func(no
 				continue
 			}
 			if repeats > 0 {
-				note(notice{label: "", text: dim(fmt.Sprintf("(repeated %d times)", repeats))})
+				ev.notice(notice{label: "", text: dim(fmt.Sprintf("(repeated %d times)", repeats))})
 			}
 			lastProblem, repeats = message, 0
-			note(notice{label: label, text: message, fatal: fatal})
+			ev.notice(notice{label: label, text: message, fatal: fatal})
 		}
 	}
 	if repeats > 0 {
-		note(notice{label: "", text: dim(fmt.Sprintf("(repeated %d times)", repeats))})
+		ev.notice(notice{label: "", text: dim(fmt.Sprintf("(repeated %d times)", repeats))})
 	}
 }
 
@@ -298,14 +302,18 @@ func stripIDs(message string) string {
 }
 
 // remoteAddr asks frpc which address the server gave us.
-func remoteAddr(adminPort int, t *Tunnel) (string, error) {
+func remoteAddr(ctx context.Context, adminPort int, t *Tunnel) (string, error) {
 	client := &http.Client{Timeout: 3 * time.Second}
 	url := fmt.Sprintf("http://127.0.0.1:%d/api/status", adminPort)
 
 	// frpc publishes the address a moment after it logs success.
 	var lastErr error
-	for attempt := 0; attempt < 10; attempt++ {
-		time.Sleep(300 * time.Millisecond)
+	for attempt := 0; attempt < 30; attempt++ {
+		select {
+		case <-ctx.Done():
+			return "", ctx.Err()
+		case <-time.After(300 * time.Millisecond):
+		}
 
 		resp, err := client.Get(url)
 		if err != nil {

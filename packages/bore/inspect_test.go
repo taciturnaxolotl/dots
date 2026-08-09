@@ -33,7 +33,7 @@ func TestInspectorForwards(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	in, err := startInspector(target, func(request) {}, func(notice) {})
+	in, err := startInspector(target, discard())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestInspectorForwards(t *testing.T) {
 	}
 
 	// A dead upstream becomes a 502 rather than a hang.
-	dead, err := startInspector(19999, func(request) {}, func(notice) {})
+	dead, err := startInspector(19999, discard())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -90,5 +90,16 @@ func TestNoticesGoStaleOnlyOnceARequestFollows(t *testing.T) {
 	}
 	if (notice{after: 3, fatal: true}).stale(99) {
 		t.Error("a fatal notice should stay until it is superseded")
+	}
+}
+
+// discard is an events sink for tests that only care about what got proxied.
+func discard() events {
+	return events{
+		request: func(request) {},
+		flow:    func(flow) {},
+		notice:  func(notice) {},
+		header:  func(headerRow) {},
+		open:    func(int) {},
 	}
 }

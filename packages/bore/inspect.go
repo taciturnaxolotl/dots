@@ -18,7 +18,7 @@ import (
 // your port, and it forwards on. That is the same trick ngrok's agent uses:
 // requests are only visible to something on the path.
 //
-// http only. tcp and udp are opaque bytes; there is nothing to name.
+// http only. tcp and udp go through startStream, which counts what it can.
 type inspector struct {
 	target int
 	port   int
@@ -73,12 +73,12 @@ func (r request) render() string {
 	)
 }
 
-func startInspector(target int, sink func(request), note func(notice)) (*inspector, error) {
+func startInspector(target int, ev events) (*inspector, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
-	in := &inspector{target: target, port: listener.Addr().(*net.TCPAddr).Port, sink: sink}
+	in := &inspector{target: target, port: listener.Addr().(*net.TCPAddr).Port, sink: ev.request}
 
 	upstream, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%d", target))
 	if err != nil {
@@ -92,7 +92,7 @@ func startInspector(target int, sink func(request), note func(notice)) (*inspect
 	transport.MaxIdleConnsPerHost = 64
 	transport.IdleConnTimeout = 90 * time.Second
 	proxy.Transport = transport
-	proxy.ErrorLog = log.New(proxyLog{note}, "", 0)
+	proxy.ErrorLog = log.New(proxyLog{ev.notice}, "", 0)
 	// Stream responses through as they arrive rather than buffering, so server
 	// sent events and long polling behave the way they would without us.
 	proxy.FlushInterval = -1

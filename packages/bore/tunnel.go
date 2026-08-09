@@ -229,6 +229,42 @@ func validate(t *Tunnel) error {
 	return nil
 }
 
+// events is everything an inspector or frpc has to say, in the one shape both
+// the live view and the plain printer can take.
+type events struct {
+	request func(request)
+	flow    func(flow)
+	notice  func(notice)
+	// header adds a detail that only becomes known once the tunnel is up.
+	header func(headerRow)
+	// open counts conversations in flight: +1 on connect, -1 on close.
+	open func(int)
+}
+
+// interpose puts a counter in front of the local port, whatever it speaks, and
+// returns the port frpc should use instead.
+func interpose(protocol string, target int, ev events) (int, error) {
+	if protocol == "http" {
+		in, err := startInspector(target, ev)
+		if err != nil {
+			return 0, err
+		}
+		return in.port, nil
+	}
+	return startStream(protocol, target, ev)
+}
+
+// carries names what a tunnel moves, for counting it out loud.
+func carries(protocol string) string {
+	switch protocol {
+	case "tcp":
+		return "connections"
+	case "udp":
+		return "callers"
+	}
+	return "requests"
+}
+
 // start writes the frpc config and runs it, either under the full screen view
 // or as plain lines when there is no terminal to draw on.
 func start(root context.Context, t *Tunnel, opts tunnelOptions) error {
@@ -244,28 +280,42 @@ func start(root context.Context, t *Tunnel, opts tunnelOptions) error {
 	rows := headerRows(t, opts)
 	sec := newSection("protocol", "public", "local", "labels", "auth", "saved")
 
-	// Under the full screen view, requests and notes become messages. Plain
-	// mode prints them as they happen.
-	live := t.protocolOrDefault() == "http" && !opts.noInspect && !opts.verbose && stdoutIsTerminal()
+	// Under the live view, everything that happens becomes a message. Plain
+	// mode prints it as it happens.
+	live := !opts.noInspect && !opts.verbose && stdoutIsTerminal()
 
 	var program *tea.Program
-	onRequest := func(r request) { lipgloss.Println(r.render()) }
-	onNote := sec.notice
+	ev := events{
+		request: func(r request) { lipgloss.Println(r.render()) },
+		flow:    func(f flow) { lipgloss.Println(f.render()) },
+		notice:  sec.notice,
+		header:  func(row headerRow) { sec.row(row.label, row.value) },
+		open:    func(int) {},
+	}
 	if live {
-		program = tea.NewProgram(tunnelUI{header: rows, started: time.Now()})
-		onRequest = func(r request) { program.Send(requestMsg(r)) }
-		onNote = func(n notice) { program.Send(noticeMsg(n)) }
+		program = tea.NewProgram(tunnelUI{
+			header:  rows,
+			noun:    carries(t.protocolOrDefault()),
+			started: time.Now(),
+		})
+		ev = events{
+			request: func(r request) { program.Send(requestMsg(r)) },
+			flow:    func(f flow) { program.Send(flowMsg(f)) },
+			notice:  func(n notice) { program.Send(noticeMsg(n)) },
+			header:  func(row headerRow) { program.Send(headerMsg(row)) },
+			open:    func(delta int) { program.Send(openMsg(delta)) },
+		}
 	}
 
-	// For http, frpc is pointed at the inspector rather than at the service,
-	// so every request passes through something that can name it.
+	// frpc is pointed at an inspector rather than at the service, so everything
+	// going through passes something that can count it.
 	localPort := t.Port
-	if t.protocolOrDefault() == "http" && !opts.noInspect {
-		in, err := startInspector(t.Port, onRequest, onNote)
+	if !opts.noInspect {
+		port, err := interpose(t.protocolOrDefault(), t.Port, ev)
 		if err != nil {
 			return err
 		}
-		localPort = in.port
+		localPort = port
 	}
 
 	path, err := writeConfig(buildConfig(t, localPort, adminPort, opts.verbose))
@@ -284,15 +334,17 @@ func start(root context.Context, t *Tunnel, opts tunnelOptions) error {
 		for _, row := range rows {
 			sec.row(row.label, row.value)
 		}
-		if !listening(t.Port) {
+		// A udp socket does not answer a tcp dial, so there is nothing to
+		// usefully probe there.
+		if t.protocolOrDefault() != "udp" && !listening(t.Port) {
 			sec.warn("local", fmt.Sprintf("nothing is listening on localhost:%d", t.Port))
 		}
 		fmt.Println()
-		return run(ctx, t, path, adminPort, opts.verbose, onNote)
+		return run(ctx, t, path, adminPort, opts.verbose, ev)
 	}
 
 	go func() {
-		err := run(ctx, t, path, adminPort, opts.verbose, onNote)
+		err := run(ctx, t, path, adminPort, opts.verbose, ev)
 		program.Send(doneMsg{err})
 	}()
 
