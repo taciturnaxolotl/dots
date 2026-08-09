@@ -21,7 +21,7 @@ buildGoModule (finalAttrs: {
 
   src = ./ghrpc;
 
-  vendorHash = "sha256-xl3e5oPMLREQ54eFHw4g1UKcTg0HpMOS8j25k1w90vw=";
+  vendorHash = "sha256-MrzBMTbq2bwesWENSDR9PI2wfw76uw+9a0yOYoavu9Y=";
 
   nativeBuildInputs = [
     installShellFiles

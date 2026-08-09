@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+
+	"charm.land/lipgloss/v2"
 	"os"
 	"path/filepath"
 	"strings"
@@ -67,7 +69,7 @@ func run(cfg config, opts *options, set given) error {
 	r.publish(created(touched))
 	if len(touched) > 0 {
 		fmt.Println()
-		fmt.Println(fileTree(opts.name, touched))
+		lipgloss.Println(fileTree(opts.name, touched))
 	}
 
 	reportDir()

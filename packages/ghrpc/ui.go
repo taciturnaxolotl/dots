@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/huh/spinner"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/huh/v2"
+	"charm.land/huh/v2/spinner"
+	"charm.land/lipgloss/v2"
 )
 
 // ANSI 0-15 only, so the terminal's own theme picks the actual colours rather
@@ -57,7 +57,10 @@ func (s *section) line(style lipgloss.Style, label, value string) {
 	if n := s.width - lipgloss.Width(label); n > 0 {
 		gap = strings.Repeat(" ", n)
 	}
-	fmt.Println(style.Render(label) + gap + "  " + value)
+	// lipgloss.Println rather than fmt: v2 dropped the renderer that used to
+	// notice it was not writing to a terminal, so styled text has to go
+	// through something that downsamples, or piped output fills with escapes.
+	lipgloss.Println(style.Render(label) + gap + "  " + value)
 }
 
 // step runs a slow action behind a spinner sitting in this section's label
@@ -71,8 +74,7 @@ func (s *section) step(title string, action func()) {
 	_ = spinner.New().
 		Type(spinner.Dots).
 		Title(strings.Repeat(" ", s.width) + title).
-		TitleStyle(lipgloss.NewStyle()).
-		Style(labelStyle).
+		WithTheme(spinnerTheme).
 		Action(action).
 		Run()
 }
@@ -105,10 +107,13 @@ func abort(err error) {
 }
 
 // formTheme is ThemeBase16 with three fixes: everything on ANSI 0-15 (bubbles
-// ships truecolour greys in the help line), no left gutter, and no coloured
-// button chrome.
-func formTheme() *huh.Theme {
-	t := huh.ThemeBase16()
+// ships truecolour greys in the help line), no left gutter, and no dimming of
+// unfocused fields.
+//
+// v2 hands the theme the terminal's light or dark preference. Ours is the same
+// either way: it names ANSI slots and lets the terminal decide the shades.
+var formTheme = huh.ThemeFunc(func(isDark bool) *huh.Styles {
+	t := huh.ThemeBase16(isDark)
 
 	// No border and no padding: the form starts at column zero, flush with
 	// everything else the command prints.
@@ -123,7 +128,17 @@ func formTheme() *huh.Theme {
 	t.Help.Ellipsis = dimStyle
 
 	return t
-}
+})
+
+// spinnerTheme puts the spinner in the label column's colour and leaves its
+// text plain, so a slow step reads like the rows around it. The default is a
+// pink truecolour, which would ignore the terminal's own palette.
+var spinnerTheme = spinner.ThemeFunc(func(bool) *spinner.Styles {
+	return &spinner.Styles{
+		Spinner: labelStyle,
+		Title:   lipgloss.NewStyle(),
+	}
+})
 
 // selectField builds a picker with no explicit height, which huh reads as
 // "size the viewport to the options" so the cursor moves through the list
@@ -147,7 +162,7 @@ func yesNo(title, description string, value *bool) *huh.Select[bool] {
 
 func confirm(title string) bool {
 	var answer bool
-	form := huh.NewForm(huh.NewGroup(yesNo(title, "", &answer))).WithTheme(formTheme())
+	form := huh.NewForm(huh.NewGroup(yesNo(title, "", &answer))).WithTheme(formTheme)
 	if err := form.Run(); err != nil {
 		abort(err)
 	}

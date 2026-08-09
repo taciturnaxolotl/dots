@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 )
 
 type options struct {
@@ -129,7 +129,7 @@ func ask(opts *options, set given) {
 	}
 
 	if len(groups) > 0 {
-		if err := huh.NewForm(groups...).WithTheme(formTheme()).Run(); err != nil {
+		if err := huh.NewForm(groups...).WithTheme(formTheme).Run(); err != nil {
 			abort(err)
 		}
 	}

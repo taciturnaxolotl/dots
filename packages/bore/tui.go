@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // The tunnel's details belong on screen the whole time it is running, but not
@@ -40,7 +40,7 @@ func (m tunnelUI) Init() tea.Cmd { return nil }
 
 func (m tunnelUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case tea.KeyMsg:
+	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q", "esc":
 			m.quitting = true
@@ -66,12 +66,12 @@ func (m tunnelUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m tunnelUI) View() string {
+func (m tunnelUI) View() tea.View {
 	if m.quitting {
 		// Leave the details behind rather than clearing them away.
-		return m.status() + "\n"
+		return tea.NewView(m.status() + "\n")
 	}
-	return m.status()
+	return tea.NewView(m.status())
 }
 
 func (m tunnelUI) status() string {

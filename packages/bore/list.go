@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"sort"
 	"time"
+
+	"charm.land/lipgloss/v2"
 )
 
 // statusResponse is what bore-auth publishes at /tunnels: the handful of
@@ -52,7 +54,7 @@ func runList() error {
 		}
 	}
 	if len(online) == 0 {
-		fmt.Println(dim("no tunnels are running"))
+		lipgloss.Println(dim("no tunnels are running"))
 		return nil
 	}
 	sort.Slice(online, func(i, j int) bool { return online[i].Name < online[j].Name })
@@ -92,7 +94,7 @@ func runSaved() error {
 	}
 	names := cfg.Names()
 	if len(names) == 0 {
-		fmt.Println(dim("no " + ConfigFile + " here"))
+		lipgloss.Println(dim("no " + ConfigFile + " here"))
 		return nil
 	}
 

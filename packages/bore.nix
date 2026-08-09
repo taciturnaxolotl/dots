@@ -17,7 +17,7 @@ buildGoModule (finalAttrs: {
 
   src = ./bore;
 
-  vendorHash = "sha256-aLRNjA+9TY/Kd5nrWenn9R/Dr55iVvRnD33QCgBk+14=";
+  vendorHash = "sha256-j5W+7iMzx0nDNVCTKbY8+4IJHzOOUqMlYWn1JjUlbrc=";
 
   nativeBuildInputs = [
     installShellFiles

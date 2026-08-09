@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/lipgloss/v2"
 )
 
 // The inspector sits between the tunnel and your service, so bore can say what

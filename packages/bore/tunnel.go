@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/huh"
+	tea "charm.land/bubbletea/v2"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // tunnelOptions is what the command line asked for. The *Given fields record
@@ -98,7 +99,7 @@ func ask(cfg *Config, t *Tunnel, opts tunnelOptions) (*Tunnel, error) {
 		options := append([]string{newTunnel}, cfg.Names()...)
 		form := huh.NewForm(huh.NewGroup(
 			selectField(huh.NewOptions(options...), &choice).Title("Tunnel"),
-		)).WithTheme(formTheme())
+		)).WithTheme(formTheme)
 		if err := form.Run(); err != nil {
 			abort(err)
 		}
@@ -153,7 +154,7 @@ func ask(cfg *Config, t *Tunnel, opts tunnelOptions) (*Tunnel, error) {
 	}
 
 	if len(groups) > 0 {
-		if err := huh.NewForm(groups...).WithTheme(formTheme()).Run(); err != nil {
+		if err := huh.NewForm(groups...).WithTheme(formTheme).Run(); err != nil {
 			abort(err)
 		}
 	}
@@ -247,7 +248,7 @@ func start(root context.Context, t *Tunnel, opts tunnelOptions) error {
 	live := t.protocolOrDefault() == "http" && !opts.noInspect && !opts.verbose && stdoutIsTerminal()
 
 	var program *tea.Program
-	onRequest := func(r request) { fmt.Println(r.render()) }
+	onRequest := func(r request) { lipgloss.Println(r.render()) }
 	onNote := func(label, text string) { newSection("status").warn(label, text) }
 	if live {
 		program = tea.NewProgram(tunnelUI{header: rows, started: time.Now()})

@@ -6,8 +6,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/charmbracelet/huh"
-	"github.com/charmbracelet/lipgloss"
+	"charm.land/huh/v2"
+	"charm.land/lipgloss/v2"
 )
 
 // ANSI 0-15 only, so the terminal's own theme picks the shades.
@@ -38,7 +38,10 @@ func (s *section) line(style lipgloss.Style, label, value string) {
 	if n := s.width - lipgloss.Width(label); n > 0 {
 		gap = strings.Repeat(" ", n)
 	}
-	fmt.Println(style.Render(label) + gap + "  " + value)
+	// lipgloss.Println rather than fmt: v2 dropped the renderer that noticed
+	// it was not writing to a terminal, so styled text has to go through
+	// something that downsamples, or piped output fills with escapes.
+	lipgloss.Println(style.Render(label) + gap + "  " + value)
 }
 
 func dim(text string) string { return dimStyle.Render(text) }
@@ -77,8 +80,8 @@ func abort(err error) {
 	os.Exit(1)
 }
 
-func formTheme() *huh.Theme {
-	t := huh.ThemeBase16()
+var formTheme = huh.ThemeFunc(func(isDark bool) *huh.Styles {
+	t := huh.ThemeBase16(isDark)
 
 	plain := lipgloss.NewStyle()
 	t.Focused.Base, t.Blurred.Base = plain, plain
@@ -101,7 +104,7 @@ func formTheme() *huh.Theme {
 	t.Help.Ellipsis = dimStyle
 
 	return t
-}
+})
 
 // selectField builds a picker with no explicit height, so the cursor moves
 // through the list instead of the list scrolling under it.

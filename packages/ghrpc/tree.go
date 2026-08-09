@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/tree"
+	"charm.land/lipgloss/v2"
+	"charm.land/lipgloss/v2/tree"
 )
 
 // entry is one path the scaffold touched, and whether we wrote it or found it
