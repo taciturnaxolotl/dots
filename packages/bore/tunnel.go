@@ -284,10 +284,14 @@ func start(root context.Context, t *Tunnel, opts tunnelOptions) error {
 	// mode prints it as it happens.
 	live := !opts.noInspect && !opts.verbose && stdoutIsTerminal()
 
+	// Without the view there is nothing repainting on resize, so the width is
+	// read once and lines are cut to whatever the terminal was then.
+	plainWidth := terminalWidth()
+
 	var program *tea.Program
 	ev := events{
-		request: func(r request) { lipgloss.Println(r.render()) },
-		flow:    func(f flow) { lipgloss.Println(f.render()) },
+		request: func(r request) { lipgloss.Println(r.render(plainWidth)) },
+		flow:    func(f flow) { lipgloss.Println(f.render(plainWidth)) },
 		notice:  sec.notice,
 		header:  func(row headerRow) { sec.row(row.label, row.value) },
 		open:    func(int) {},

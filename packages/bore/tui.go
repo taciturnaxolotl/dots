@@ -24,6 +24,7 @@ type tunnelUI struct {
 	// tcp, callers over udp. Counting them all as "requests" would be a small
 	// lie that makes a tcp tunnel read like an http one.
 	noun     string
+	width    int
 	count    int
 	open     int
 	bytes    int64
@@ -52,6 +53,11 @@ func (m tunnelUI) Init() tea.Cmd { return nil }
 
 func (m tunnelUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		// Lines are printed into scrollback and never redrawn, so the width
+		// matters at the moment each one is rendered, not at the end.
+		m.width = msg.Width
+
 	case tea.KeyPressMsg:
 		switch msg.String() {
 		case "ctrl+c", "q", "esc":
@@ -63,12 +69,12 @@ func (m tunnelUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.count++
 		m.bytes += msg.bytes
 		// Printed rather than stored: the terminal keeps the history.
-		return m, tea.Println(request(msg).render())
+		return m, tea.Println(request(msg).render(m.width))
 
 	case flowMsg:
 		m.count++
 		m.bytes += msg.up + msg.down
-		return m, tea.Println(flow(msg).render())
+		return m, tea.Println(flow(msg).render(m.width))
 
 	case openMsg:
 		m.open += int(msg)

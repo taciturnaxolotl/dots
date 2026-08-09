@@ -8,6 +8,7 @@ import (
 
 	"charm.land/huh/v2"
 	"charm.land/lipgloss/v2"
+	"github.com/charmbracelet/x/term"
 )
 
 // ANSI 0-15 only, so the terminal's own theme picks the shades.
@@ -93,6 +94,16 @@ func link(url string) string {
 		return url
 	}
 	return "\x1b]8;;" + url + "\x1b\\" + url + "\x1b]8;;\x1b\\"
+}
+
+// terminalWidth is what we have to fit into, or zero when we are not drawing
+// to a terminal at all and can print in full.
+func terminalWidth() int {
+	width, _, err := term.GetSize(os.Stdout.Fd())
+	if err != nil {
+		return 0
+	}
+	return width
 }
 
 func stdoutIsTerminal() bool {

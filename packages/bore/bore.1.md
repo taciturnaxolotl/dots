@@ -60,16 +60,16 @@ The tunnel lasts as long as the command runs. Stop it with ctrl-c.
 
 bore sits between the tunnel and the service and reports what goes through. For an http tunnel that is a line per request:
 
-    15:04:12  GET     /                        200  4ms  1.2 kB
-    15:04:12  GET     /static/app.css          200  1ms  14.0 kB
-    15:04:19  POST    /api/login               401  22ms  87 B
+    15:04:12  GET      /                                        200    4ms  1.2 kB
+    15:04:13  GET      /static/app.css                          200    1ms   14 kB
+    15:04:19  POST     /api/login                               401   22ms    87 B
 
-Status codes are coloured by class. The lines are printed into normal scrollback with the tunnel's details pinned below them, so scrolling back through a session works as it would for any other command. Requests are only visible to something on the path, which is why the tunnel points at bore rather than at the service; **--no-inspect** removes the hop and the listing with it.
+The columns are sized to the widest thing that can land in them, and a narrow terminal drops them from the right: the byte count first, then the duration, then the timestamp, so what happened and how it went survive to the end. Status codes are coloured by class. The lines are printed into normal scrollback with the tunnel's details pinned below them, so scrolling back through a session works as it would for any other command. Requests are only visible to something on the path, which is why the tunnel points at bore rather than at the service; **--no-inspect** removes the hop and the listing with it.
 
 tcp and udp carry bytes with no requests in them, so what gets reported is the shape of the traffic rather than its content: one line per conversation, with how long it lasted and how much went each way.
 
-    15:04:12  tcp     ↑ 1.4 kB  ↓ 22.0 kB       ok   1.2s   23.4 kB
-    15:04:31  udp     18 datagrams               ok   4.0s    2.1 kB
+    15:04:12  tcp      ↑ 1.4 kB  ↓ 22.0 kB                       ok   1.2s   23 kB
+    15:04:31  udp      18 datagrams                              ok   4.0s  2.1 kB
 
 A tcp conversation ends when either side hangs up. udp has no such thing, so a conversation is one source address until it goes quiet for thirty seconds. While conversations are held open the status line counts them, which for a database or an ssh session is most of what there is to say.
 

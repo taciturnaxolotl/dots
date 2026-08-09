@@ -32,18 +32,21 @@ type flow struct {
 
 // render uses the same columns as a request line, so a tcp tunnel reads like an
 // http one even though the middle of it says something different.
-func (f flow) render() string {
-	status, style := " ok", labelStyle
+func (f flow) render(width int) string {
+	status, style := "ok", labelStyle
 	if f.failed {
 		status, style = "err", failStyle
 	}
-	return fmt.Sprintf("%s  %s  %s  %s %s",
-		dim(f.at.Format("15:04:05")),
-		methodStyle.Render(fmt.Sprintf("%-6s", f.protocol)),
-		padRight(f.detail, 32),
-		style.Render(status),
-		dim(fmt.Sprintf("%8s  %9s", duration(f.took), size(f.up+f.down))),
-	)
+	return trafficLine{
+		at:          f.at,
+		verb:        f.protocol,
+		verbStyle:   methodStyle,
+		subject:     f.detail,
+		status:      status,
+		statusStyle: style,
+		took:        f.took,
+		bytes:       f.up + f.down,
+	}.render(width)
 }
 
 // startStream puts a counter in front of a tcp or udp port and returns the port

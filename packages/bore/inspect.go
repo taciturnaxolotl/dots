@@ -61,16 +61,17 @@ type request struct {
 	bytes  int64
 }
 
-// render lays a request out in fixed columns, so a stream of them lines up
-// however long the paths and timings are.
-func (r request) render() string {
-	return fmt.Sprintf("%s  %s  %s  %s %s",
-		dim(r.at.Format("15:04:05")),
-		methodStyle.Render(fmt.Sprintf("%-6s", r.method)),
-		padRight(r.path, 32),
-		statusStyle(r.status).Render(fmt.Sprintf("%3d", r.status)),
-		dim(fmt.Sprintf("%8s  %9s", duration(r.took), size(r.bytes))),
-	)
+func (r request) render(width int) string {
+	return trafficLine{
+		at:          r.at,
+		verb:        r.method,
+		verbStyle:   methodStyle,
+		subject:     r.path,
+		status:      fmt.Sprint(r.status),
+		statusStyle: statusStyle(r.status),
+		took:        r.took,
+		bytes:       r.bytes,
+	}.render(width)
 }
 
 func startInspector(target int, ev events) (*inspector, error) {
@@ -187,32 +188,4 @@ func statusStyle(status int) lipgloss.Style {
 		return lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
 	}
 	return labelStyle
-}
-
-// padRight keeps the status column in the same place whatever the path is.
-func padRight(s string, width int) string {
-	if len(s) > width {
-		return s[:width-1] + "…"
-	}
-	return s + strings.Repeat(" ", width-len(s))
-}
-
-func duration(d time.Duration) string {
-	switch {
-	case d < time.Millisecond:
-		return fmt.Sprintf("%dµs", d.Microseconds())
-	case d < time.Second:
-		return fmt.Sprintf("%dms", d.Milliseconds())
-	}
-	return fmt.Sprintf("%.1fs", d.Seconds())
-}
-
-func size(bytes int64) string {
-	switch {
-	case bytes < 1024:
-		return fmt.Sprintf("%d B", bytes)
-	case bytes < 1024*1024:
-		return fmt.Sprintf("%.1f kB", float64(bytes)/1024)
-	}
-	return fmt.Sprintf("%.1f MB", float64(bytes)/(1024*1024))
 }
