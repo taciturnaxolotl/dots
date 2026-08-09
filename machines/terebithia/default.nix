@@ -275,6 +275,7 @@
     ];
     allowedUDPPorts = [
       28869 # Minecraft voice chat
+      443 # HTTP/3: caddy advertises h3 whether or not this is open
     ];
     logRefusedConnections = false;
     rejectPackets = true;
