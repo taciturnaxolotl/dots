@@ -242,6 +242,7 @@ func start(root context.Context, t *Tunnel, opts tunnelOptions) error {
 	}
 
 	rows := headerRows(t, opts)
+	sec := newSection("protocol", "public", "local", "labels", "auth", "saved")
 
 	// Under the full screen view, requests and notes become messages. Plain
 	// mode prints them as they happen.
@@ -249,18 +250,18 @@ func start(root context.Context, t *Tunnel, opts tunnelOptions) error {
 
 	var program *tea.Program
 	onRequest := func(r request) { lipgloss.Println(r.render()) }
-	onNote := func(label, text string) { newSection("status").warn(label, text) }
+	onNote := sec.notice
 	if live {
 		program = tea.NewProgram(tunnelUI{header: rows, started: time.Now()})
 		onRequest = func(r request) { program.Send(requestMsg(r)) }
-		onNote = func(label, text string) { program.Send(noteMsg{label, text}) }
+		onNote = func(n notice) { program.Send(noticeMsg(n)) }
 	}
 
 	// For http, frpc is pointed at the inspector rather than at the service,
 	// so every request passes through something that can name it.
 	localPort := t.Port
 	if t.protocolOrDefault() == "http" && !opts.noInspect {
-		in, err := startInspector(t.Port, onRequest)
+		in, err := startInspector(t.Port, onRequest, onNote)
 		if err != nil {
 			return err
 		}
@@ -280,7 +281,6 @@ func start(root context.Context, t *Tunnel, opts tunnelOptions) error {
 	defer stop()
 
 	if !live {
-		sec := newSection("protocol", "public", "local", "labels", "auth", "saved")
 		for _, row := range rows {
 			sec.row(row.label, row.value)
 		}

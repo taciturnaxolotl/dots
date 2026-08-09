@@ -29,6 +29,38 @@ func newSection(labels ...string) *section {
 	return s
 }
 
+// A notice is something that happened to the tunnel rather than through it.
+//
+// Warnings are moments: a response cut short, a dial that failed. Errors are
+// states: the tunnel is not working, and saying so once and vanishing would be
+// worse than useless.
+type notice struct {
+	label string
+	text  string
+	fatal bool
+	// after is how many requests had been served when this happened. A warning
+	// is the latest news until a request goes through, which is both the proof
+	// that it has passed and the only clock that means anything here: a tunnel
+	// nobody is using should still say why the last try failed.
+	after int
+}
+
+// stale reports whether a request has arrived since, making this old news.
+func (n notice) stale(requests int) bool { return !n.fatal && requests > n.after }
+
+// style is red when the tunnel is broken and yellow when it is merely a bad
+// moment, matching what fail and warn mean in a section.
+func (n notice) style() lipgloss.Style {
+	if n.fatal {
+		return failStyle
+	}
+	return warnStyle
+}
+
+// notice prints one in this section's column, so it lines up with the tunnel's
+// details rather than starting wherever its label happens to end.
+func (s *section) notice(n notice) { s.line(n.style(), n.label, n.text) }
+
 func (s *section) row(label, value string)  { s.line(labelStyle, label, value) }
 func (s *section) fail(label, value string) { s.line(failStyle, label, value) }
 func (s *section) warn(label, value string) { s.line(warnStyle, label, value) }

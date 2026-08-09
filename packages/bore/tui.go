@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -18,7 +19,7 @@ import (
 // was in the terminal before is still there.
 type tunnelUI struct {
 	header   []headerRow
-	notes    []string
+	notes    []notice
 	count    int
 	bytes    int64
 	started  time.Time
@@ -32,7 +33,7 @@ type headerRow struct {
 
 type (
 	requestMsg request
-	noteMsg    struct{ label, text string }
+	noticeMsg  notice
 	doneMsg    struct{ err error }
 )
 
@@ -53,10 +54,18 @@ func (m tunnelUI) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Printed rather than stored: the terminal keeps the history.
 		return m, tea.Println(request(msg).render())
 
-	case noteMsg:
-		m.notes = append(m.notes, failStyle.Render(msg.label)+"  "+msg.text)
-		if len(m.notes) > 2 {
-			m.notes = m.notes[len(m.notes)-2:]
+	case noticeMsg:
+		n := notice(msg)
+		n.after = m.count
+		// Drop what this one supersedes: anything about the same subject, and
+		// anything a request has already answered for. A dev server restarting
+		// twice should not push the tunnel's details off the screen.
+		m.notes = slices.DeleteFunc(m.notes, func(o notice) bool {
+			return o.label == n.label || o.stale(m.count)
+		})
+		m.notes = append(m.notes, n)
+		if len(m.notes) > 3 {
+			m.notes = m.notes[len(m.notes)-3:]
 		}
 
 	case doneMsg:
@@ -88,8 +97,12 @@ func (m tunnelUI) status() string {
 		gap := strings.Repeat(" ", width-lipgloss.Width(row.label))
 		out.WriteString(labelStyle.Render(row.label) + gap + "  " + row.value + "\n")
 	}
-	for _, note := range m.notes {
-		out.WriteString(note + "\n")
+	for _, n := range m.notes {
+		if n.stale(m.count) {
+			continue
+		}
+		gap := strings.Repeat(" ", max(width-lipgloss.Width(n.label), 0))
+		out.WriteString(n.style().Render(n.label) + gap + "  " + n.text + "\n")
 	}
 
 	summary := "waiting for requests"

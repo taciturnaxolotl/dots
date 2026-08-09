@@ -185,7 +185,7 @@ var frpcLine = regexp.MustCompile(`^\S+ \S+ \[([IWED])\] \[[^\]]+\] (.*)$`)
 // run starts frpc and reports what happens in bore's own words. Verbose mode
 // passes frpc's output through untouched, for when the translation is hiding
 // the thing you need.
-func run(ctx context.Context, t *Tunnel, configPath string, adminPort int, verbose bool, note func(label, text string)) error {
+func run(ctx context.Context, t *Tunnel, configPath string, adminPort int, verbose bool, note func(notice)) error {
 	cmd := exec.CommandContext(ctx, frpcBin, "-c", configPath)
 	cmd.Stdin = os.Stdin
 
@@ -218,7 +218,7 @@ func stoppedBySignal(exit *exec.ExitError) bool {
 	return ok && status.Signaled()
 }
 
-func narrate(out io.Reader, t *Tunnel, adminPort int, verbose bool, note func(label, text string)) {
+func narrate(out io.Reader, t *Tunnel, adminPort int, verbose bool, note func(notice)) {
 	scanner := bufio.NewScanner(out)
 
 	var lastProblem string
@@ -246,11 +246,11 @@ func narrate(out io.Reader, t *Tunnel, adminPort int, verbose bool, note func(la
 				continue // the header already says where it is
 			}
 			if addr, err := remoteAddr(adminPort, t); err == nil {
-				note("remote", addr)
+				note(notice{label: "remote", text: addr})
 			}
 
 		case level == "E" || level == "W":
-			label, message := translate(message, t)
+			label, message, fatal := translate(message, t)
 			// frpc retries a failing connection every second or so; saying it
 			// once is informative, saying it forty times is noise.
 			if message == lastProblem {
@@ -258,27 +258,31 @@ func narrate(out io.Reader, t *Tunnel, adminPort int, verbose bool, note func(la
 				continue
 			}
 			if repeats > 0 {
-				note("", dim(fmt.Sprintf("(repeated %d times)", repeats)))
+				note(notice{label: "", text: dim(fmt.Sprintf("(repeated %d times)", repeats))})
 			}
 			lastProblem, repeats = message, 0
-			note(label, message)
+			note(notice{label: label, text: message, fatal: fatal})
 		}
 	}
 	if repeats > 0 {
-		note("", dim(fmt.Sprintf("(repeated %d times)", repeats)))
+		note(notice{label: "", text: dim(fmt.Sprintf("(repeated %d times)", repeats))})
 	}
 }
 
 // translate puts frpc's most common complaints in terms of what the user did,
 // rather than what frpc was doing at the time.
-func translate(message string, t *Tunnel) (label, text string) {
+// translate puts frpc's most common complaints in terms of what the user did,
+// and says which of them mean the tunnel is not working.
+func translate(message string, t *Tunnel) (label, text string, fatal bool) {
 	switch {
 	case strings.Contains(message, "connect to local service") && strings.Contains(message, "connection refused"):
-		return "local", fmt.Sprintf("nothing is listening on localhost:%d", t.Port)
+		// The tunnel is fine; there is just nothing on the other end yet.
+		return "local", fmt.Sprintf("nothing is listening on localhost:%d", t.Port), false
 	case strings.Contains(message, "login to server failed"), strings.Contains(message, "connect to server error"):
-		return "server", strings.TrimPrefix(message, "login to server failed: ")
+		// Nothing is getting through at all.
+		return "server", strings.TrimPrefix(message, "login to server failed: "), true
 	}
-	return "frpc", message
+	return "frpc", message, true
 }
 
 // stripIDs removes the run id and proxy name frpc prefixes to every message.

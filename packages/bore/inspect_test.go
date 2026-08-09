@@ -33,7 +33,7 @@ func TestInspectorForwards(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	in, err := startInspector(target, func(request) {})
+	in, err := startInspector(target, func(request) {}, func(notice) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -66,7 +66,7 @@ func TestInspectorForwards(t *testing.T) {
 	}
 
 	// A dead upstream becomes a 502 rather than a hang.
-	dead, err := startInspector(19999, func(request) {})
+	dead, err := startInspector(19999, func(request) {}, func(notice) {})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,5 +76,19 @@ func TestInspectorForwards(t *testing.T) {
 	}
 	if resp.StatusCode != http.StatusBadGateway {
 		t.Errorf("unreachable upstream: got %d, want 502", resp.StatusCode)
+	}
+}
+
+// A warning holds until a request answers it; an error holds regardless.
+func TestNoticesGoStaleOnlyOnceARequestFollows(t *testing.T) {
+	warned := notice{after: 3}
+	if warned.stale(3) {
+		t.Error("a warning should hold while the tunnel is quiet")
+	}
+	if !warned.stale(4) {
+		t.Error("a request after the warning should retire it")
+	}
+	if (notice{after: 3, fatal: true}).stale(99) {
+		t.Error("a fatal notice should stay until it is superseded")
 	}
 }

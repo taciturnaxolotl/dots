@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"net/http/httputil"
@@ -26,6 +27,30 @@ type inspector struct {
 	sink func(request)
 }
 
+// proxyLog turns ReverseProxy's internal logging into one of our own lines.
+//
+// It logs through the standard logger by default, which writes to stderr with
+// a timestamp, in nobody's style, straight through whatever we are drawing.
+type proxyLog struct {
+	note func(notice)
+}
+
+func (l proxyLog) Write(p []byte) (int, error) {
+	message := strings.TrimSpace(string(p))
+	message = strings.TrimPrefix(message, "httputil: ReverseProxy ")
+
+	// The common one by far: a dev server restarting, or a visitor navigating
+	// away from a page whose response was still arriving.
+	if strings.Contains(message, "unexpected EOF") || strings.Contains(message, "body copy") {
+		// A dev server restarting or a visitor navigating away. It says its
+		// piece and fades.
+		l.note(notice{label: "local", text: "the response ended early"})
+		return len(p), nil
+	}
+	l.note(notice{label: "local", text: message})
+	return len(p), nil
+}
+
 // request is one exchange through the tunnel.
 type request struct {
 	at     time.Time
@@ -48,7 +73,7 @@ func (r request) render() string {
 	)
 }
 
-func startInspector(target int, sink func(request)) (*inspector, error) {
+func startInspector(target int, sink func(request), note func(notice)) (*inspector, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
@@ -67,6 +92,7 @@ func startInspector(target int, sink func(request)) (*inspector, error) {
 	transport.MaxIdleConnsPerHost = 64
 	transport.IdleConnTimeout = 90 * time.Second
 	proxy.Transport = transport
+	proxy.ErrorLog = log.New(proxyLog{note}, "", 0)
 	// Stream responses through as they arrive rather than buffering, so server
 	// sent events and long polling behave the way they would without us.
 	proxy.FlushInterval = -1
