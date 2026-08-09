@@ -149,12 +149,16 @@ let
       host="hackatime.hackclub.com"
     fi
 
+    # A predictable name in a shared directory is somebody else's to write.
+    summary=$(mktemp -t hackatime.XXXXXX)
+    trap 'rm -f "$summary"' EXIT
+
     ${pkgs.gum}/bin/gum spin --spinner dot --title "Fetching summary from $host for $user_id..." -- \
       ${pkgs.curl}/bin/curl -s -X 'GET' \
         "https://$host/api/summary?user=''${user_id}&interval=month" \
         -H 'accept: application/json' \
         -H 'Authorization: Bearer 2ce9e698-8a16-46f0-b49a-ac121bcfd608' \
-      > /tmp/hackatime-$$.json
+      > "$summary"
 
     ${pkgs.gum}/bin/gum style --bold --foreground 212 "Summary for $user_id"
     echo
@@ -168,7 +172,7 @@ let
       else
         0
       end
-    ' /tmp/hackatime-$$.json)
+    ' "$summary")
 
     if [[ "$total_seconds" -gt 0 ]]; then
       hours=$((total_seconds / 3600))
@@ -190,7 +194,7 @@ let
       else
         "  No projects"
       end
-    ' /tmp/hackatime-$$.json
+    ' "$summary"
 
     echo
 
@@ -203,9 +207,7 @@ let
       else
         "  No languages"
       end
-    ' /tmp/hackatime-$$.json
-
-    rm -f /tmp/hackatime-$$.json
+    ' "$summary"
   '';
 
   now = pkgs.writeShellScriptBin "now" ''
@@ -228,9 +230,13 @@ let
           esac
         done
 
-        # Load account information from agenix secrets
+        # Load account information from agenix secrets. Exported rather than
+        # spliced into the script below: a password with a quote in it would
+        # otherwise end the string it was sitting in.
         if [[ -f "/run/agenix/bluesky" ]]; then
+          set -a
           source "/run/agenix/bluesky"
+          set +a
         else
           ${pkgs.gum}/bin/gum style --foreground 196 "Error: Bluesky credentials file not found at /run/agenix/bluesky"
           exit 1
@@ -244,6 +250,8 @@ let
             exit 1
           fi
         fi
+
+        export message
 
         ${pkgs.gum}/bin/gum spin --spinner dot --title "Posting to Bluesky..." -- /bin/bash <<EOF
         # Function to resolve DID to PDS endpoint
@@ -301,10 +309,8 @@ let
         # Generate JWT for ACCOUNT1
         account1_response=\$(${pkgs.curl}/bin/curl -s -X POST \
           -H "Content-Type: application/json" \
-          -d '{
-            "identifier": "'$ACCOUNT1'",
-            "password": "'$ACCOUNT1_PASSWORD'"
-          }' \
+          -d "\$(${pkgs.jq}/bin/jq -n --arg id "\$ACCOUNT1" --arg pw "\$ACCOUNT1_PASSWORD" \
+                '{identifier: \$id, password: \$pw}')" \
           "\$account1_pds/xrpc/com.atproto.server.createSession")
 
         account1_jwt=\$(echo "\$account1_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
@@ -319,10 +325,8 @@ let
         # Generate JWT for ACCOUNT2
         account2_response=\$(${pkgs.curl}/bin/curl -s -X POST \
           -H "Content-Type: application/json" \
-          -d '{
-            "identifier": "'$ACCOUNT2'",
-            "password": "'$ACCOUNT2_PASSWORD'"
-          }' \
+          -d "\$(${pkgs.jq}/bin/jq -n --arg id "\$ACCOUNT2" --arg pw "\$ACCOUNT2_PASSWORD" \
+                '{identifier: \$id, password: \$pw}')" \
           "\$account2_pds/xrpc/com.atproto.server.createSession")
 
         account2_jwt=\$(echo "\$account2_response" | ${pkgs.jq}/bin/jq -r '.accessJwt')
@@ -338,15 +342,12 @@ let
         account1_post_response=\$(${pkgs.curl}/bin/curl -s -X POST \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer \$account1_jwt" \
-          -d '{
-            "collection": "a.status.update",
-            "repo": "'\$account1_did'",
-            "record": {
-              "\$type": "a.status.update",
-              "text": "'"$message"'",
-              "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
-            }
-          }' \
+          -d "\$(${pkgs.jq}/bin/jq -n \
+                --arg repo "\$account1_did" \
+                --arg type "a.status.update" \
+                --arg text "\$message" \
+                --arg at "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                '{collection: \$type, repo: \$repo, record: {"\$type": \$type, text: \$text, createdAt: \$at}}')" \
           "\$account1_pds/xrpc/com.atproto.repo.createRecord")
 
         if [[ \$(echo "\$account1_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
@@ -359,15 +360,12 @@ let
         account2_post_response=\$(${pkgs.curl}/bin/curl -s -X POST \
           -H "Content-Type: application/json" \
           -H "Authorization: Bearer \$account2_jwt" \
-          -d '{
-            "collection": "app.bsky.feed.post",
-            "repo": "'\$account2_did'",
-            "record": {
-              "\$type": "app.bsky.feed.post",
-              "text": "'"$message"'",
-              "createdAt": "'\$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"
-            }
-          }' \
+          -d "\$(${pkgs.jq}/bin/jq -n \
+                --arg repo "\$account2_did" \
+                --arg type "app.bsky.feed.post" \
+                --arg text "\$message" \
+                --arg at "\$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                '{collection: \$type, repo: \$repo, record: {"\$type": \$type, text: \$text, createdAt: \$at}}')" \
           "\$account2_pds/xrpc/com.atproto.repo.createRecord")
 
         if [[ \$(echo "\$account2_post_response" | ${pkgs.jq}/bin/jq -r 'has("error")') == "true" ]]; then
@@ -566,19 +564,6 @@ in
                 source ${inputs.impure}/async.zsh
                 IMPURE_CMD_MAX_EXEC_TIME=3
                 source ${inputs.impure}/impure.zsh
-
-                # Colored man pages
-                man() {
-                  env \
-                    LESS_TERMCAP_mb=$(printf "\e[1;31m") \
-                    LESS_TERMCAP_md=$(printf "\e[1;31m") \
-                    LESS_TERMCAP_me=$(printf "\e[0m") \
-                    LESS_TERMCAP_se=$(printf "\e[0m") \
-                    LESS_TERMCAP_so=$(printf "\e[1;44;33m") \
-                    LESS_TERMCAP_ue=$(printf "\e[0m") \
-                    LESS_TERMCAP_us=$(printf "\e[1;32m") \
-                    command man "$@"
-                }
 
                 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
                 zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"

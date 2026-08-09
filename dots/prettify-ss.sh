@@ -1,4 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
+set -euo pipefail
 
 # Define temporary files
 TEMP_IMAGE=$(mktemp --suffix=.png)
@@ -7,14 +9,16 @@ MASK_IMAGE=$(mktemp --suffix=.png)
 GRADIENT_IMAGE=$(mktemp --suffix=.png)
 FINAL_IMAGE=$(mktemp --suffix=.png)
 
+# Clean up whatever we got to, not just the happy path.
+trap 'rm -f "$TEMP_IMAGE" "$MASK_IMAGE" "$SHADOWED_IMAGE" "$GRADIENT_IMAGE" "$FINAL_IMAGE"' EXIT
+
 # Grab the clipboard image
 wl-paste --type image/png > "$TEMP_IMAGE"
 
-# Extract standout colors (3 dominant colors)
+# Extract standout colors, and gradient between the two furthest apart
 COLORS=$(magick "$TEMP_IMAGE" -colors 3 -unique-colors txt: | grep -oP '#[0-9A-Fa-f]{6}')
 COLOR1=$(echo "$COLORS" | head -n 1)
-COLOR2=$(echo "$COLORS" | tail -n 1 | head -n 1)
-COLOR3=$(echo "$COLORS" | tail -n 1)
+COLOR2=$(echo "$COLORS" | tail -n 1)
 
 # Get original image dimensions
 WIDTH=$(magick identify -format "%w" "$TEMP_IMAGE")
@@ -40,8 +44,5 @@ magick "$GRADIENT_IMAGE" "$SHADOWED_IMAGE" -gravity center -composite "$FINAL_IM
 
 # Copy the final image back to the clipboard
 wl-copy < "$FINAL_IMAGE"
-
-# Clean up temporary files
-rm "$TEMP_IMAGE" "$MASK_IMAGE" "$SHADOWED_IMAGE" "$GRADIENT_IMAGE" "$FINAL_IMAGE"
 
 

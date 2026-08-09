@@ -42,7 +42,7 @@
               "#meta"
               "#fraud-land"
             ];
-            channel-keys = {
+            channel_keys = {
               fraud-land = "fraudpheus";
             };
           };
