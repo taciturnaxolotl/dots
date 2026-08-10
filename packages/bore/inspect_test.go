@@ -103,3 +103,15 @@ func discard() events {
 		open:    func(int) {},
 	}
 }
+
+// A dropped control connection is a moment; a refused token is a state.
+func TestServerTroubleIsOnlyFatalWhenRetryingCannotHelp(t *testing.T) {
+	tunnel := &Tunnel{Name: "myapp", Port: 8000}
+
+	if _, _, fatal := translate("connect to server error: EOF", tunnel); fatal {
+		t.Error("a dropped connection should warn, not kill the tunnel")
+	}
+	if _, _, fatal := translate("login to server failed: token mismatch", tunnel); !fatal {
+		t.Error("a refused token should be fatal")
+	}
+}

@@ -282,8 +282,16 @@ func translate(message string, t *Tunnel) (label, text string, fatal bool) {
 	case strings.Contains(message, "connect to local service") && strings.Contains(message, "connection refused"):
 		// The tunnel is fine; there is just nothing on the other end yet.
 		return "local", fmt.Sprintf("nothing is listening on localhost:%d", t.Port), false
-	case strings.Contains(message, "login to server failed"), strings.Contains(message, "connect to server error"):
-		// Nothing is getting through at all.
+	case strings.Contains(message, "connect to server error"):
+		// frpc dials again every second, so a dropped connection is a bad
+		// moment rather than a dead tunnel: it usually fixes itself.
+		reason := strings.TrimPrefix(message, "connect to server error: ")
+		if reason == "EOF" {
+			reason = "the server closed the connection"
+		}
+		return "server", reason + dim(" · retrying"), false
+	case strings.Contains(message, "login to server failed"):
+		// A token the server will not take stays refused however long we try.
 		return "server", strings.TrimPrefix(message, "login to server failed: "), true
 	}
 	return "frpc", message, true

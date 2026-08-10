@@ -120,7 +120,11 @@ func (m tunnelUI) status() string {
 	var out strings.Builder
 
 	// Divide the requests scrolling past from the details that stay put.
-	out.WriteString("\n")
+	// Nothing has scrolled past yet on a quiet tunnel, so there is nothing to
+	// divide it from.
+	if m.count > 0 {
+		out.WriteString("\n")
+	}
 
 	width := 0
 	for _, row := range m.header {
