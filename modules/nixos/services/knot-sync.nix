@@ -115,6 +115,10 @@ in
               exit 0
           fi
 
+          # git prefixes every line we print with "remote: ", so keep them short
+          dim=$'\033[2m'; bold=$'\033[1m'; green=$'\033[32m'
+          yellow=$'\033[33m'; red=$'\033[31m'; reset=$'\033[0m'
+
           # Function to sync to GitHub
           sync_to_github() {
               log "Syncing $REPO_NAME to GitHub"
@@ -129,21 +133,64 @@ in
                   git remote set-url origin "$expected_url"
               fi
 
-              # Mirror push everything (refs, tags, branches)
-              if git push --mirror origin 2>&1 | tee -a "$LOG_FILE"; then
-                  log "Sync succeeded for $REPO_NAME"
-                  return 0
-              else
+              local out=/tmp/knot-sync.$$.out err=/tmp/knot-sync.$$.err status
+
+              # Explicit refspecs rather than --mirror: --mirror also ships
+              # refs/remotes/* to GitHub, which is both noise and junk refs.
+              # --porcelain gives a tab-separated status we can format ourselves.
+              git push --porcelain --prune origin \
+                  '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*' \
+                  >"$out" 2>"$err"
+              status=$?
+
+              { cat "$out"; cat "$err"; } >> "$LOG_FILE"
+
+              if [ $status -ne 0 ]; then
                   log "Sync failed for $REPO_NAME"
+                  printf '%smirror to github.com/%s/%s failed%s\n' \
+                      "$red" "$GITHUB_USERNAME" "$REPO_NAME" "$reset"
+                  sed -e 's/^remote: //' -e '/^To /d' -e '/^Done$/d' -e '/^$/d' "$err" |
+                      head -5 | while IFS= read -r line; do
+                          printf '  %s%s%s\n' "$dim" "$line" "$reset"
+                      done
+                  rm -f "$out" "$err"
                   return 1
               fi
+
+              printf '%smirrored to%s %sgithub.com/%s/%s%s\n' \
+                  "$dim" "$reset" "$bold" "$GITHUB_USERNAME" "$REPO_NAME" "$reset"
+
+              # <flag>\t<from>:<to>\t<summary>; '=' means already up to date
+              while IFS=$'\t' read -r flag refs summary; do
+                  case "$flag" in
+                      "To "*|Done|=|"") continue ;;
+                  esac
+                  ref=''${refs#*:}
+                  case "$ref" in
+                      refs/tags/*) ref="tag ''${ref#refs/tags/}" ;;
+                      refs/heads/*) ref=''${ref#refs/heads/} ;;
+                  esac
+                  printf '  %s%s%s %s%s%s\n' "$green" "$ref" "$reset" \
+                      "$dim" "''${summary%% (*}" "$reset"
+              done < "$out"
+
+              # GitHub's security nags are worth one line, not a banner
+              sed 's/^remote:[[:space:]]*//' "$err" |
+                  grep -iE 'vulnerabilit|/security/dependabot' | head -2 |
+                  while IFS= read -r line; do
+                      printf '  %s%s%s\n' "$yellow" "$line" "$reset"
+                  done
+
+              log "Sync succeeded for $REPO_NAME"
+              rm -f "$out" "$err"
+              return 0
           }
 
-          # Main
+          # Main; drain stdin first so a multi-ref push mirrors once, not once per ref
           while read oldrev newrev refname; do
               log "Received push for ref '$refname' (old revision: $oldrev, new revision: $newrev)"
-              sync_to_github
           done
+          sync_to_github
           HOOKEOF
 
                     HOOK_TEMPLATE="/tmp/post-receive.template"
