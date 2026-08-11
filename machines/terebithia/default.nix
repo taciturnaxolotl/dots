@@ -674,5 +674,14 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelParams = [ "console=ttyS0" ];
 
+  # Uncapped journald defaults to 10% of the filesystem, which is ~14G here, and
+  # 30 services on a public IP fill that faster than you'd think (it was at 3.9G).
+  # More headroom than prattle's 100M/7day on purpose: this box is the one facing
+  # the internet, so fail2ban and auth history are worth keeping around longer.
+  services.journald.extraConfig = ''
+    SystemMaxUse=1G
+    MaxRetentionSec=14day
+  '';
+
   system.stateVersion = "23.05";
 }
