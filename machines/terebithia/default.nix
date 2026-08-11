@@ -542,7 +542,10 @@
     domain = "lard.dunkirk.sh";
     secretsFile = config.age.secrets.lard.path;
     healthUrl = "https://lard.dunkirk.sh/healthz";
-    allowedClientIds = [ "ikc_NEil8GK01UX2O9AvbcDrv" "ikc_cskXitSS6XFSDzvyq3NBA"]; # lard, kloe
+    allowedClientIds = [
+      "ikc_NEil8GK01UX2O9AvbcDrv"
+      "ikc_cskXitSS6XFSDzvyq3NBA"
+    ]; # lard, kloe
     allowedUsers = [ "https://dunkirk.sh/" ];
     collectorClientId = "ikc_NEil8GK01UX2O9AvbcDrv";
   };

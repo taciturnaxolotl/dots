@@ -96,20 +96,22 @@ let
         );
       in
       {
-        atelier.services.lard.environment = storage // {
-          LARD_ADDR = ":${toString cfg.port}";
-          LARD_AUTH = cfg.authMode;
-          LARD_AUTH_SERVER = cfg.authServer;
-          LARD_PUBLIC_URL = "https://${cfg.domain}";
-          LARD_OAUTH_CLIENT_IDS = lib.concatStringsSep "," cfg.allowedClientIds;
-          LARD_OAUTH_USERS = lib.concatStringsSep "," cfg.allowedUsers;
-        }
-        // lib.optionalAttrs (cfg.collectorClientId != "") {
-          LARD_COLLECTOR_CLIENT_ID = cfg.collectorClientId;
-        }
-        // lib.optionalAttrs (cfg.primaryUser != "") {
-          LARD_PRIMARY_USER = cfg.primaryUser;
-        };
+        atelier.services.lard.environment =
+          storage
+          // {
+            LARD_ADDR = ":${toString cfg.port}";
+            LARD_AUTH = cfg.authMode;
+            LARD_AUTH_SERVER = cfg.authServer;
+            LARD_PUBLIC_URL = "https://${cfg.domain}";
+            LARD_OAUTH_CLIENT_IDS = lib.concatStringsSep "," cfg.allowedClientIds;
+            LARD_OAUTH_USERS = lib.concatStringsSep "," cfg.allowedUsers;
+          }
+          // lib.optionalAttrs (cfg.collectorClientId != "") {
+            LARD_COLLECTOR_CLIENT_ID = cfg.collectorClientId;
+          }
+          // lib.optionalAttrs (cfg.primaryUser != "") {
+            LARD_PRIMARY_USER = cfg.primaryUser;
+          };
 
         assertions = [
           {
@@ -122,7 +124,11 @@ let
             '';
           }
           {
-            assertion = !cfg.multiUser || cfg.primaryUser == "" || lib.elem cfg.primaryUser cfg.allowedUsers || cfg.allowedUsers == [ ];
+            assertion =
+              !cfg.multiUser
+              || cfg.primaryUser == ""
+              || lib.elem cfg.primaryUser cfg.allowedUsers
+              || cfg.allowedUsers == [ ];
             message = ''
               atelier.services.lard: primaryUser "${cfg.primaryUser}" is not in
               allowedUsers, so the tenant that inherits the pre-multi-user
