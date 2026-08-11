@@ -766,9 +766,6 @@ in
                           command direnv allow "$dir" >/dev/null 2>&1
                         fi
                       fi
-                      if [[ -f "$dir/.envrc" ]]; then
-                        command direnv reload >/dev/null 2>&1
-                      fi
                       return
                     fi
                     dir="''${dir:h}"
