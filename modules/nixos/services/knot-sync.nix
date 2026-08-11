@@ -116,7 +116,7 @@ in
           fi
 
           # git prefixes every line we print with "remote: ", so keep them short
-          dim=$'\033[2m'; bold=$'\033[1m'; green=$'\033[32m'
+          dim=$'\033[2m'; green=$'\033[32m'
           yellow=$'\033[33m'; red=$'\033[31m'; reset=$'\033[0m'
 
           # Function to sync to GitHub
@@ -157,8 +157,8 @@ in
                   return 1
               fi
 
-              printf '%smirrored to%s %sgithub.com/%s/%s%s\n' \
-                  "$dim" "$reset" "$bold" "$GITHUB_USERNAME" "$REPO_NAME" "$reset"
+              printf '%smirrored to github.com/%s/%s%s\n' \
+                  "$dim" "$GITHUB_USERNAME" "$REPO_NAME" "$reset"
 
               # <flag>\t<from>:<to>\t<summary>; '=' means already up to date
               while IFS=$'\t' read -r flag refs summary; do
