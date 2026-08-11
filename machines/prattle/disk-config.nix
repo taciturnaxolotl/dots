@@ -1,9 +1,14 @@
 {
   disko.devices = {
     disk = {
+      # /dev/sdX is assigned by enumeration order, not by which disk is which,
+      # and it has already drifted once: the disk holding disk-main-* is sdc,
+      # not the sda this file used to name. Disko formats whatever `main`
+      # points at, so a stale name here is a wiped pool member. by-id only.
+      # Swap `main` to the new SSD's by-id when it goes in.
       main = {
         type = "disk";
-        device = "/dev/sda";
+        device = "/dev/disk/by-id/ata-Hitachi_HTS543212L9SA02_090130FBEB00LGGJ35RF";
         content = {
           type = "gpt";
           partitions = {
@@ -29,7 +34,7 @@
       };
       storage1 = {
         type = "disk";
-        device = "/dev/sdb";
+        device = "/dev/disk/by-id/ata-HGST_HDN726060ALE614_K1HHZH5B";
         content = {
           type = "gpt";
           partitions = {
@@ -45,7 +50,7 @@
       };
       storage2 = {
         type = "disk";
-        device = "/dev/sdc";
+        device = "/dev/disk/by-id/ata-HGST_HDN726060ALE614_K1HHZD8B";
         content = {
           type = "gpt";
           partitions = {
