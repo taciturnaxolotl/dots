@@ -123,14 +123,27 @@ in
           sync_to_github() {
               log "Syncing $REPO_NAME to GitHub"
               expected_url="https://''${GITHUB_USERNAME}:''${GITHUB_TOKEN}@github.com/''${GITHUB_USERNAME}/''${REPO_NAME}.git"
-              current_url=$(git remote get-url origin 2>/dev/null || echo "")
+
+              # The mirror lives on "github", not "origin": the knot reads an
+              # origin remote as "this repo is a fork of that URL" and answers
+              # every branch push with a bogus cross-repo pull request link.
+              # Drop a mirror we previously parked on origin, but leave a real
+              # fork upstream alone.
+              case "$(git remote get-url origin 2>/dev/null || true)" in
+                  *"@github.com/''${GITHUB_USERNAME}/''${REPO_NAME}.git")
+                      log "Moving mirror off the origin remote"
+                      git remote remove origin
+                      ;;
+              esac
+
+              current_url=$(git remote get-url github 2>/dev/null || echo "")
 
               if [ -z "$current_url" ]; then
-                  log "Adding origin remote"
-                  git remote add origin "$expected_url"
+                  log "Adding github remote"
+                  git remote add github "$expected_url"
               elif [ "$current_url" != "$expected_url" ]; then
-                  log "Updating origin remote URL"
-                  git remote set-url origin "$expected_url"
+                  log "Updating github remote URL"
+                  git remote set-url github "$expected_url"
               fi
 
               local out=/tmp/knot-sync.$$.out err=/tmp/knot-sync.$$.err status
@@ -138,7 +151,7 @@ in
               # Explicit refspecs rather than --mirror: --mirror also ships
               # refs/remotes/* to GitHub, which is both noise and junk refs.
               # --porcelain gives a tab-separated status we can format ourselves.
-              git push --porcelain --prune origin \
+              git push --porcelain --prune github \
                   '+refs/heads/*:refs/heads/*' '+refs/tags/*:refs/tags/*' \
                   >"$out" 2>"$err"
               status=$?
@@ -174,11 +187,16 @@ in
                       "$dim" "''${summary%% (*}" "$reset"
               done < "$out"
 
-              # GitHub's security nags are worth one line, not a banner
-              sed 's/^remote:[[:space:]]*//' "$err" |
-                  grep -iE 'vulnerabilit|/security/dependabot' | head -2 |
+              # Whatever GitHub itself said (PR links, security nags), trimmed
+              # of its padding and capped so a banner can't take over the push.
+              sed -n 's/^remote:[[:space:]]*//p' "$err" |
+                  sed -e 's/[[:space:]]*$//' -e '/^$/d' | head -6 |
                   while IFS= read -r line; do
-                      printf '  %s%s%s\n' "$yellow" "$line" "$reset"
+                      case "$line" in
+                          *vulnerabilit*|*[Ww]arning*) color=$yellow ;;
+                          *) color=$dim ;;
+                      esac
+                      printf '  %s%s%s\n' "$color" "$line" "$reset"
                   done
 
               log "Sync succeeded for $REPO_NAME"
