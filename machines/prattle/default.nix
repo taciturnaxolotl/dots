@@ -211,6 +211,19 @@
     useRoutingFeatures = "client";
   };
 
+  # ── Storage health ───────────────────────────────────────────────────
+  services.zfs.autoScrub = {
+    enable = true;
+    interval = "monthly";
+  };
+  services.zfs.zed.settings.ZED_DEBUG_LOG = "/var/log/zed.log";
+
+  services.smartd = {
+    enable = true;
+    autodetect = true;
+    notifications.wall.enable = true;
+  };
+
   # ── Nixarr ───────────────────────────────────────────────────────────
   nixarr = {
     enable = true;
@@ -410,12 +423,26 @@
       "transmission.service"
     ];
     wantedBy = [ "multi-user.target" ];
-    unitConfig.JoinsNamespaceOf = "transmission.service";
     serviceConfig = {
       Type = "simple";
       Restart = "on-failure";
       User = "transmission";
       Group = "media";
+
+      # JoinsNamespaceOf only shares namespaces systemd itself created, and
+      # nixarr points transmission at a netns that wg.service made out of band.
+      # So this unit was silently running on the host network and every NAT-PMP
+      # request went nowhere. Enter the namespace the same way transmission does.
+      NetworkNamespacePath = "/run/netns/wg";
+
+      # Inside that netns, 10.0.0.0/8 routes back to the host over veth-wg so the
+      # arrs stay reachable, and ProtonVPN's NAT-PMP gateway (10.2.0.1) falls
+      # inside that range. A /32 wins on longest-prefix match and puts the
+      # gateway back on wg0. Runs as root ("+"), still inside the netns.
+      ExecStartPre = "+${pkgs.writeShellScript "protonvpn-pf-route" ''
+        ${pkgs.iproute2}/bin/ip route replace 10.2.0.1/32 dev wg0
+      ''}";
+
       ExecStart = pkgs.writeShellScript "protonvpn-port-forward" ''
         sleep 5
         GATEWAY=10.2.0.1
