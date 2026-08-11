@@ -17,8 +17,36 @@ All options under `atelier.ssh`:
 |--------|------|---------|-------------|
 | `zmx.enable` | bool | `false` | Install zmx and autossh |
 | `zmx.hosts` | list of strings | `[]` | Host patterns to auto-attach via zmx |
+| `zmx.bypassEnv` | list of strings | `[ "ZMX_OFF" "AI_AGENT" "CLAUDECODE" "CRUSH" ]` | Env vars that turn zmx auto-attach off |
 
 When zmx is enabled for a host, the SSH config injects `RemoteCommand`, `RequestTTY force`, and `ControlMaster`/`ControlPersist` settings. Shell aliases are also added: `zmls`, `zmk`, `zma`, `ash`.
+
+#### Bypass
+
+`RemoteCommand` makes one-shot commands a hard error: `ssh terebithia ls`, `scp`,
+`rsync` and `git` over a zmx host all die with `Cannot execute command-line and
+remote command`. To fix that, a `Match` block is emitted ahead of every host
+block that cancels `RemoteCommand` when any variable in `zmx.bypassEnv` is set:
+
+```
+Match originalhost t.*,prattle,terebithia exec "test -n \"$ZMX_OFF$AI_AGENT$CLAUDECODE$CRUSH\""
+  RemoteCommand none
+  RequestTTY auto
+```
+
+So coding agents get plain SSH for free, and anyone else can opt out per command:
+
+```bash
+ZMX_OFF=1 ssh terebithia uptime
+ZMX_OFF=1 rsync -a ./build/ terebithia:/srv/app/
+```
+
+Persistence is still available on purpose, without a TTY:
+
+```bash
+ssh terebithia zmx run build nix build .#foo   # runs in a session, survives disconnect
+ssh terebithia zmx history build               # read the scrollback later
+```
 
 ### Hosts
 

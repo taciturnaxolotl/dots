@@ -19,6 +19,21 @@ in
         default = [ ];
         description = "List of host patterns to enable zmx auto-attach (e.g., 'd.*')";
       };
+      bypassEnv = mkOption {
+        type = types.listOf types.str;
+        default = [
+          "ZMX_OFF"
+          "AI_AGENT"
+          "CLAUDECODE"
+          "CRUSH"
+        ];
+        description = ''
+          Environment variables that, when non-empty, disable zmx auto-attach
+          for zmx hosts. Without this, `ssh host cmd`, `scp` and `rsync` fail
+          with "Cannot execute command-line and remote command", which coding
+          agents hit constantly.
+        '';
+      };
     };
 
     agent = {
@@ -220,6 +235,22 @@ in
             else
               { };
 
+          # Every host that gets a zmx RemoteCommand, patterns included
+          zmxHosts = cfg.zmx.hosts ++ attrNames (filterAttrs (_: h: h.zmx) cfg.hosts);
+
+          # RemoteCommand makes `ssh host cmd`, scp and rsync hard errors. Give
+          # them back by cancelling the zmx block whenever a bypass variable is
+          # set, so agents get plain ssh and humans still land in a session.
+          bypassBlock = optionalAttrs (cfg.zmx.enable && zmxHosts != [ ] && cfg.zmx.bypassEnv != [ ]) {
+            zmx-bypass = hm.dag.entryBefore (attrNames (hostSettings // zmxSettings)) {
+              header = ''Match originalhost ${concatStringsSep "," zmxHosts} exec "test -n \"${
+                concatMapStrings (v: "$" + v) cfg.zmx.bypassEnv
+              }\""'';
+              RemoteCommand = "none";
+              RequestTTY = "auto";
+            };
+          };
+
           # Default block for global SSH options
           defaultBlock = {
             "*" = {
@@ -227,7 +258,7 @@ in
             };
           };
         in
-        defaultBlock // hostSettings // zmxSettings;
+        defaultBlock // hostSettings // zmxSettings // bypassBlock;
 
       extraConfig = cfg.extraConfig;
     };
