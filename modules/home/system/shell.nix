@@ -735,45 +735,27 @@ in
                 # chpwd hooks
                 autoload -Uz add-zsh-hook
 
+                # Tracks which venv we activated, so a venv you sourced by hand
+                # is never yanked out from under you.
+                typeset -g _auto_venv=""
+
                 function auto_venv() {
-                  if [[ -n "$VIRTUAL_ENV" && ! -f "$VIRTUAL_ENV/bin/activate" ]]; then
-                    deactivate
-                  fi
-                  [[ -n "$VIRTUAL_ENV" ]] && return
-                  local dir="$PWD"
+                  local dir="$PWD" venv=""
                   while [[ "$dir" != "/" ]]; do
                     if [[ -f "$dir/.venv/bin/activate" ]]; then
-                      source "$dir/.venv/bin/activate"
-                      return
+                      venv="$dir/.venv"
+                      break
                     fi
                     dir="''${dir:h}"
                   done
-                }
-
-                function auto_nix() {
-                  [[ -n "$IN_NIX_SHELL" ]] && return
-                  local dir="$PWD"
-                  while [[ "$dir" != "/" ]]; do
-                    if [[ -f "$dir/flake.nix" ]]; then
-                      if [[ ! -f "$dir/.envrc" ]]; then
-                        local arch
-                        arch="$(nix eval --impure --expr 'builtins.currentSystem' 2>/dev/null | tr -d '"')"
-                        if nix eval --json "$dir#devShells.$arch" \
-                             --apply 'x: true' >/dev/null 2>&1; then
-                          cat > "$dir/.envrc" <<'EOF'
-        use flake
-        EOF
-                          command direnv allow "$dir" >/dev/null 2>&1
-                        fi
-                      fi
-                      return
-                    fi
-                    dir="''${dir:h}"
-                  done
+                  [[ "$VIRTUAL_ENV" == "$venv" ]] && return
+                  [[ -n "$VIRTUAL_ENV" && "$VIRTUAL_ENV" != "$_auto_venv" ]] && return
+                  (( $+functions[deactivate] )) && deactivate
+                  _auto_venv="$venv"
+                  [[ -n "$venv" ]] && source "$venv/bin/activate"
                 }
 
                 add-zsh-hook chpwd auto_venv
-                add-zsh-hook chpwd auto_nix
 
                 # zsh-patina: Rust-based syntax highlighting (must be last)
                 eval "$(${
