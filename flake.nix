@@ -301,6 +301,15 @@
             ./machines/atalanta
           ];
         };
+        beef = nix-darwin.lib.darwinSystem {
+          system = "aarch64-darwin";
+          specialArgs = { inherit inputs outputs; };
+          modules = [
+            home-manager.darwinModules.home-manager
+            agenix.darwinModules.default
+            ./machines/beef
+          ];
+        };
       };
 
       # Service manifest for infra dashboard
