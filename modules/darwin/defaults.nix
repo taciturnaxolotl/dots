@@ -1,6 +1,8 @@
 {
   inputs,
   pkgs,
+  lib,
+  config,
   ...
 }:
 {
@@ -34,9 +36,11 @@
     "flakes"
   ];
 
-  nix.package = pkgs.lixPackageSets.latest.lix;
+  # Nix installation management (only when nix-darwin manages nix)
+  # Machines using Determinate Nix should set nix.enable = false
+  nix.package = lib.mkIf config.nix.enable pkgs.lixPackageSets.latest.lix;
 
-  nix.gc = {
+  nix.gc = lib.mkIf config.nix.enable {
     automatic = true;
     interval = {
       Weekday = 0;
@@ -45,7 +49,7 @@
     };
     options = "--delete-older-than 14d";
   };
-  nix.optimise.automatic = true;
+  nix.optimise.automatic = lib.mkIf config.nix.enable true;
 
   users.users.kierank = {
     name = "kierank";

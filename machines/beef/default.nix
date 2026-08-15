@@ -12,6 +12,9 @@
 
   networking.hostName = "beef";
 
+  # Determinate Nix manages its own daemon; disable nix-darwin nix management
+  nix.enable = false;
+
   atelier.machine = {
     enable = true;
     type = "client";
