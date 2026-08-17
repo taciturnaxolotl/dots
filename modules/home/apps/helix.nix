@@ -12,6 +12,26 @@
   };
 
   config = lib.mkIf config.atelier.apps.helix.enable {
+    # Build tree-sitter-cdl grammar as a nix derivation so helix doesn't need
+    # `hx --grammar build` after every rebuild.
+    xdg.configFile = let
+      tree-sitter-cdl-grammar = pkgs.stdenv.mkDerivation {
+        name = "tree-sitter-cdl";
+        src = ../../../packages/tree-sitter-cdl;
+        buildPhase = ''
+          $CC -shared -fPIC -O2 -o cdl.so src/parser.c -I src
+        '';
+        installPhase = ''
+          mkdir -p $out
+          cp cdl.so $out/
+        '';
+      };
+    in {
+      "helix/runtime/grammars/cdl.so".source = "${tree-sitter-cdl-grammar}/cdl.so";
+      "helix/runtime/queries/cdl/highlights.scm".source =
+        ../../../packages/tree-sitter-cdl/queries/highlights.scm;
+    };
+
     programs.helix = {
       enable = true;
       package = pkgs.evil-helix;
@@ -306,6 +326,12 @@
               "wakatime"
             ];
             auto-format = true;
+          }
+          {
+            name = "cdl";
+            scope = "source.cdl";
+            file-types = [ "cdl" ];
+            grammar = "cdl";
           }
         ]
         ++ lib.optionals config.atelier.apps.helix.swift [

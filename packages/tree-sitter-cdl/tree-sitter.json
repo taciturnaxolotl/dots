@@ -1,0 +1,30 @@
+{
+  "grammars": [
+    {
+      "name": "cdl",
+      "camelcase": "Cdl",
+      "scope": "source.cdl",
+      "path": ".",
+      "file-types": ["cdl"],
+      "highlights": "queries/highlights.scm"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Tree-sitter grammar for CedarLogic CDL v3 circuit description files",
+    "authors": [
+      {
+        "name": "Kieran Klukas"
+      }
+    ]
+  },
+  "bindings": {
+    "c": true,
+    "go": false,
+    "node": false,
+    "python": false,
+    "rust": false,
+    "swift": false
+  }
+}

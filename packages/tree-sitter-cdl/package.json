@@ -1,0 +1,25 @@
+{
+  "name": "tree-sitter-cdl",
+  "version": "0.1.0",
+  "description": "Tree-sitter grammar for CedarLogic CDL v3 circuit description files",
+  "main": "bindings/node",
+  "types": "bindings/node",
+  "keywords": ["tree-sitter", "cedarlogic", "cdl"],
+  "files": [
+    "grammar.js",
+    "src/**"
+  ],
+  "dependencies": {
+    "node-addon-api": "^8.0.0",
+    "node-gyp-build": "^4.8.0"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.26.0"
+  },
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "test": "tree-sitter test",
+    "parse": "tree-sitter parse"
+  },
+  "license": "MIT"
+}
