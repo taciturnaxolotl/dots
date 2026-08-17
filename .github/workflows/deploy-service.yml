@@ -183,7 +183,7 @@ jobs:
           PREV_FULL="${{ steps.deploy.outputs.prev_full }}"
           NEW_SHORT="${{ steps.deploy.outputs.new_short }}"
           NEW_FULL="${{ steps.deploy.outputs.new_full }}"
-          DURATION="$(($(date +%s) - ${{ steps.deploy.outputs.start }}))s"
+          START="${{ steps.deploy.outputs.start }}"
           HEALTH="${{ steps.health.outputs.status || steps.systemd.outputs.status }}"
           HOST="${{ inputs.host }}"
           REPO="https://github.com/${{ github.repository }}"
@@ -194,16 +194,30 @@ jobs:
             STATUS="Failed"
           fi
 
+          # Every column below comes out of the deploy step. When that step
+          # never ran, a table of empty cells and dead commit links reads like
+          # a deploy that did nothing rather than one that never started.
+          if [ -z "$START" ]; then
+            echo "\`${STATUS}\` on \`${HOST}\` before the deploy started — see the failing step above." \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          DURATION="$(($(date +%s) - START))s"
+
           cat >> "$GITHUB_STEP_SUMMARY" << EOF
           | status | host | commits | health |
           |---|---|---|---|
           | \`${STATUS}\` in \`${DURATION}\` | \`${HOST}\` | [\`${PREV_SHORT}\`](${REPO}/commit/${PREV_FULL}) → [\`${NEW_SHORT}\`](${REPO}/commit/${NEW_FULL}) ([diff](${REPO}/compare/${PREV_FULL}...${NEW_FULL})) | \`${HEALTH:-skipped}\` |
           EOF
 
+      # Only once the deploy step has moved the checkout — a failure before
+      # that (no tailnet, no ssh) left nothing to roll back, and rolling back
+      # anyway just buries the real error under a second one.
       - name: Rollback on failure
-        if: failure()
+        if: failure() && steps.deploy.outputs.prev_full != ''
         run: |
-          ::warning::Deploy failed — rolling back ${{ inputs.service }}
+          echo "::warning::Deploy failed — rolling back ${{ inputs.service }}"
 
           ssh ${{ inputs.service }}@${{ inputs.host }} << 'ROLLBACK'
             set -e
