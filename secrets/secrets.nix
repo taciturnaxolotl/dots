@@ -51,6 +51,9 @@ in
   "control.age".publicKeys = [
     kierank
   ];
+  "kloe.age".publicKeys = [
+    kierank
+  ];
   "restic/env.age".publicKeys = [
     kierank
   ];

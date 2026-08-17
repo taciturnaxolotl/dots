@@ -327,6 +327,19 @@
   # share the host clock) and keeps such a runtime from choking on it.
   virtualisation.docker.daemon.settings.features.time-namespaces = false;
 
+  # The identity kloe (on terebithia) lands as. It exists here only to hold a
+  # login and the docker group; the tailnet ACL is what decides who may become
+  # it, and docker's `dial-stdio` needs a shell to be spawned from.
+  users.groups.kloe = { };
+  users.users.kloe = {
+    isSystemUser = true;
+    group = "kloe";
+    extraGroups = [ "docker" ];
+    home = "/var/lib/kloe";
+    createHome = true;
+    shell = pkgs.bash;
+  };
+
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
   atelier.services.arm = {
     enable = true;

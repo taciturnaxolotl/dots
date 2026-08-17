@@ -181,6 +181,10 @@
       file = ../../secrets/lard.age;
       owner = "lard";
     };
+    kloe = {
+      file = ../../secrets/kloe.age;
+      owner = "kloe";
+    };
     paperless-oidc = {
       file = ../../secrets/paperless-oidc.age;
       owner = "paperless";
@@ -548,6 +552,86 @@
     ]; # lard, kloe
     allowedUsers = [ "https://dunkirk.sh/" ];
     collectorClientId = "ikc_NEil8GK01UX2O9AvbcDrv";
+  };
+
+  atelier.services.kloe = {
+    enable = true;
+    domain = "kloe.dunkirk.sh";
+    repository = "https://github.com/taciturnaxolotl/kloe";
+    secretsFile = config.age.secrets.kloe.path;
+    healthUrl = "https://kloe.dunkirk.sh/health";
+
+    settings = {
+      auth = {
+        enabled = true;
+        issuer = "https://indiko.dunkirk.sh";
+        clientId = "ikc_cskXitSS6XFSDzvyq3NBA";
+        clientSecret = "$KLOE_CLIENT_SECRET";
+        allowedSubs = [ "https://dunkirk.sh/" ];
+      };
+
+      lard = {
+        enabled = true;
+        baseUrl = "https://lard.dunkirk.sh";
+      };
+
+      search = {
+        backends = [
+          {
+            provider = "exa";
+            apiKey = "$EXA_API_KEY";
+            searchType = "auto";
+          }
+          {
+            provider = "ceramic";
+            apiKey = "$CERAMIC_API_KEY";
+          }
+        ];
+        maxResults = 5;
+      };
+
+      fetch.renderer = {
+        provider = "flaresolverr";
+        endpoint = "https://flaresolver.dunkirk.sh/v1";
+        timeoutMs = 60000;
+      };
+
+      # Runs on prattle's docker under gVisor, reached over Tailscale SSH as
+      # the kloe user declared there. The tailnet ACL is the thing that has to
+      # allow the hop; nothing here can grant it.
+      sandbox = {
+        enabled = true;
+        image = "buildpack-deps:bookworm-scm";
+        runtime = "runsc";
+        dockerHost = "ssh://kloe@prattle";
+        network = true;
+      };
+
+      providers = [
+        {
+          id = "hyper";
+          apiKey = "$HYPER_API_KEY";
+          apiEndpoint = "https://hyper.charm.land/v1";
+          type = "hyper";
+          maxConcurrency = 4;
+        }
+        {
+          id = "llmsolutions";
+          apiKey = "$LLMSOLUTIONS_API_KEY";
+          apiEndpoint = "https://llmsolutions.top/v1";
+          type = "openai-compat";
+          maxConcurrency = 4;
+          models = [
+            {
+              id = "deepseek-v4-flash-0731";
+              name = "DeepSeek V4 Flash (llmsolutions)";
+              context_window = 1048576;
+              default_max_tokens = 32768;
+            }
+          ];
+        }
+      ];
+    };
   };
 
   atelier.services.tangled = {
