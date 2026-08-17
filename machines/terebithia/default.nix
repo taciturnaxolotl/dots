@@ -567,8 +567,37 @@
         issuer = "https://indiko.dunkirk.sh";
         clientId = "ikc_cskXitSS6XFSDzvyq3NBA";
         clientSecret = "$KLOE_CLIENT_SECRET";
-        allowedSubs = [ "https://dunkirk.sh/" ];
+        # Anyone with an indiko account may sign in; roles decide what they
+        # get. A role is held by name or by what indiko calls someone, and a
+        # name wins: indiko only reports a role during a fresh login, where a
+        # name here applies the moment it deploys.
+        allowedSubs = [ ];
+        roles = {
+          owner = {
+            admin = true;
+            sandbox = true;
+            publish = true;
+            subs = [ "https://dunkirk.sh/" ];
+            # "admin" is what the kloe client offers in indiko; "owner" is kept
+            # in case the client is ever renamed to match this side.
+            providerRoles = [
+              "admin"
+              "owner"
+            ];
+          };
+          # Everyone else: chat, whichever models are marked for guests, and
+          # whatever they connect their own account to. No shell, which is this
+          # machine, and no public links, which are this domain.
+          guest = {
+            providerRoles = [ "guest" ];
+          };
+        };
       };
+
+      # Encrypts the provider credentials users hand over (their own hyper
+      # grant, a pasted key). Without it kloe refuses to store one rather than
+      # writing it into a database that gets backed up offsite.
+      security.credentialKey = "$KLOE_CREDENTIAL_KEY";
 
       lard = {
         enabled = true;
@@ -587,7 +616,9 @@
             apiKey = "$CERAMIC_API_KEY";
           }
         ];
-        maxResults = 5;
+        # Asked of each backend and kept after fusion. Ceramic will go to 50;
+        # this is the dial that decides how much of a search the model reads.
+        maxResults = 10;
       };
 
       fetch.renderer = {
@@ -614,6 +645,12 @@
           apiEndpoint = "https://hyper.charm.land/v1";
           type = "hyper";
           maxConcurrency = 4;
+          # The device endpoints sit at the app root, not under /v1, so a user
+          # can approve kloe from hyper's own page and spend their own credits.
+          oauth = {
+            flow = "hyper-device";
+            baseUrl = "https://hyper.charm.land";
+          };
         }
         {
           id = "llmsolutions";
