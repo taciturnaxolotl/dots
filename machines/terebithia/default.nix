@@ -577,6 +577,9 @@
             admin = true;
             sandbox = true;
             publish = true;
+            # Everything this instance can reach; which of those show up in a
+            # picker is each person's own business, set in settings.
+            models = [ "*" ];
             subs = [ "https://dunkirk.sh/" ];
             # "admin" is what the kloe client offers in indiko; "owner" is kept
             # in case the client is ever renamed to match this side.
@@ -585,10 +588,12 @@
               "owner"
             ];
           };
-          # Everyone else: chat, whichever models are marked for guests, and
-          # whatever they connect their own account to. No shell, which is this
-          # machine, and no public links, which are this domain.
+          # Everyone else: nothing of this instance's to spend until you say
+          # so, and whatever they connect their own account to. No shell, which
+          # is this machine, and no public links, which are this domain.
+          # Add refs or a "provider/*" pattern here to open a tier to them.
           guest = {
+            models = [ ];
             providerRoles = [ "guest" ];
           };
         };
