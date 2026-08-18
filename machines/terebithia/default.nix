@@ -580,6 +580,7 @@
             # Everything this instance can reach; which of those show up in a
             # picker is each person's own business, set in settings.
             models = [ "*" ];
+            search = [ "*" ];
             subs = [ "https://dunkirk.sh/" ];
             # "admin" is what the kloe client offers in indiko; "owner" is kept
             # in case the client is ever renamed to match this side.
@@ -601,6 +602,10 @@
           # stands between a guest's shell command and the host.
           guest = {
             models = [ "hyper/deepseek-v4-flash-0731" ];
+            # DuckDuckGo only: it needs no key, so a guest can search and
+            # research without spending the Exa or Ceramic credits this
+            # instance pays for. An engine they connect themselves is theirs.
+            search = [ "duckduckgo" ];
             sandbox = true;
             providerRoles = [ "guest" ];
           };
