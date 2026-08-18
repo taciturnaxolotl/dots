@@ -588,12 +588,20 @@
               "owner"
             ];
           };
-          # Everyone else: nothing of this instance's to spend until you say
-          # so, and whatever they connect their own account to. No shell, which
-          # is this machine, and no public links, which are this domain.
-          # Add refs or a "provider/*" pattern here to open a tier to them.
+          # Everyone else gets the cheapest thing hyper serves and a sandbox.
+          #
+          # deepseek-v4-flash-0731 is $0.13/$0.26 per 1M with a 1M window. Note
+          # the id: plain "deepseek-v4-flash" is the same weights (both are
+          # DeepSeek-V4-Flash-0731 upstream) at $0.20/$0.40. Hyper's "prism"
+          # looks free in the catalogue and is not — it is the Emissary router,
+          # and the bill follows whichever model it picks.
+          #
+          # No public links: those are this domain. The sandbox is this
+          # machine's compute, given deliberately — gVisor on prattle is what
+          # stands between a guest's shell command and the host.
           guest = {
-            models = [ ];
+            models = [ "hyper/deepseek-v4-flash-0731" ];
+            sandbox = true;
             providerRoles = [ "guest" ];
           };
         };
