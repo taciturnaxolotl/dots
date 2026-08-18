@@ -47,6 +47,7 @@ in
         pager.branch = false;
         column.ui = "auto";
         commit.gpgsign = true;
+        tag.gpgSign = true;
         gpg.format = "ssh";
         gpg.ssh.allowedSignersFile = "~/.ssh/allowedSigners";
         pull.rebase = true;
