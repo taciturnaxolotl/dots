@@ -52,6 +52,8 @@
     pkgs.mill
     pkgs.clang-tools
     pkgs.ninja
+    # security
+    pkgs.unstable.metasploit
     # tools
     pkgs.calc
     pkgs.nh
