@@ -218,6 +218,12 @@
   };
   services.zfs.zed.settings.ZED_DEBUG_LOG = "/var/log/zed.log";
 
+  # Root lives on bcachefs. nixpkgs builds the out-of-tree module against this
+  # kernel at build time, so a mismatch fails the rebuild, not the boot; the
+  # previous generation stays bootable either way.
+  boot.supportedFilesystems.bcachefs = true;
+  boot.initrd.supportedFilesystems.bcachefs = true;
+
   services.smartd = {
     enable = true;
     autodetect = true;
