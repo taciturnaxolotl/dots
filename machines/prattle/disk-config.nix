@@ -5,10 +5,9 @@
       # and it has already drifted once: the disk holding disk-main-* is sdc,
       # not the sda this file used to name. Disko formats whatever `main`
       # points at, so a stale name here is a wiped pool member. by-id only.
-      # Swap `main` to the new SSD's by-id when it goes in.
       main = {
         type = "disk";
-        device = "/dev/disk/by-id/ata-Hitachi_HTS543212L9SA02_090130FBEB00LGGJ35RF";
+        device = "/dev/disk/by-id/ata-INTEL_SSDSC2KB240G8_BTYF913507GA240AGN";
         content = {
           type = "gpt";
           partitions = {
@@ -25,8 +24,9 @@
               size = "100%";
               content = {
                 type = "filesystem";
-                format = "ext4";
+                format = "bcachefs";
                 mountpoint = "/";
+                extraArgs = [ "--compression=zstd" ];
               };
             };
           };

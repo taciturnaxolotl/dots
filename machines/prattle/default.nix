@@ -224,6 +224,11 @@
   boot.supportedFilesystems.bcachefs = true;
   boot.initrd.supportedFilesystems.bcachefs = true;
 
+  services.bcachefs.autoScrub = {
+    enable = true;
+    interval = "weekly";
+  };
+
   services.smartd = {
     enable = true;
     autodetect = true;
