@@ -607,6 +607,16 @@
             # instance pays for. An engine they connect themselves is theirs.
             search = [ "duckduckgo" ];
             sandbox = true;
+            # A day's worth, in a rolling 24 hours. At $0.13/$0.26 per 1M that
+            # is a few million tokens of conversation, which is a generous
+            # afternoon and a cheap month. Whichever bound is hit first stops
+            # the next run; a run already going finishes.
+            #
+            # Neither counts what someone spends on an account they connected
+            # themselves. That is the escape hatch, and it is the one the
+            # refusal points at.
+            usdPerDay = 0.5;
+            tokensPerDay = 4000000;
             providerRoles = [ "guest" ];
           };
         };
