@@ -10,6 +10,12 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
+# FlakeHub Cache authenticates via the Actions OIDC token, so id-token: write is
+# required; contents: read keeps checkout working under the narrowed scope.
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   # Decide which nodes actually need deploying from the diff. A change under
   # machines/<node> deploys only that node; anything shared (flake, modules,
@@ -131,6 +137,15 @@ jobs:
             extra-substituters = http://prattle:8091/dots
             extra-trusted-public-keys = dots:Mgol9jjaoUcN6pfgLetO3fe/JAm/fVpKXYBZaQ1MhFM=
 
+      # Persist store paths + flake inputs across runs. Attic still serves our
+      # custom packages to the servers; this keeps the runner from re-downloading
+      # the ~2900-path closure every cold run.
+      - name: FlakeHub Cache
+        uses: DeterminateSystems/flakehub-cache-action@v3
+        # Non-fatal: if FlakeHub isn't authorized for this repo yet, deploys
+        # still run (just without the cross-run store cache).
+        continue-on-error: true
+
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
         with:
@@ -150,21 +165,24 @@ jobs:
       # small VPS. The target substitutes standard paths from cache.nixos.org.
       - name: Deploy ${{ matrix.node }}
         run: |
+          # Resolve the toplevel once (eval-cache warm) and stash it so the push
+          # step reuses the exact path instead of re-evaluating the flake.
+          TOPLEVEL=$(nix eval --raw ".#nixosConfigurations.${{ matrix.node }}.config.system.build.toplevel")
+          echo "TOPLEVEL=$TOPLEVEL" >> "$GITHUB_ENV"
           nix develop .#default --command deploy \
             --skip-checks \
             --ssh-user kierank \
             --ssh-opts="-o StrictHostKeyChecking=accept-new" \
             .#${{ matrix.node }}
 
-      # Push what we just built so the next run substitutes it. attic skips
+      # Push what we just built so the servers substitute it. attic skips
       # anything already on cache.nixos.org, so this uploads only our own paths.
       - name: Cache build in attic
         env:
           ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
         run: |
           nix run nixpkgs#attic-client -- login prattle http://prattle:8091 "$ATTIC_TOKEN"
-          nix build .#nixosConfigurations.${{ matrix.node }}.config.system.build.toplevel --no-link --print-out-paths \
-            | xargs nix run nixpkgs#attic-client -- push dots
+          nix run nixpkgs#attic-client -- push dots "$TOPLEVEL"
 
   rollback:
     needs: [pre-deploy, deploy]
