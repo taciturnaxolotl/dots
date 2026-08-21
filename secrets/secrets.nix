@@ -105,4 +105,7 @@ in
   "garage-env.age".publicKeys = [
     kierank
   ];
+  "atticd-env.age".publicKeys = [
+    kierank
+  ];
 }

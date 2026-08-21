@@ -111,6 +111,9 @@
       owner = "garage";
       group = "garage";
     };
+    atticd-env = {
+      file = ../../secrets/atticd-env.age;
+    };
   };
 
   programs.nh = {
@@ -321,7 +324,10 @@
   # spindle's HTTP port, reachable only over Tailscale (terebithia fronts the
   # public spindle.dunkirk.sh and reverse-proxies here). Not in the global
   # allowedTCPPorts, so the default-deny firewall blocks it on the LAN.
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ 6555 ];
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+    6555
+    8091 # atticd (Nix binary cache), tailnet-only
+  ];
 
   # microVM host prerequisite: the vsock transport for the spindle's in-guest agent.
   boot.kernelModules = [ "vhost_vsock" ];
@@ -700,6 +706,19 @@
       PrivateTmp = true;
       NoNewPrivileges = true;
     };
+  };
+
+  # ── Attic (Nix binary cache) ──────────────────────────────────────────
+  # Tailnet-only cache so CI and both servers reuse custom-built packages
+  # (knot, herald, the tangled bits) instead of recompiling them every deploy.
+  # SQLite + local storage under /var/lib/atticd on the SSD root; the tailnet
+  # provides transport encryption, so it binds plain HTTP and 8091 is opened
+  # only on tailscale0 (same pattern as spindle). The RS256 signing secret
+  # lives in the agenix env file.
+  services.atticd = {
+    enable = true;
+    environmentFile = config.age.secrets.atticd-env.path;
+    settings.listen = "[::]:8091";
   };
 
   boot.zfs.forceImportRoot = false;
