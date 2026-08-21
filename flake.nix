@@ -321,14 +321,19 @@
       formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
       formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
 
+      # Use nixpkgs' own deploy-rs (Hydra-built, on cache.nixos.org) rather than
+      # deploy-rs.packages.*, which — because the input's nixpkgs follows ours —
+      # matches no binary cache and compiles from source (~14 min) every cold CI
+      # run. The activate wrapper in deploy.nodes still uses the flake's lib, but
+      # that binary builds once and persists in each target's store.
       devShells.aarch64-darwin.default = nixpkgs-unstable-small.legacyPackages.aarch64-darwin.mkShell {
-        packages = [ deploy-rs.packages.aarch64-darwin.deploy-rs ];
+        packages = [ nixpkgs-unstable-small.legacyPackages.aarch64-darwin.deploy-rs ];
       };
       devShells.x86_64-linux.default = nixpkgs-unstable-small.legacyPackages.x86_64-linux.mkShell {
-        packages = [ deploy-rs.packages.x86_64-linux.deploy-rs ];
+        packages = [ nixpkgs-unstable-small.legacyPackages.x86_64-linux.deploy-rs ];
       };
       devShells.aarch64-linux.default = nixpkgs-unstable-small.legacyPackages.aarch64-linux.mkShell {
-        packages = [ deploy-rs.packages.aarch64-linux.deploy-rs ];
+        packages = [ nixpkgs-unstable-small.legacyPackages.aarch64-linux.deploy-rs ];
       };
 
       # Deploy-rs configurations
