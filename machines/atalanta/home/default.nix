@@ -116,10 +116,6 @@
           hostname = "150.136.15.177"; # terebithia
         };
 
-        "e.*" = {
-          hostname = "ember"; # ember
-        };
-
         "p.*" = {
           hostname = "100.105.247.54"; # prattle
         };

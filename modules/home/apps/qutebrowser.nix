@@ -16,8 +16,8 @@
           ];
           method = "both";
         };
-        url.default_page = "http://ember:8081/";
-        url.start_pages = [ "http://ember:8081/" ];
+        url.default_page = "about:blank";
+        url.start_pages = [ "about:blank" ];
       };
       extraConfig = ''
         config.bind("<Space>ff", "cmd-set-text -s :open")

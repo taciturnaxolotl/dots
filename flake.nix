@@ -192,17 +192,6 @@
       # NixOS configuration entrypoint
       # Available through 'nixos-rebuild --flake .#hostname'
       nixosConfigurations = {
-        moonlark = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
-          modules = [
-            inputs.disko.nixosModules.disko
-            { disko.devices.disk.disk1.device = "/dev/vda"; }
-            agenix.nixosModules.default
-            unstable-overlays
-            ./machines/moonlark
-          ];
-        };
-
         prattle = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs outputs; };
           modules = [
@@ -250,18 +239,6 @@
       # Standalone home-manager configurations
       # Available through 'home-manager --flake .#hostname'
       homeConfigurations = {
-        "tacyon" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.aarch64-linux;
-          extraSpecialArgs = {
-            inherit inputs outputs;
-            nixpkgs-unstable = nixpkgs-unstable;
-          };
-          modules = [
-            ./machines/tacyon
-            unstable-overlays
-          ];
-        };
-
         "nest" = home-manager.lib.homeManagerConfiguration {
           pkgs = nixpkgs.legacyPackages.x86_64-linux;
           extraSpecialArgs = {
@@ -275,18 +252,6 @@
           ];
         };
 
-        "ember" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.x86_64-linux;
-          extraSpecialArgs = {
-            inherit inputs outputs;
-            nixpkgs-unstable = nixpkgs-unstable;
-          };
-          modules = [
-            ./machines/ember
-            unstable-overlays
-          ];
-
-        };
       };
 
       # Darwin configurations
