@@ -172,19 +172,24 @@ in
           postBackup = "systemctl start knot";
         };
 
-        # Prevent knot's memory leak from triggering system-wide OOM
-        # MemoryMax: hard kill at 4G (process is unresponsive well before 8G)
-        # MemoryHigh: throttle at 3G to slow growth
-        # MemorySwapMax: prevent swap thrashing entirely
-        systemd.services.knot.serviceConfig = {
-          MemoryMax = "8G";
-          MemoryHigh = "6G";
-          MemorySwapMax = "0";
+        # Contain knot's memory leak. GOMEMLIMIT gives Go a budget it will
+        # actually collect against; MemoryMax is only the backstop, sized above
+        # it so the kernel steps in solely when Go has already lost.
+        #
+        # There is deliberately no MemoryHigh. MemoryHigh throttles rather than
+        # kills, so a leaking knot gets pinned in reclaim in D state, where it
+        # cannot be signalled at all: no OOM kill, no SIGTERM, no restart, just
+        # a wedged unit and system-wide memory stall until someone lifts the
+        # limit by hand. A hard MemoryMax with Restart=always self-heals in
+        # seconds instead. Swap is left enabled for the same reason, so reclaim
+        # always has somewhere to go.
+        systemd.services.knot = {
+          environment.GOMEMLIMIT = "3GiB";
+          serviceConfig.MemoryMax = "4G";
         };
 
-        # Proactively restart knot every 4 hours to prevent memory bloat
-        # from accumulating. The RepoCompare endpoint leaks ~1.5GB/hour under
-        # normal traffic, so 4h keeps it well under the 4G hard limit.
+        # Proactively restart knot every 4 hours so the leak is usually cleared
+        # on a schedule rather than by hitting MemoryMax mid-request.
         systemd.timers.knot-restart = {
           wantedBy = [ "timers.target" ];
           timerConfig = {
