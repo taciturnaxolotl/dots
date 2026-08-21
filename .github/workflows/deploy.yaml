@@ -130,27 +130,12 @@ jobs:
           extra-conf: |
             extra-substituters = http://prattle:8091/dots
             extra-trusted-public-keys = dots:Mgol9jjaoUcN6pfgLetO3fe/JAm/fVpKXYBZaQ1MhFM=
-            keep-outputs = true
-            keep-derivations = true
 
-      # Persist the runner's /nix/store across runs via GitHub's own (free)
-      # Actions cache — the self-hosted-spirit stand-in for FlakeHub. Key is
-      # per-arch (prattle X64 and terebithia ARM64 must not share a cache) and
-      # per flake.lock. gc caps each cache before save so the two stay under
-      # GitHub's 10 GB/repo ceiling; purge trims stale entries. Non-fatal.
-      - name: Cache Nix store
-        uses: nix-community/cache-nix-action@v7
-        continue-on-error: true
-        with:
-          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/flake.lock') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
-          gc-max-store-size-linux: 4500000000
-          purge: true
-          purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
-          purge-created: 0
-          purge-last-accessed: P2D
-          purge-primary-key: never
-
+      # No runner-store cache: measured a wash. cache-nix-action cut downloads
+      # 2459→55 but wall-clock didn't move — restoring a ~4.5 GB GitHub cache
+      # costs about what re-fetching from cache.nixos.org's CDN does. The 4-6 min
+      # floor is eval + input fetch + copy-to-target + activate, which no runner
+      # cache touches. Attic still serves our custom packages to the fleet.
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
         with:
