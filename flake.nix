@@ -187,6 +187,27 @@
           })
         ];
       };
+
+      # deploy-rs.lib.activate embeds the deploy-rs binary in each node's
+      # activation closure. Taken straight from the flake input (whose nixpkgs
+      # follows ours) that binary is in no cache and compiles from source — fine
+      # under --remote-build (built once on the target), but a per-run source
+      # build on the CI runner now that we build there. Swap in nixpkgs' cached
+      # binary via deploy-rs's documented overlay, keeping its lib functions.
+      deployRsLib =
+        system:
+        (import nixpkgs-unstable-small {
+          inherit system;
+          overlays = [
+            deploy-rs.overlays.default
+            (_final: prev: {
+              deploy-rs = {
+                inherit (nixpkgs-unstable-small.legacyPackages.${system}) deploy-rs;
+                lib = prev.deploy-rs.lib;
+              };
+            })
+          ];
+        }).deploy-rs.lib;
     in
     {
       # NixOS configuration entrypoint
@@ -344,7 +365,7 @@
           profiles.system = {
             sshUser = "kierank";
             user = "root";
-            path = deploy-rs.lib.aarch64-linux.activate.nixos self.nixosConfigurations.terebithia;
+            path = (deployRsLib "aarch64-linux").activate.nixos self.nixosConfigurations.terebithia;
           };
         };
         prattle = {
@@ -352,7 +373,7 @@
           profiles.system = {
             sshUser = "kierank";
             user = "root";
-            path = deploy-rs.lib.x86_64-linux.activate.nixos self.nixosConfigurations.prattle;
+            path = (deployRsLib "x86_64-linux").activate.nixos self.nixosConfigurations.prattle;
           };
         };
       };

@@ -111,7 +111,10 @@ jobs:
         node: ${{ fromJSON(needs.changes.outputs.nodes) }}
 
     name: ${{ matrix.node }}
-    runs-on: ubuntu-latest
+    # Build on a runner whose arch matches the target, so the closure builds
+    # natively (no emulation) and we can drop --remote-build. terebithia is
+    # aarch64; everything else is x86_64.
+    runs-on: ${{ matrix.node == 'terebithia' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     environment:
       name: ${{ matrix.node }}
 
@@ -134,13 +137,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
 
-      # --remote-build builds the closure natively on the target, so aarch64
-      # (terebithia) needs no emulation on this x86 runner.
+      # Build on the runner (native arch), then copy only the output-closure
+      # diff to the target. Without --remote-build we no longer ship the whole
+      # derivation closure to the target over ssh-ng, which was ~24 min to the
+      # small VPS. The target substitutes standard paths from cache.nixos.org.
       - name: Deploy ${{ matrix.node }}
         run: |
           nix develop .#default --command deploy \
             --skip-checks \
-            --remote-build \
             --ssh-user kierank \
             --ssh-opts="-o StrictHostKeyChecking=accept-new" \
             .#${{ matrix.node }}
