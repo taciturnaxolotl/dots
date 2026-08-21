@@ -11,7 +11,59 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Decide which nodes actually need deploying from the diff. A change under
+  # machines/<node> deploys only that node; anything shared (flake, modules,
+  # lib, secrets, packages, or this workflow) deploys both. workflow_dispatch
+  # always deploys everything.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      nodes: ${{ steps.set.outputs.nodes }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            shared:
+              - 'flake.nix'
+              - 'flake.lock'
+              - 'modules/**'
+              - 'lib/**'
+              - 'secrets/**'
+              - 'packages/**'
+              - '.github/workflows/deploy.yaml'
+            terebithia:
+              - 'machines/terebithia/**'
+            prattle:
+              - 'machines/prattle/**'
+            docs:
+              - 'docs/**'
+              - 'packages/docs.nix'
+              - 'modules/**'
+
+      - id: set
+        run: |
+          nodes=()
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ steps.filter.outputs.shared }}" = "true" ]; then
+            nodes=(terebithia prattle)
+          else
+            [ "${{ steps.filter.outputs.terebithia }}" = "true" ] && nodes+=(terebithia)
+            [ "${{ steps.filter.outputs.prattle }}" = "true" ] && nodes+=(prattle)
+          fi
+          if [ ${#nodes[@]} -eq 0 ]; then
+            echo "nodes=[]" >> "$GITHUB_OUTPUT"
+          else
+            printf '%s\n' "${nodes[@]}" | jq -R . | jq -sc . | sed 's/^/nodes=/' >> "$GITHUB_OUTPUT"
+          fi
+
   pre-deploy:
+    needs: changes
+    if: needs.changes.outputs.nodes != '[]'
     runs-on: ubuntu-latest
     outputs:
       generations: ${{ steps.capture.outputs.generations }}
@@ -32,45 +84,35 @@ jobs:
 
       - name: Capture generations
         id: capture
+        env:
+          NODES: ${{ needs.changes.outputs.nodes }}
         run: |
           GENERATIONS='{}'
-          for NODE in terebithia prattle; do
-            GEN=$(ssh kierank@${NODE} \
+          for NODE in $(echo "$NODES" | jq -r '.[]'); do
+            GEN=$(ssh -n "kierank@${NODE}" \
               "readlink /nix/var/nix/profiles/system | grep -oP 'system-\K[0-9]+'")
             GENERATIONS=$(echo "$GENERATIONS" | jq -c --arg node "$NODE" --arg gen "$GEN" '. + {($node): $gen}')
           done
           echo "generations=$GENERATIONS" >> "$GITHUB_OUTPUT"
 
   deploy:
-    needs: pre-deploy
+    needs: [changes, pre-deploy]
+    if: needs.changes.outputs.nodes != '[]'
     strategy:
       fail-fast: false
       matrix:
-        node:
-          - name: terebithia
-            arch: aarch64-linux
-          - name: prattle
-            arch: x86_64-linux
+        node: ${{ fromJSON(needs.changes.outputs.nodes) }}
 
-    name: ${{ matrix.node.name }}
+    name: ${{ matrix.node }}
     runs-on: ubuntu-latest
     environment:
-      name: ${{ matrix.node.name }}
+      name: ${{ matrix.node }}
 
     steps:
       - uses: actions/checkout@v6
 
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
-        with:
-          extra-conf: |
-            extra-platforms = aarch64-linux
-
-      - name: Set up QEMU
-        if: matrix.node.arch == 'aarch64-linux'
-        uses: docker/setup-qemu-action@v4
-        with:
-          platforms: arm64
 
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
@@ -85,14 +127,16 @@ jobs:
           mkdir -p ~/.ssh
           echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
 
-      - name: Deploy ${{ matrix.node.name }}
+      # --remote-build builds the closure natively on the target, so aarch64
+      # (terebithia) needs no emulation on this x86 runner.
+      - name: Deploy ${{ matrix.node }}
         run: |
           nix develop .#default --command deploy \
             --skip-checks \
             --remote-build \
             --ssh-user kierank \
             --ssh-opts="-o StrictHostKeyChecking=accept-new" \
-            .#${{ matrix.node.name }}
+            .#${{ matrix.node }}
 
   rollback:
     needs: [pre-deploy, deploy]
@@ -113,14 +157,14 @@ jobs:
           mkdir -p ~/.ssh
           echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
 
-      - name: Rollback all nodes
+      - name: Rollback deployed nodes
         env:
           GENERATIONS: ${{ needs.pre-deploy.outputs.generations }}
         run: |
           echo "$GENERATIONS" | jq -r 'to_entries[] | "\(.key) \(.value)"' | \
           while read -r NODE GEN; do
             echo "::group::rollback $NODE → generation $GEN"
-            ssh kierank@${NODE} "
+            ssh -n "kierank@${NODE}" "
               sudo nix-env -p /nix/var/nix/profiles/system --switch-generation ${GEN}
               sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
             "
@@ -128,7 +172,8 @@ jobs:
           done
 
   docs:
-    needs: deploy
+    needs: [changes, deploy]
+    if: always() && needs.deploy.result != 'failure' && (needs.changes.outputs.docs == 'true' || needs.deploy.result == 'success')
     runs-on: ubuntu-latest
 
     steps:
