@@ -19,47 +19,54 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       nodes: ${{ steps.set.outputs.nodes }}
-      docs: ${{ steps.filter.outputs.docs }}
+      docs: ${{ steps.set.outputs.docs }}
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 2
+          fetch-depth: 0
 
-      - id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            shared:
-              - 'flake.nix'
-              - 'flake.lock'
-              - 'modules/**'
-              - 'lib/**'
-              - 'secrets/**'
-              - 'packages/**'
-              - '.github/workflows/deploy.yaml'
-            terebithia:
-              - 'machines/terebithia/**'
-            prattle:
-              - 'machines/prattle/**'
-            docs:
-              - 'docs/**'
-              - 'packages/docs.nix'
-              - 'modules/**'
-
+      # Classify the diff with plain git: a change under machines/<node>
+      # deploys that node; anything shared (flake, modules, lib, secrets,
+      # packages, this workflow) deploys both; workflow_dispatch deploys all.
       - id: set
+        env:
+          EVENT: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
         run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            shared=1 changed=""
+          else
+            shared=0
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "${BEFORE}^{commit}" 2>/dev/null; then
+              changed=$(git diff --name-only "${SHA}~1" "$SHA" 2>/dev/null || git ls-files)
+            else
+              changed=$(git diff --name-only "$BEFORE" "$SHA")
+            fi
+          fi
+          echo "changed files:"; echo "$changed"
+          match() { echo "$changed" | grep -qE "$1"; }
+
+          match '^(flake\.nix|flake\.lock)$'          && shared=1
+          match '^(modules|lib|secrets|packages)/'     && shared=1
+          match '^\.github/workflows/deploy\.yaml$'     && shared=1
+
           nodes=()
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] || [ "${{ steps.filter.outputs.shared }}" = "true" ]; then
+          if [ "$shared" = "1" ]; then
             nodes=(terebithia prattle)
           else
-            [ "${{ steps.filter.outputs.terebithia }}" = "true" ] && nodes+=(terebithia)
-            [ "${{ steps.filter.outputs.prattle }}" = "true" ] && nodes+=(prattle)
+            match '^machines/terebithia/' && nodes+=(terebithia)
+            match '^machines/prattle/'    && nodes+=(prattle)
           fi
           if [ ${#nodes[@]} -eq 0 ]; then
             echo "nodes=[]" >> "$GITHUB_OUTPUT"
           else
             printf '%s\n' "${nodes[@]}" | jq -R . | jq -sc . | sed 's/^/nodes=/' >> "$GITHUB_OUTPUT"
           fi
+
+          docs=false
+          if [ "$shared" = "1" ] || match '^(docs/|packages/docs\.nix$)'; then docs=true; fi
+          echo "docs=$docs" >> "$GITHUB_OUTPUT"
 
   pre-deploy:
     needs: changes
