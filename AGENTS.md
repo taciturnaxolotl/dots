@@ -8,11 +8,8 @@ Kieran's NixOS/nix-darwin/home-manager dotfiles and homelab infrastructure.
 |---|---|---|---|
 | `atalanta` | nix-darwin | aarch64-darwin | Primary macOS workstation (Apple Silicon) |
 | `terebithia` | NixOS | aarch64-linux | Main homelab server (ARM VPS, runs most services) |
-| `prattle` | NixOS | x86_64-linux | Secondary server (deploys via deploy-rs) |
-| `moonlark` | NixOS | x86_64-linux | VM (Disko-managed, /dev/vda) |
-| `ember` | home-manager only | x86_64-linux | Standalone HM config |
+| `prattle` | NixOS | x86_64-linux | Media + CI server (nixarr, garage, tangled spindle; root on bcachefs SSD) |
 | `nest` | home-manager only | x86_64-linux | Standalone HM config |
-| `tacyon` | home-manager only | aarch64-linux | Standalone HM config |
 | `iso-*` | NixOS ISO | x86_64 + aarch64 | Bootable install media |
 
 ## Apply Commands
@@ -26,7 +23,7 @@ nixos-rebuild switch --flake .#terebithia
 nixos-rebuild switch --flake .#prattle
 
 # Standalone home-manager (run locally)
-home-manager switch --flake .#tacyon
+home-manager switch --flake .#nest
 
 # Remote deploy via deploy-rs (from dev shell, uses Tailscale)
 nix develop                                   # enters shell with deploy-rs
@@ -142,7 +139,7 @@ Two patterns in use — know which machine uses which:
 
 **`import-tree`** (terebithia, atalanta): Automatically imports all `.nix` files under a directory tree. Used as `inputs.import-tree ../../modules/nixos` or `inputs.import-tree ../../../modules/home`. Any `.nix` file dropped in those trees is automatically included — no manual import list needed.
 
-**Explicit imports** (moonlark, prattle): Individual `imports = [ ... ]` lists. Adding a module requires editing the machine's `default.nix`.
+**Explicit imports** (prattle): Individual `imports = [ ... ]` lists. Adding a module requires editing the machine's `default.nix`.
 
 The home config for atalanta (`machines/atalanta/home/default.nix`) uses `import-tree` for `modules/home`, meaning all home modules are always available — they just won't activate without `atelier.<module>.enable = true`.
 

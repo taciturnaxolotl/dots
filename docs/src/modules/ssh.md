@@ -68,7 +68,7 @@ Per-host config under `atelier.ssh.hosts.<name>`:
 atelier.ssh = {
   enable = true;
   zmx.enable = true;
-  zmx.hosts = [ "terebithia" "ember" ];
+  zmx.hosts = [ "terebithia" "prattle" ];
 
   hosts = {
     terebithia = {

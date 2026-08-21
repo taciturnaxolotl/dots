@@ -32,7 +32,7 @@ Only one of `psk`, `pskVar`, or `pskFile` should be set per profile.
 ```nix
 atelier.network.wifi = {
   enable = true;
-  hostName = "moonlark";
+  hostName = "nest";
   nameservers = [ "1.1.1.1" "8.8.8.8" ];
   envFile = config.age.secrets.wifi.path;
 
