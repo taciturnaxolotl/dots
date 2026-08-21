@@ -121,8 +121,15 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
+      # Pull custom packages (knot, herald, …) from prattle's attic cache so the
+      # runner substitutes them instead of recompiling. Reachable once Tailscale
+      # is up (below), which is before the build in Deploy. Public cache, no token.
       - name: Install Nix
         uses: DeterminateSystems/determinate-nix-action@v3
+        with:
+          extra-conf: |
+            extra-substituters = http://prattle:8091/dots
+            extra-trusted-public-keys = dots:Mgol9jjaoUcN6pfgLetO3fe/JAm/fVpKXYBZaQ1MhFM=
 
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
@@ -148,6 +155,16 @@ jobs:
             --ssh-user kierank \
             --ssh-opts="-o StrictHostKeyChecking=accept-new" \
             .#${{ matrix.node }}
+
+      # Push what we just built so the next run substitutes it. attic skips
+      # anything already on cache.nixos.org, so this uploads only our own paths.
+      - name: Cache build in attic
+        env:
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          nix run nixpkgs#attic-client -- login prattle http://prattle:8091 "$ATTIC_TOKEN"
+          nix build .#nixosConfigurations.${{ matrix.node }}.config.system.build.toplevel --no-link --print-out-paths \
+            | xargs nix run nixpkgs#attic-client -- push dots
 
   rollback:
     needs: [pre-deploy, deploy]
