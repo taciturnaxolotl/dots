@@ -349,6 +349,12 @@
     home = "/var/lib/kloe";
     createHome = true;
     shell = pkgs.bash;
+    # kloe gets a rapid burst of short SSH sessions (terebithia's sandbox doing
+    # `docker dial-stdio`), each spinning user@997.service up and down. A deploy
+    # that lands mid-teardown finds /run/user/997 half-gone and per-user
+    # activation dies with EACCES, failing the whole switch. Linger pins the
+    # user manager up so there's no teardown window to race.
+    linger = true;
   };
 
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
