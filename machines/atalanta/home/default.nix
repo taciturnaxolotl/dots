@@ -48,6 +48,10 @@
         "app=\"^Dia$\" title=\"^Personal:\" space=1"
         "app=\"^Dia$\" title=\"^Charm\" space=2"
         "app=\"^Dia$\" title=\"^Cedarville\" space=2"
+        # Granola's overlay comes in with an empty role/subrole, so a
+        # subrole rule (like Dia's above) can't match it. Left managed, the
+        # dead AX handle stays in the bsp tree and focus lands on nothing.
+        "app=\"^Granola$\" manage=off"
         "app=\"^Slack$\" space=8"
         "app=\"^Vesktop$\" space=7"
         "app=\"^Notion$\" space=9"
