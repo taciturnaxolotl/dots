@@ -10,12 +10,6 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
-# FlakeHub Cache authenticates via the Actions OIDC token, so id-token: write is
-# required; contents: read keeps checkout working under the narrowed scope.
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   # Decide which nodes actually need deploying from the diff. A change under
   # machines/<node> deploys only that node; anything shared (flake, modules,
@@ -136,15 +130,26 @@ jobs:
           extra-conf: |
             extra-substituters = http://prattle:8091/dots
             extra-trusted-public-keys = dots:Mgol9jjaoUcN6pfgLetO3fe/JAm/fVpKXYBZaQ1MhFM=
+            keep-outputs = true
+            keep-derivations = true
 
-      # Persist store paths + flake inputs across runs. Attic still serves our
-      # custom packages to the servers; this keeps the runner from re-downloading
-      # the ~2900-path closure every cold run.
-      - name: FlakeHub Cache
-        uses: DeterminateSystems/flakehub-cache-action@v3
-        # Non-fatal: if FlakeHub isn't authorized for this repo yet, deploys
-        # still run (just without the cross-run store cache).
+      # Persist the runner's /nix/store across runs via GitHub's own (free)
+      # Actions cache — the self-hosted-spirit stand-in for FlakeHub. Key is
+      # per-arch (prattle X64 and terebithia ARM64 must not share a cache) and
+      # per flake.lock. gc caps each cache before save so the two stay under
+      # GitHub's 10 GB/repo ceiling; purge trims stale entries. Non-fatal.
+      - name: Cache Nix store
+        uses: nix-community/cache-nix-action@v7
         continue-on-error: true
+        with:
+          primary-key: nix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('**/flake.lock') }}
+          restore-prefixes-first-match: nix-${{ runner.os }}-${{ runner.arch }}-
+          gc-max-store-size-linux: 4500000000
+          purge: true
+          purge-prefixes: nix-${{ runner.os }}-${{ runner.arch }}-
+          purge-created: 0
+          purge-last-accessed: P2D
+          purge-primary-key: never
 
       - name: Setup Tailscale
         uses: tailscale/github-action@v4
