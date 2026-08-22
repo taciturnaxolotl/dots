@@ -334,6 +334,7 @@
           x86_64-linux.docs = mkDocs "x86_64-linux";
           aarch64-linux.docs = mkDocs "aarch64-linux";
           aarch64-darwin.docs = mkDocs "aarch64-darwin";
+          aarch64-darwin.gp-menubar = nixpkgs.legacyPackages.aarch64-darwin.callPackage ./packages/gp-menubar.nix { };
 
           x86_64-linux.iso = self.nixosConfigurations.iso-x86_64.config.system.build.isoImage;
           aarch64-linux.iso = self.nixosConfigurations.iso-aarch64.config.system.build.isoImage;

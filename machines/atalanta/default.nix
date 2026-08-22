@@ -27,7 +27,13 @@
   };
 
   # Install packages
+  # Darwin-only packages live here rather than the shared linux overlay.
+  nixpkgs.overlays = [
+    (final: prev: { gp-menubar = prev.callPackage ../../packages/gp-menubar.nix { }; })
+  ];
+
   environment.systemPackages = [
+    pkgs.gp-menubar
     # nix stuff
     pkgs.nixd
     pkgs.nil
@@ -93,6 +99,17 @@
     computer = 1;
     display = 1;
     harddisk = 10;
+  };
+
+  # GP Relay menu bar applet: launch at login, keep alive.
+  launchd.user.agents.gp-relay = {
+    serviceConfig = {
+      Label = "sh.dunkirk.gp-relay";
+      ProgramArguments = [ "${pkgs.gp-menubar}/Applications/GP Relay.app/Contents/MacOS/gp-menubar" ];
+      RunAtLoad = true;
+      KeepAlive = true;
+      ProcessType = "Interactive";
+    };
   };
 
   system.stateVersion = 4;
