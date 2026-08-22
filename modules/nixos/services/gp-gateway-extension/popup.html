@@ -1,0 +1,38 @@
+<!doctype html>
+<meta charset="utf-8" />
+<style>
+  :root {
+    --bg: #17151c; --panel: #1f1c26; --fg: #e6e2ef; --dim: #8a8397;
+    --line: #2a2733; --accent: #a390f0; --ok: #3fb56b; --fail: #d64f5a; --wait: #5a7fd6;
+  }
+  body { margin: 0; width: 268px; background: var(--bg); color: var(--fg);
+    font: 13px/1.45 ui-monospace, "SF Mono", Menlo, monospace; }
+  header { display: flex; align-items: center; gap: 8px; padding: 13px 14px 10px;
+    border-bottom: 1px solid var(--line); }
+  header img { width: 18px; height: 18px; border-radius: 5px; }
+  header b { font-weight: 600; letter-spacing: .02em; }
+  header span { color: var(--dim); font-weight: 400; margin-left: auto; font-size: 11px; }
+  .row { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px 0; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dim); flex: none; align-self: center; }
+  .dot.up { background: var(--ok); } .dot.failed { background: var(--fail); }
+  .dot.relaying { background: var(--wait); } .dot.down, .dot.unreachable { background: var(--dim); }
+  .state { text-transform: capitalize; font-weight: 600; }
+  .k { color: var(--dim); } .v { margin-left: auto; text-align: right; word-break: break-all; }
+  .sub { padding: 2px 14px 0; color: var(--dim); font-size: 11px; }
+  .relay { margin: 11px 14px 0; padding: 8px 10px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 7px; color: var(--dim); font-size: 11px; word-break: break-word; }
+  button { width: calc(100% - 28px); margin: 12px 14px 14px; padding: 9px; background: var(--accent);
+    color: #17151c; border: 0; border-radius: 7px; font: inherit; font-weight: 600; cursor: pointer; }
+  button:hover { filter: brightness(1.08); }
+</style>
+<header>
+  <img src="icon-48.png" alt="" />
+  <b>GP Relay</b>
+  <span id="poll"></span>
+</header>
+<div class="row"><div class="dot" id="dot"></div><div class="state" id="state">…</div></div>
+<div class="row"><span class="k">address</span><span class="v" id="addr">—</span></div>
+<div class="row"><span class="k">expires</span><span class="v" id="exp">—</span></div>
+<div class="relay" id="relay">no relay yet</div>
+<button id="login">Login / Reauth</button>
+<script src="popup.js"></script>

@@ -371,6 +371,18 @@
     makemkvKey = "T-BSaJ6gwgMx4eIggWkVYXiVP_6zehm7WAO9dEydvzOHFHoZ6YQ82BL5cGpYDxvyRWnS";
   };
 
+  # GlobalProtect → Tailscale subnet router. The gateway is a full tunnel
+  # (pushes 0.0.0.0/0), so we ignore its routes and advertise only these campus
+  # ranges: 10.40/16 covers internal services like 10.40.10.48, 163.11/16 is
+  # Cedarville's public range plus the internal DNS servers (163.11.75.113/119).
+  atelier.services.gpGateway = {
+    enable = true;
+    routes = [
+      "10.40.0.0/16"
+      "163.11.0.0/16"
+    ];
+  };
+
   # Root folders and hardlinks for Sonarr/Radarr
   services.sonarr.settings.mediaManagement = {
     useHardlinksInsteadOfCopy = true;
