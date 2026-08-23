@@ -758,9 +758,7 @@ in
                 add-zsh-hook chpwd auto_venv
 
                 # zsh-patina: Rust-based syntax highlighting (must be last)
-                eval "$(${
-                  inputs.zsh-patina.packages.${pkgs.stdenv.hostPlatform.system}.default
-                }/bin/zsh-patina activate)"
+                eval "$(${pkgs.unstable.zsh-patina}/bin/zsh-patina activate)"
 
       '';
       history = {
@@ -847,7 +845,7 @@ in
       ghostty-setup
       pkgs.unstable.wakatime-cli
       inputs.terminal-wakatime.packages.${pkgs.stdenv.hostPlatform.system}.default
-      inputs.zsh-patina.packages.${pkgs.stdenv.hostPlatform.system}.default
+      pkgs.unstable.zsh-patina
       pkgs.gitstatus
       unzip
       dog

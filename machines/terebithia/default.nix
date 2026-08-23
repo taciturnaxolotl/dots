@@ -302,7 +302,7 @@
         "github.com/caddy-dns/cloudflare@v0.2.2"
         "github.com/mholt/caddy-ratelimit@v0.1.0"
       ];
-      hash = "sha256-5d+U7sdSIUuwj6OK8WutZGsfvshtDj0FKRjkMDNfbxU=";
+      hash = "sha256-Jt+TYOvhRW9dW1muXgFKmtdRkAKei9m4e+eNx1ec1nE=";
     };
     email = "kieran@dunkirk.sh";
     # No global acme_dns: every vhost sets its own "dns cloudflare" inline (see
