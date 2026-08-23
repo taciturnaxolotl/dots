@@ -1,0 +1,42 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>GP Relay — reauth failed</title>
+<style>
+  :root {
+    --bg: #17151c; --panel: #1f1c26; --fg: #e6e2ef; --dim: #8a8397;
+    --line: #2a2733; --accent: #a390f0; --fail: #d64f5a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+    background: var(--bg); color: var(--fg);
+    font: 14px/1.55 ui-monospace, "SF Mono", Menlo, monospace; }
+  main { width: min(520px, calc(100% - 48px)); }
+  .badge { display: inline-flex; align-items: center; gap: 8px; color: var(--fail);
+    font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+  .badge i { width: 8px; height: 8px; border-radius: 50%; background: var(--fail);
+    display: block; }
+  h1 { font-size: 20px; margin: 12px 0 6px; font-weight: 600; letter-spacing: -.01em; }
+  p { margin: 0 0 18px; color: var(--dim); }
+  pre { margin: 0 0 20px; padding: 12px 14px; background: var(--panel);
+    border: 1px solid var(--line); border-radius: 8px; color: var(--dim);
+    font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  .row { display: flex; gap: 10px; }
+  button { flex: 1; padding: 10px; border: 0; border-radius: 8px; font: inherit;
+    font-weight: 600; cursor: pointer; background: var(--accent); color: #17151c; }
+  button.ghost { background: transparent; color: var(--fg);
+    border: 1px solid var(--line); }
+  button:hover { filter: brightness(1.1); }
+  .hint { margin-top: 16px; font-size: 12px; color: var(--dim); }
+</style>
+<main>
+  <span class="badge"><i></i> reauth failed</span>
+  <h1 id="title">Couldn't reconnect</h1>
+  <p id="blurb"></p>
+  <pre id="detail"></pre>
+  <div class="row">
+    <button id="retry">Try again</button>
+    <button class="ghost" id="close">Close</button>
+  </div>
+  <p class="hint" id="hint"></p>
+</main>
+<script src="failed.js"></script>

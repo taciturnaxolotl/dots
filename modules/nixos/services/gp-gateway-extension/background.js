@@ -51,19 +51,34 @@ async function startLogin({ background }) {
   authTabId = tab.id;
   clearTimeout(authTimer);
   authTimer = setTimeout(async () => {
-    // Still no cookie: the chain wants a human. Surface the tab rather than
-    // leaving a silent failure.
     if (authTabId === null) return;
     const id = authTabId;
     authTabId = null;
     try {
+      const t = await chrome.tabs.get(id);
+      // Never left the receiver: it failed to mint a login URL (usually DNS on
+      // prattle). That is broken, not waiting on a human, so explain it.
+      if (t.url && t.url.startsWith(HOST)) {
+        await chrome.tabs.remove(id).catch(() => {});
+        openFailurePage("receiver", t.url);
+        notify("GlobalProtect", "Gateway couldn't start a login.");
+        return;
+      }
+      // Otherwise we are parked at the IdP: a human needs to finish it.
       await chrome.tabs.update(id, { active: true });
-      await chrome.windows.update((await chrome.tabs.get(id)).windowId, { focused: true });
+      await chrome.windows.update(t.windowId, { focused: true });
       notify("GlobalProtect", "Reauth needs you — finish the login in the open tab.");
     } catch (_) {
       /* tab already gone */
     }
   }, NEEDS_HUMAN_MS);
+}
+
+function openFailurePage(reason, detail) {
+  const u = new URL(chrome.runtime.getURL("failed.html"));
+  u.searchParams.set("reason", reason);
+  if (detail) u.searchParams.set("detail", String(detail).slice(0, 500));
+  chrome.tabs.create({ url: u.toString(), active: true });
 }
 
 function finishLogin(tabId) {
@@ -149,7 +164,7 @@ chrome.webRequest.onHeadersReceived.addListener(
         chrome.storage.local.set({ relay: { state: "fail", detail: String(e), at: Date.now() } });
         setBadge("failed");
         finishLogin(details.tabId);
-        notify("GlobalProtect relay failed", String(e));
+        openFailurePage("relay", e);
       });
   },
   { urls: [ACS] },
