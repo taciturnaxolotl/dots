@@ -93,7 +93,11 @@ let
   # this flips the upstream with tunnel state: campus resolvers while up, public
   # while down. dnsmasq re-reads servers-file on SIGHUP, which is exactly the
   # hook we need.
-  dnsServersFile = "/run/gp-gateway/dns-servers.conf";
+  # Lives outside /run/gp-gateway: that dir is 0700 root (it holds the cookie)
+  # and dnsmasq drops privileges to its own user, so it could not read it there.
+  # These are just upstream IPs, nothing secret.
+  dnsServersDir = "/run/gp-dns";
+  dnsServersFile = "${dnsServersDir}/servers.conf";
 
   dnsSwitch = pkgs.writeShellScript "gp-dns-switch" ''
     set -eu
@@ -105,7 +109,8 @@ let
     }:$PATH
     mode="''${1:-down}"
     [ "$mode" = "init" ] && { [ -e ${dnsServersFile} ] && exit 0; mode=down; }
-    mkdir -p /run/gp-gateway
+    mkdir -p ${dnsServersDir}
+    chmod 0755 ${dnsServersDir}
     tmp=$(mktemp ${dnsServersFile}.XXXX)
     if [ "$mode" = "up" ]; then
       ${lib.concatMapStringsSep "\n" (
@@ -122,6 +127,7 @@ let
         '') cfg.dns.fallbackServers
       ) cfg.dns.domains}
     fi
+    chmod 0644 "$tmp"
     mv "$tmp" ${dnsServersFile}
     echo "gp-gateway: dns upstream -> $mode"
     # SIGHUP makes dnsmasq re-read servers-file and flush its cache, so stale
@@ -396,7 +402,9 @@ in
     # a shared RuntimeDirectory gets torn down when gp-tunnel stops (which it
     # does on every cookie-less start), yanking the dir out from under the
     # still-running receiver. tmpfiles keeps it stable across both lifecycles.
-    systemd.tmpfiles.rules = [ "d /run/gp-gateway 0700 root root -" ];
+    systemd.tmpfiles.rules = [
+      "d /run/gp-gateway 0700 root root -"
+    ] ++ lib.optional cfg.dns.enable "d ${dnsServersDir} 0755 root root -";
 
     systemd.services.gp-tunnel = {
       description = "GlobalProtect tunnel (openconnect)";
