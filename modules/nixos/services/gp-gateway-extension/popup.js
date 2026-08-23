@@ -45,6 +45,14 @@ async function refresh() {
   render(await chrome.storage.local.get(["status", "relay"]));
 }
 
+const auto = $("auto");
+chrome.storage.local.get("autoReauth").then((r) => {
+  auto.checked = r.autoReauth !== false; // default on
+});
+auto.addEventListener("change", () => {
+  chrome.storage.local.set({ autoReauth: auto.checked });
+});
+
 chrome.storage.onChanged.addListener(refresh);
 chrome.runtime.sendMessage("poll"); // force a fresh status on open
 refresh();

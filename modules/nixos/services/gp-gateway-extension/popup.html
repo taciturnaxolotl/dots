@@ -21,6 +21,9 @@
   .sub { padding: 2px 14px 0; color: var(--dim); font-size: 11px; }
   .relay { margin: 11px 14px 0; padding: 8px 10px; background: var(--panel);
     border: 1px solid var(--line); border-radius: 7px; color: var(--dim); font-size: 11px; word-break: break-word; }
+  .auto { display: flex; align-items: center; gap: 7px; margin: 10px 14px 0;
+    color: var(--dim); font-size: 11px; cursor: pointer; user-select: none; }
+  .auto input { accent-color: var(--accent); margin: 0; }
   button { width: calc(100% - 28px); margin: 12px 14px 14px; padding: 9px; background: var(--accent);
     color: #17151c; border: 0; border-radius: 7px; font: inherit; font-weight: 600; cursor: pointer; }
   button:hover { filter: brightness(1.08); }
@@ -34,5 +37,6 @@
 <div class="row"><span class="k">address</span><span class="v" id="addr">—</span></div>
 <div class="row"><span class="k">expires</span><span class="v" id="exp">—</span></div>
 <div class="relay" id="relay">no relay yet</div>
+<label class="auto"><input type="checkbox" id="auto" /> <span>Auto-reauth in background</span></label>
 <button id="login">Login / Reauth</button>
 <script src="popup.js"></script>
