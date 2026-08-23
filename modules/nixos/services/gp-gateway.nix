@@ -68,6 +68,7 @@ let
         # campus route set changed, then adjust cfg.routes.
         echo "gp-gateway: gateway pushed the following config:"
         env | grep -E '^(CISCO_SPLIT_INC|INTERNAL_IP4|CISCO_DEF_DOMAIN)' | sort || true
+        ${lib.optionalString cfg.dns.enable ''${dnsSwitch} up''}
         ;;
       disconnect)
         ${lib.concatMapStringsSep "\n" (r: ''
@@ -75,9 +76,43 @@ let
         '') cfg.routes}
         [ -n "''${VPNGATEWAY:-}" ] && ip route del "$VPNGATEWAY/32" 2>/dev/null || true
         ip addr flush dev "$TUNDEV" 2>/dev/null || true
+        ${lib.optionalString cfg.dns.enable ''${dnsSwitch} down''}
         ;;
     esac
     exit 0
+  '';
+
+  # Campus DNS lives inside the tunnel, so pointing Tailscale's split DNS
+  # straight at it means every cedarville.edu lookup hangs when the tunnel is
+  # down, including the public names. Instead Tailscale points at prattle and
+  # this flips the upstream with tunnel state: campus resolvers while up, public
+  # while down. dnsmasq re-reads servers-file on SIGHUP, which is exactly the
+  # hook we need.
+  dnsServersFile = "/run/gp-gateway/dns-servers.conf";
+
+  dnsSwitch = pkgs.writeShellScript "gp-dns-switch" ''
+    set -eu
+    export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.procps ]}:$PATH
+    mode="''${1:-down}"
+    [ "$mode" = "init" ] && { [ -e ${dnsServersFile} ] && exit 0; mode=down; }
+    mkdir -p /run/gp-gateway
+    tmp=$(mktemp ${dnsServersFile}.XXXX)
+    if [ "$mode" = "up" ]; then
+      ${lib.concatMapStringsSep "\n" (d:
+        lib.concatMapStringsSep "\n" (srv: ''
+          echo "server=/${d}/${srv}" >> "$tmp"
+        '') cfg.dns.campusServers) cfg.dns.domains}
+    else
+      ${lib.concatMapStringsSep "\n" (d:
+        lib.concatMapStringsSep "\n" (srv: ''
+          echo "server=/${d}/${srv}" >> "$tmp"
+        '') cfg.dns.fallbackServers) cfg.dns.domains}
+    fi
+    mv "$tmp" ${dnsServersFile}
+    echo "gp-gateway: dns upstream -> $mode"
+    # SIGHUP makes dnsmasq re-read servers-file and flush its cache, so stale
+    # answers from the other mode do not linger.
+    pkill -HUP -x dnsmasq 2>/dev/null || true
   '';
 
   connect = pkgs.writeShellScript "gp-connect" ''
@@ -295,6 +330,37 @@ in
       default = "100.105.247.54"; # prattle's tailnet IP
       description = "Address the cookie receiver binds to. Keep this tailnet-only.";
     };
+
+    dns = {
+      enable = lib.mkEnableOption "tunnel-aware split DNS resolver" // {
+        default = true;
+      };
+
+      domains = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ "cedarville.edu" ];
+        description = ''
+          Domains served with campus DNS while the tunnel is up. Subdomains are
+          matched too, so cedarforest.cedarville.edu is covered by the parent.
+        '';
+      };
+
+      campusServers = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ "163.11.75.113" "163.11.75.119" ];
+        description = "Internal campus resolvers, reachable only through the tunnel.";
+      };
+
+      fallbackServers = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ "1.1.1.1" "9.9.9.9" ];
+        description = ''
+          Public resolvers used while the tunnel is down. Internal-only names
+          then return NXDOMAIN quickly instead of hanging, and public
+          cedarville.edu names keep working.
+        '';
+      };
+    };
   };
 
   config = lib.mkIf cfg.enable {
@@ -351,7 +417,43 @@ in
       '';
     };
 
-    networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.receiverPort ];
+    networking.firewall.interfaces.tailscale0.allowedTCPPorts =
+      [ cfg.receiverPort ] ++ lib.optional cfg.dns.enable 53;
+    networking.firewall.interfaces.tailscale0.allowedUDPPorts = lib.optional cfg.dns.enable 53;
+
+    # Tailnet-facing resolver for the campus domains. Point Tailscale's split
+    # DNS at this host rather than at the campus resolvers directly.
+    services.dnsmasq = lib.mkIf cfg.dns.enable {
+      enable = true;
+      resolveLocalQueries = false;
+      settings = {
+        # Never read /etc/resolv.conf: it points at Tailscale (100.100.100.100),
+        # which points cedarville.edu back here. That would be a resolution loop.
+        no-resolv = true;
+        servers-file = dnsServersFile;
+        listen-address = "127.0.0.1,${cfg.bindAddr}";
+        bind-interfaces = true;
+        cache-size = 1000;
+      };
+    };
+
+    systemd.services.dnsmasq = lib.mkIf cfg.dns.enable {
+      after = [ "gp-dns-init.service" ];
+      wants = [ "gp-dns-init.service" ];
+    };
+
+    # Make sure a servers-file exists before dnsmasq starts, defaulting to the
+    # public upstream so a cold boot resolves rather than hangs.
+    systemd.services.gp-dns-init = lib.mkIf cfg.dns.enable {
+      description = "Seed GlobalProtect DNS upstream (public default)";
+      wantedBy = [ "multi-user.target" ];
+      before = [ "dnsmasq.service" ];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${dnsSwitch} init";
+      };
+    };
 
     environment.systemPackages = [ pkgs.openconnect ];
   };
