@@ -109,13 +109,11 @@ in
     # inside dataDir where the unit can actually write it.
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir}/.ssh 0700 kloe kloe -"
-      "L+ ${cfg.dataDir}/.ssh/config - - - - ${
-        pkgs.writeText "kloe-ssh-config" ''
-          Host *
-            StrictHostKeyChecking accept-new
-            UserKnownHostsFile ${cfg.dataDir}/.ssh/known_hosts
-        ''
-      }"
+      "L+ ${cfg.dataDir}/.ssh/config - - - - ${pkgs.writeText "kloe-ssh-config" ''
+        Host *
+          StrictHostKeyChecking accept-new
+          UserKnownHostsFile ${cfg.dataDir}/.ssh/known_hosts
+      ''}"
     ];
   };
 }

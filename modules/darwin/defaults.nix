@@ -186,42 +186,66 @@
           "30" = {
             enabled = true;
             value = {
-              parameters = [ 52 21 1703936 ];
+              parameters = [
+                52
+                21
+                1703936
+              ];
               type = "standard";
             };
           };
           "31" = {
             enabled = true;
             value = {
-              parameters = [ 52 21 1179648 ];
+              parameters = [
+                52
+                21
+                1179648
+              ];
               type = "standard";
             };
           };
           "28" = {
             enabled = true;
             value = {
-              parameters = [ 51 20 1703936 ];
+              parameters = [
+                51
+                20
+                1703936
+              ];
               type = "standard";
             };
           };
           "29" = {
             enabled = true;
             value = {
-              parameters = [ 51 20 1179648 ];
+              parameters = [
+                51
+                20
+                1179648
+              ];
               type = "standard";
             };
           };
           "64" = {
             enabled = false;
             value = {
-              parameters = [ 32 49 1048576 ];
+              parameters = [
+                32
+                49
+                1048576
+              ];
               type = "standard";
             };
           };
           "65" = {
             enabled = false;
             value = {
-              parameters = [ 32 49 1572864 ];
+              parameters = [
+                32
+                49
+                1572864
+              ];
               type = "standard";
             };
           };

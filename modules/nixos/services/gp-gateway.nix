@@ -35,7 +35,12 @@ let
   # traffic outside these prefixes.
   vpncScript = pkgs.writeShellScript "gp-vpnc-script" ''
     set -eu
-    export PATH=${lib.makeBinPath [ pkgs.iproute2 pkgs.coreutils ]}:$PATH
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.iproute2
+        pkgs.coreutils
+      ]
+    }:$PATH
     # This REPLACES openconnect's stock vpnc-script on purpose. The stock script
     # would install the gateway's pushed 0.0.0.0/0, routing prattle's own traffic
     # (and this SSH session) through campus. So we bring the interface up
@@ -68,7 +73,7 @@ let
         # campus route set changed, then adjust cfg.routes.
         echo "gp-gateway: gateway pushed the following config:"
         env | grep -E '^(CISCO_SPLIT_INC|INTERNAL_IP4|CISCO_DEF_DOMAIN)' | sort || true
-        ${lib.optionalString cfg.dns.enable ''${dnsSwitch} up''}
+        ${lib.optionalString cfg.dns.enable "${dnsSwitch} up"}
         ;;
       disconnect)
         ${lib.concatMapStringsSep "\n" (r: ''
@@ -76,7 +81,7 @@ let
         '') cfg.routes}
         [ -n "''${VPNGATEWAY:-}" ] && ip route del "$VPNGATEWAY/32" 2>/dev/null || true
         ip addr flush dev "$TUNDEV" 2>/dev/null || true
-        ${lib.optionalString cfg.dns.enable ''${dnsSwitch} down''}
+        ${lib.optionalString cfg.dns.enable "${dnsSwitch} down"}
         ;;
     esac
     exit 0
@@ -92,21 +97,30 @@ let
 
   dnsSwitch = pkgs.writeShellScript "gp-dns-switch" ''
     set -eu
-    export PATH=${lib.makeBinPath [ pkgs.coreutils pkgs.procps ]}:$PATH
+    export PATH=${
+      lib.makeBinPath [
+        pkgs.coreutils
+        pkgs.procps
+      ]
+    }:$PATH
     mode="''${1:-down}"
     [ "$mode" = "init" ] && { [ -e ${dnsServersFile} ] && exit 0; mode=down; }
     mkdir -p /run/gp-gateway
     tmp=$(mktemp ${dnsServersFile}.XXXX)
     if [ "$mode" = "up" ]; then
-      ${lib.concatMapStringsSep "\n" (d:
+      ${lib.concatMapStringsSep "\n" (
+        d:
         lib.concatMapStringsSep "\n" (srv: ''
           echo "server=/${d}/${srv}" >> "$tmp"
-        '') cfg.dns.campusServers) cfg.dns.domains}
+        '') cfg.dns.campusServers
+      ) cfg.dns.domains}
     else
-      ${lib.concatMapStringsSep "\n" (d:
+      ${lib.concatMapStringsSep "\n" (
+        d:
         lib.concatMapStringsSep "\n" (srv: ''
           echo "server=/${d}/${srv}" >> "$tmp"
-        '') cfg.dns.fallbackServers) cfg.dns.domains}
+        '') cfg.dns.fallbackServers
+      ) cfg.dns.domains}
     fi
     mv "$tmp" ${dnsServersFile}
     echo "gp-gateway: dns upstream -> $mode"
@@ -311,7 +325,10 @@ in
     routes = lib.mkOption {
       type = lib.types.listOf lib.types.str;
       default = [ ];
-      example = [ "10.0.0.0/8" "163.11.0.0/16" ];
+      example = [
+        "10.0.0.0/8"
+        "163.11.0.0/16"
+      ];
       description = ''
         Campus CIDRs to install on the tunnel and advertise over Tailscale.
         Leave empty for the first connect: openconnect runs verbose and the
@@ -347,13 +364,19 @@ in
 
       campusServers = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = [ "163.11.75.113" "163.11.75.119" ];
+        default = [
+          "163.11.75.113"
+          "163.11.75.119"
+        ];
         description = "Internal campus resolvers, reachable only through the tunnel.";
       };
 
       fallbackServers = lib.mkOption {
         type = lib.types.listOf lib.types.str;
-        default = [ "1.1.1.1" "9.9.9.9" ];
+        default = [
+          "1.1.1.1"
+          "9.9.9.9"
+        ];
         description = ''
           Public resolvers used while the tunnel is down. Internal-only names
           then return NXDOMAIN quickly instead of hanging, and public
@@ -395,7 +418,10 @@ in
 
     systemd.services.gp-receiver = {
       description = "GlobalProtect cookie receiver (tailnet-only)";
-      after = [ "tailscaled.service" "systemd-tmpfiles-setup.service" ];
+      after = [
+        "tailscaled.service"
+        "systemd-tmpfiles-setup.service"
+      ];
       wantedBy = [ "multi-user.target" ];
       serviceConfig = {
         ExecStart = receiver;
@@ -417,8 +443,10 @@ in
       '';
     };
 
-    networking.firewall.interfaces.tailscale0.allowedTCPPorts =
-      [ cfg.receiverPort ] ++ lib.optional cfg.dns.enable 53;
+    networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+      cfg.receiverPort
+    ]
+    ++ lib.optional cfg.dns.enable 53;
     networking.firewall.interfaces.tailscale0.allowedUDPPorts = lib.optional cfg.dns.enable 53;
 
     # Tailnet-facing resolver for the campus domains. Point Tailscale's split

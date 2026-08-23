@@ -577,188 +577,188 @@ in
         vim = "nvim";
       };
       initContent = ''
-                bindkey -e
+        bindkey -e
 
-                # Instant prompt: print minimal prompt before heavy init (pre-compiled)
-                source ${instant-prompt}/instant-prompt.zsh
+        # Instant prompt: print minimal prompt before heavy init (pre-compiled)
+        source ${instant-prompt}/instant-prompt.zsh
 
-                # Impure prompt
-                source ${inputs.impure}/async.zsh
-                IMPURE_CMD_MAX_EXEC_TIME=3
-                source ${inputs.impure}/impure.zsh
+        # Impure prompt
+        source ${inputs.impure}/async.zsh
+        IMPURE_CMD_MAX_EXEC_TIME=3
+        source ${inputs.impure}/impure.zsh
 
-                zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
-                zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
-                zstyle ':completion:*' menu no
-                zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
-                zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
+        zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
+        zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
+        zstyle ':completion:*' menu no
+        zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
+        zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
-                ${lib.concatMapStringsSep "\n" (f: "source ${f}") shell-init}
+        ${lib.concatMapStringsSep "\n" (f: "source ${f}") shell-init}
 
-                eval "$(command terminal-wakatime init)"
+        eval "$(command terminal-wakatime init)"
 
-                # Edit command buffer in $EDITOR (Ctrl+X, Ctrl+E)
-                autoload -Uz edit-command-line
-                zle -N edit-command-line
-                bindkey '^X^E' edit-command-line
+        # Edit command buffer in $EDITOR (Ctrl+X, Ctrl+E)
+        autoload -Uz edit-command-line
+        zle -N edit-command-line
+        bindkey '^X^E' edit-command-line
 
-                # Magic space - expand history expressions like !! or !$
-                bindkey ' ' magic-space
+        # Magic space - expand history expressions like !! or !$
+        bindkey ' ' magic-space
 
-                # Suffix aliases - open files by extension
-                alias -s json=jless
-                alias -s md=bat
-                alias -s go='$EDITOR'
-                alias -s rs='$EDITOR'
-                alias -s txt=bat
-                alias -s log=bat
-                alias -s py='$EDITOR'
-                alias -s js='$EDITOR'
-                alias -s ts='$EDITOR'
-                ${if pkgs.stdenv.isDarwin then "alias -s html=open" else ""}
+        # Suffix aliases - open files by extension
+        alias -s json=jless
+        alias -s md=bat
+        alias -s go='$EDITOR'
+        alias -s rs='$EDITOR'
+        alias -s txt=bat
+        alias -s log=bat
+        alias -s py='$EDITOR'
+        alias -s js='$EDITOR'
+        alias -s ts='$EDITOR'
+        ${if pkgs.stdenv.isDarwin then "alias -s html=open" else ""}
 
-                ${lib.optionalString pkgs.stdenv.isDarwin ''
-                  # Use Apple's toolchain for native builds. nix's cc/clang
-                  # don't wire in the macOS SDK, so cgo/cargo/cmake links fail
-                  # with "library not found" (e.g. -lresolv). Apple's cc
-                  # handles SDK, frameworks, and code signing natively.
-                  # Respected by cgo ($CC), cargo, cmake, etc.
-                  export CC=/usr/bin/cc
-                  export CXX=/usr/bin/c++
-                ''}
+        ${lib.optionalString pkgs.stdenv.isDarwin ''
+          # Use Apple's toolchain for native builds. nix's cc/clang
+          # don't wire in the macOS SDK, so cgo/cargo/cmake links fail
+          # with "library not found" (e.g. -lresolv). Apple's cc
+          # handles SDK, frameworks, and code signing natively.
+          # Respected by cgo ($CC), cargo, cmake, etc.
+          export CC=/usr/bin/cc
+          export CXX=/usr/bin/c++
+        ''}
 
-                # Global aliases
-                alias -g NE='2>/dev/null'
-                alias -g NO='>/dev/null'
-                alias -g NUL='>/dev/null 2>&1'
-                alias -g J='| jq'
+        # Global aliases
+        alias -g NE='2>/dev/null'
+        alias -g NO='>/dev/null'
+        alias -g NUL='>/dev/null 2>&1'
+        alias -g J='| jq'
 
-                # Override source to handle .env files safely
-                function source() {
-                  if [[ "$1" == *.env ]]; then
-                    [[ ! -f "$1" ]] && { echo "File not found: $1" >&2; return 1; }
-                    while IFS= read -r line || [[ -n "$line" ]]; do
-                      [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-                      if [[ "$line" =~ ^([a-zA-Z_][a-zA-Z0-9_]*)=(.*)$ ]]; then
-                        export "''${match[1]}=''${match[2]}"
-                      fi
-                    done < "$1"
-                  else
-                    builtin source "$1"
-                  fi
-                }
+        # Override source to handle .env files safely
+        function source() {
+          if [[ "$1" == *.env ]]; then
+            [[ ! -f "$1" ]] && { echo "File not found: $1" >&2; return 1; }
+            while IFS= read -r line || [[ -n "$line" ]]; do
+              [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+              if [[ "$line" =~ ^([a-zA-Z_][a-zA-Z0-9_]*)=(.*)$ ]]; then
+                export "''${match[1]}=''${match[2]}"
+              fi
+            done < "$1"
+          else
+            builtin source "$1"
+          fi
+        }
 
-                # OSC 52 clipboard (works over SSH)
-                function osc52copy() {
-                  local data=$(cat "$@" | base64 | tr -d '\n')
-                  printf "\033]52;c;%s\a" "$data"
-                }
-                alias -g C='| osc52copy'
+        # OSC 52 clipboard (works over SSH)
+        function osc52copy() {
+          local data=$(cat "$@" | base64 | tr -d '\n')
+          printf "\033]52;c;%s\a" "$data"
+        }
+        alias -g C='| osc52copy'
 
-                # zmv - advanced batch rename/move
-                autoload -Uz zmv
-                alias zcp='zmv -C'
-                alias zln='zmv -L'
+        # zmv - advanced batch rename/move
+        autoload -Uz zmv
+        alias zcp='zmv -C'
+        alias zln='zmv -L'
 
-                # Clear screen but keep current command buffer (Ctrl+X, Ctrl+L)
-                function clear-screen-and-scrollback() {
-                  echoti civis >"$TTY"
-                  printf '%b' '\e[H\e[2J\e[3J' >"$TTY"
-                  echoti cnorm >"$TTY"
-                  zle redisplay
-                }
-                zle -N clear-screen-and-scrollback
-                bindkey '^X^L' clear-screen-and-scrollback
+        # Clear screen but keep current command buffer (Ctrl+X, Ctrl+L)
+        function clear-screen-and-scrollback() {
+          echoti civis >"$TTY"
+          printf '%b' '\e[H\e[2J\e[3J' >"$TTY"
+          echoti cnorm >"$TTY"
+          zle redisplay
+        }
+        zle -N clear-screen-and-scrollback
+        bindkey '^X^L' clear-screen-and-scrollback
 
-                # Copy current command buffer to clipboard (Ctrl+X, Ctrl+C) - OSC 52 for SSH support
-                function copy-buffer-to-clipboard() {
-                  local data=$(echo -n "$BUFFER" | base64 | tr -d '\n')
-                  printf "\033]52;c;%s\a" "$data"
-                  zle -M "Copied to clipboard"
-                }
-                zle -N copy-buffer-to-clipboard
-                bindkey '^X^C' copy-buffer-to-clipboard
+        # Copy current command buffer to clipboard (Ctrl+X, Ctrl+C) - OSC 52 for SSH support
+        function copy-buffer-to-clipboard() {
+          local data=$(echo -n "$BUFFER" | base64 | tr -d '\n')
+          printf "\033]52;c;%s\a" "$data"
+          zle -M "Copied to clipboard"
+        }
+        zle -N copy-buffer-to-clipboard
+        bindkey '^X^C' copy-buffer-to-clipboard
 
-                # Double-tap escape to prepend sudo (from oh-my-zsh sudo plugin)
-                __sudo-replace-buffer() {
-                  local old=$1 new=$2 space=''${2:+ }
-                  if [[ $CURSOR -le ''${#old} ]]; then
-                    BUFFER="''${new}''${space}''${BUFFER#$old }"
-                    CURSOR=''${#new}
-                  else
-                    LBUFFER="''${new}''${space}''${LBUFFER#$old }"
-                  fi
-                }
-                sudo-command-line() {
-                  [[ -z $BUFFER ]] && LBUFFER="$(fc -ln -1)"
-                  local WHITESPACE=""
-                  if [[ ''${LBUFFER:0:1} = " " ]]; then
-                    WHITESPACE=" "
-                    LBUFFER="''${LBUFFER:1}"
-                  fi
-                  {
-                    local EDITOR=''${SUDO_EDITOR:-''${VISUAL:-$EDITOR}}
-                    if [[ -z "$EDITOR" ]]; then
-                      case "$BUFFER" in
-                        sudo\ -e\ *) __sudo-replace-buffer "sudo -e" "" ;;
-                        sudo\ *) __sudo-replace-buffer "sudo" "" ;;
-                        *) LBUFFER="sudo $LBUFFER" ;;
-                      esac
-                      return
-                    fi
-                    local cmd="''${''${(Az)BUFFER}[1]}"
-                    local realcmd="''${''${(Az)aliases[$cmd]}[1]:-$cmd}"
-                    local editorcmd="''${''${(Az)EDITOR}[1]}"
-                    if [[ "$realcmd" = (\$EDITOR|$editorcmd|''${editorcmd:c}) \
-                      || "''${realcmd:c}" = ($editorcmd|''${editorcmd:c}) ]] \
-                      || builtin which -a "$realcmd" | command grep -Fx -q "$editorcmd"; then
-                      __sudo-replace-buffer "$cmd" "sudo -e"
-                      return
-                    fi
-                    case "$BUFFER" in
-                      $editorcmd\ *) __sudo-replace-buffer "$editorcmd" "sudo -e" ;;
-                      \$EDITOR\ *) __sudo-replace-buffer '$EDITOR' "sudo -e" ;;
-                      sudo\ -e\ *) __sudo-replace-buffer "sudo -e" "$EDITOR" ;;
-                      sudo\ *) __sudo-replace-buffer "sudo" "" ;;
-                      *) LBUFFER="sudo $LBUFFER" ;;
-                    esac
-                  } always {
-                    LBUFFER="''${WHITESPACE}''${LBUFFER}"
-                    zle && zle redisplay
-                  }
-                }
-                zle -N sudo-command-line
-                bindkey -M emacs '\e\e' sudo-command-line
-                bindkey -M vicmd '\e\e' sudo-command-line
-                bindkey -M viins '\e\e' sudo-command-line
+        # Double-tap escape to prepend sudo (from oh-my-zsh sudo plugin)
+        __sudo-replace-buffer() {
+          local old=$1 new=$2 space=''${2:+ }
+          if [[ $CURSOR -le ''${#old} ]]; then
+            BUFFER="''${new}''${space}''${BUFFER#$old }"
+            CURSOR=''${#new}
+          else
+            LBUFFER="''${new}''${space}''${LBUFFER#$old }"
+          fi
+        }
+        sudo-command-line() {
+          [[ -z $BUFFER ]] && LBUFFER="$(fc -ln -1)"
+          local WHITESPACE=""
+          if [[ ''${LBUFFER:0:1} = " " ]]; then
+            WHITESPACE=" "
+            LBUFFER="''${LBUFFER:1}"
+          fi
+          {
+            local EDITOR=''${SUDO_EDITOR:-''${VISUAL:-$EDITOR}}
+            if [[ -z "$EDITOR" ]]; then
+              case "$BUFFER" in
+                sudo\ -e\ *) __sudo-replace-buffer "sudo -e" "" ;;
+                sudo\ *) __sudo-replace-buffer "sudo" "" ;;
+                *) LBUFFER="sudo $LBUFFER" ;;
+              esac
+              return
+            fi
+            local cmd="''${''${(Az)BUFFER}[1]}"
+            local realcmd="''${''${(Az)aliases[$cmd]}[1]:-$cmd}"
+            local editorcmd="''${''${(Az)EDITOR}[1]}"
+            if [[ "$realcmd" = (\$EDITOR|$editorcmd|''${editorcmd:c}) \
+              || "''${realcmd:c}" = ($editorcmd|''${editorcmd:c}) ]] \
+              || builtin which -a "$realcmd" | command grep -Fx -q "$editorcmd"; then
+              __sudo-replace-buffer "$cmd" "sudo -e"
+              return
+            fi
+            case "$BUFFER" in
+              $editorcmd\ *) __sudo-replace-buffer "$editorcmd" "sudo -e" ;;
+              \$EDITOR\ *) __sudo-replace-buffer '$EDITOR' "sudo -e" ;;
+              sudo\ -e\ *) __sudo-replace-buffer "sudo -e" "$EDITOR" ;;
+              sudo\ *) __sudo-replace-buffer "sudo" "" ;;
+              *) LBUFFER="sudo $LBUFFER" ;;
+            esac
+          } always {
+            LBUFFER="''${WHITESPACE}''${LBUFFER}"
+            zle && zle redisplay
+          }
+        }
+        zle -N sudo-command-line
+        bindkey -M emacs '\e\e' sudo-command-line
+        bindkey -M vicmd '\e\e' sudo-command-line
+        bindkey -M viins '\e\e' sudo-command-line
 
-                # chpwd hooks
-                autoload -Uz add-zsh-hook
+        # chpwd hooks
+        autoload -Uz add-zsh-hook
 
-                # Tracks which venv we activated, so a venv you sourced by hand
-                # is never yanked out from under you.
-                typeset -g _auto_venv=""
+        # Tracks which venv we activated, so a venv you sourced by hand
+        # is never yanked out from under you.
+        typeset -g _auto_venv=""
 
-                function auto_venv() {
-                  local dir="$PWD" venv=""
-                  while [[ "$dir" != "/" ]]; do
-                    if [[ -f "$dir/.venv/bin/activate" ]]; then
-                      venv="$dir/.venv"
-                      break
-                    fi
-                    dir="''${dir:h}"
-                  done
-                  [[ "$VIRTUAL_ENV" == "$venv" ]] && return
-                  [[ -n "$VIRTUAL_ENV" && "$VIRTUAL_ENV" != "$_auto_venv" ]] && return
-                  (( $+functions[deactivate] )) && deactivate
-                  _auto_venv="$venv"
-                  [[ -n "$venv" ]] && source "$venv/bin/activate"
-                }
+        function auto_venv() {
+          local dir="$PWD" venv=""
+          while [[ "$dir" != "/" ]]; do
+            if [[ -f "$dir/.venv/bin/activate" ]]; then
+              venv="$dir/.venv"
+              break
+            fi
+            dir="''${dir:h}"
+          done
+          [[ "$VIRTUAL_ENV" == "$venv" ]] && return
+          [[ -n "$VIRTUAL_ENV" && "$VIRTUAL_ENV" != "$_auto_venv" ]] && return
+          (( $+functions[deactivate] )) && deactivate
+          _auto_venv="$venv"
+          [[ -n "$venv" ]] && source "$venv/bin/activate"
+        }
 
-                add-zsh-hook chpwd auto_venv
+        add-zsh-hook chpwd auto_venv
 
-                # zsh-patina: Rust-based syntax highlighting (must be last)
-                eval "$(${pkgs.unstable.zsh-patina}/bin/zsh-patina activate)"
+        # zsh-patina: Rust-based syntax highlighting (must be last)
+        eval "$(${pkgs.unstable.zsh-patina}/bin/zsh-patina activate)"
 
       '';
       history = {
