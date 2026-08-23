@@ -1,0 +1,59 @@
+diff --git a/src/libstore/daemon.cc b/src/libstore/daemon.cc
+index 0e6668bc0..e9b61d785 100644
+--- a/src/libstore/daemon.cc
++++ b/src/libstore/daemon.cc
+@@ -1012,6 +1012,14 @@ static void performOp(
+ 
+ void processConnection(ref<Store> store, FdSource && from, FdSink && to, TrustedFlag trusted, RecursiveFlag recursive)
+ {
++    /* Never abandon a write to the client half-way. `TunnelLogger` writes
++       through this sink, and it is called from contexts that cannot cope with
++       an exception, such as `ignoreExceptionExceptInterrupt()` inside a
++       `ThreadPool` worker: the resulting `Interrupted` escapes the thread and
++       terminates the daemon. Logging must not check for interrupts, and a
++       partially written worker protocol message is unrecoverable anyway. */
++    to.allowInterrupts = false;
++
+ #ifndef _WIN32 // TODO need graceful async exit support on Windows?
+     auto monitor = !recursive ? std::make_unique<MonitorFdHup>(from.fd) : nullptr;
+     (void) monitor; // suppress warning
+diff --git a/src/libutil/include/nix/util/serialise.hh b/src/libutil/include/nix/util/serialise.hh
+index f8b545f49..5537f625d 100644
+--- a/src/libutil/include/nix/util/serialise.hh
++++ b/src/libutil/include/nix/util/serialise.hh
+@@ -151,6 +151,14 @@ struct FdSink : BufferedSink
+ {
+     Descriptor fd;
+     size_t written = 0;
++    /**
++     * Whether a blocking write may be aborted by `checkInterrupt()`.
++     *
++     * Interrupting a write leaves a partially written message behind, which
++     * is unrecoverable for framed protocols and for logging. Sinks carrying
++     * either should set this to `false`.
++     */
++    bool allowInterrupts = true;
+ 
+     FdSink()
+         : fd(INVALID_DESCRIPTOR)
+@@ -172,6 +180,7 @@ struct FdSink : BufferedSink
+         fd = s.fd;
+         s.fd = INVALID_DESCRIPTOR;
+         written = s.written;
++        allowInterrupts = s.allowInterrupts;
+         return *this;
+     }
+ 
+diff --git a/src/libutil/serialise.cc b/src/libutil/serialise.cc
+index 4cf09c298..6c92dcfaa 100644
+--- a/src/libutil/serialise.cc
++++ b/src/libutil/serialise.cc
+@@ -66,7 +66,7 @@ void FdSink::writeUnbuffered(std::string_view data)
+ {
+     written += data.size();
+     try {
+-        writeFull(fd, data);
++        writeFull(fd, data, allowInterrupts);
+     } catch (SystemError & e) {
+         _good = false;
+         throw;
