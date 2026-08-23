@@ -115,6 +115,13 @@ jobs:
     # natively (no emulation) and we can drop --remote-build. terebithia is
     # aarch64; everything else is x86_64.
     runs-on: ${{ matrix.node == 'terebithia' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    # Backstop only. deploy-rs' own activationTimeout (240s) and confirmTimeout
+    # (30s) do not bound a dead SSH socket: on 2026-08-23 two runs sat in
+    # "Waiting for confirmation event..." for over 2h each with those defaults
+    # in force. The keepalives below are the tight bound (~1 min); this is set
+    # generously so it never kills a legitimately slow cold build, and only
+    # exists to beat the 6h GitHub default.
+    timeout-minutes: 120
     environment:
       name: ${{ matrix.node }}
 
@@ -162,7 +169,7 @@ jobs:
           nix develop .#default --command deploy \
             --skip-checks \
             --ssh-user kierank \
-            --ssh-opts="-o StrictHostKeyChecking=accept-new" \
+            --ssh-opts="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
             .#${{ matrix.node }}
 
       # Push what we just built so the servers substitute it. attic skips
