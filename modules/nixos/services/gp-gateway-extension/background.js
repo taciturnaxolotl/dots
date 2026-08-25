@@ -14,11 +14,15 @@ const STATUS = HOST + "/status";
 const ACS = "https://globalprotect.cedarville.edu/SAML20/SP/ACS*";
 
 const AUTO_MIN_GAP_MS = 5 * 60 * 1000; // never retry harder than every 5 min
-const RENEW_BEFORE_MS = 60 * 60 * 1000; // renew when under an hour remains
+// Renew with half a day still on the clock. The chain is silent and cheap, so
+// keeping a wide margin means a lapse can never land in the middle of a
+// working day just because the last login happened to be at an awkward hour.
+const RENEW_BEFORE_MS = 12 * 60 * 60 * 1000;
 const NEEDS_HUMAN_MS = 25 * 1000; // no cookie by now => interaction required
 
 const BADGE = {
   up: { text: "", color: "#3fb56b" },
+  connecting: { text: "…", color: "#5a7fd6" },
   relaying: { text: "…", color: "#5a7fd6" },
   failed: { text: "!", color: "#d64f5a" },
   down: { text: "·", color: "#8a8397" },
@@ -92,6 +96,7 @@ function finishLogin(tabId) {
 function shouldAutoReauth(s) {
   if (Date.now() - lastAutoAttempt < AUTO_MIN_GAP_MS) return false;
   if (!s || s.reachable === false) return false; // receiver down, nothing to do
+  if (s.state === "connecting") return false; // handshake in flight, let it land
   if (s.state !== "up") return true; // tunnel down or auth failed
   if (s.expires) {
     const t = Date.parse(s.expires);
@@ -105,7 +110,7 @@ async function pollStatus() {
   try {
     const r = await fetch(STATUS, { cache: "no-store" });
     s = { ...(await r.json()), at: Date.now(), reachable: true };
-    setBadge(s.state === "up" ? "up" : s.state === "failed" ? "failed" : "down");
+    setBadge(BADGE[s.state] ? s.state : "down");
   } catch (e) {
     s = { reachable: false, at: Date.now(), error: String(e) };
     setBadge("down");
@@ -158,7 +163,10 @@ chrome.webRequest.onHeadersReceived.addListener(
         const msg = t.trim().slice(0, 200);
         chrome.storage.local.set({ relay: { state: "ok", user, detail: msg, at: Date.now() } });
         finishLogin(details.tabId);
-        setTimeout(pollStatus, 4000);
+        // The gateway handshake takes a few seconds, so one poll would catch
+        // the tunnel mid-connect and leave the popup showing no address.
+        // Keep checking until it settles.
+        for (const ms of [3000, 8000, 15000, 30000, 60000]) setTimeout(pollStatus, ms);
       })
       .catch((e) => {
         chrome.storage.local.set({ relay: { state: "fail", detail: String(e), at: Date.now() } });

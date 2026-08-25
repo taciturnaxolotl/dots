@@ -15,7 +15,7 @@
   .row { display: flex; align-items: baseline; gap: 8px; padding: 9px 14px 0; }
   .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--dim); flex: none; align-self: center; }
   .dot.up { background: var(--ok); } .dot.failed { background: var(--fail); }
-  .dot.relaying { background: var(--wait); } .dot.down, .dot.unreachable { background: var(--dim); }
+  .dot.relaying, .dot.connecting { background: var(--wait); } .dot.down, .dot.unreachable { background: var(--dim); }
   .state { text-transform: capitalize; font-weight: 600; }
   .k { color: var(--dim); } .v { margin-left: auto; text-align: right; word-break: break-all; }
   .sub { padding: 2px 14px 0; color: var(--dim); font-size: 11px; }

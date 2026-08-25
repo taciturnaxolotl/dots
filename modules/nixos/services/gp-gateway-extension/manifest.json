@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "GP Cookie Relay",
-  "version": "1.4",
+  "version": "1.5",
   "description": "Relays the GlobalProtect SAML cookie to the gateway VM; silent daily reauth and tunnel status.",
   "permissions": [
     "webRequest",

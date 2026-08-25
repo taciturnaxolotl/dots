@@ -25,6 +25,7 @@ function render({ status, relay }) {
   $("dot").className = "dot " + state;
   $("state").textContent =
     state === "up" ? "connected"
+    : state === "connecting" ? "connecting…"
     : state === "unreachable" ? "receiver offline"
     : state === "failed" ? "auth failed"
     : state;

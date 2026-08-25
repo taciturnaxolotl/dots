@@ -48,7 +48,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 s.address = obj["address"] as? String
                 s.expires = obj["expires"] as? String
             }
-            DispatchQueue.main.async { self?.render(s) }
+            DispatchQueue.main.async {
+                self?.render(s)
+                // The gateway handshake resolves in seconds, well inside one
+                // poll interval. Chase it so a reauth doesn't sit on
+                // "Connecting…" with no address for twenty seconds.
+                if s.state == "connecting" {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 4) { self?.poll() }
+                }
+            }
         }.resume()
     }
 
@@ -100,6 +108,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let color: NSColor
         switch s.state {
         case "up": label = "Connected"; color = .systemGreen
+        case "connecting": label = "Connecting…"; color = .systemBlue
         case "failed": label = "Auth failed"; color = .systemRed
         case "unreachable": label = "Receiver offline"; color = .systemGray
         case "inactive": label = "Disconnected"; color = .systemGray

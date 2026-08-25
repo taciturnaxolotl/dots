@@ -201,8 +201,17 @@ let
 
     def tunnel_status():
         # systemctl is the source of truth for up/down (the openconnect process
-        # stays "active" only while the tunnel lives). Address/expiry are pulled
-        # from the journal only when active, so a dead tunnel never reads as up.
+        # stays "active" only while the tunnel lives). Address/expiry are read
+        # back from the journal, scoped to the *current* invocation: a tail of
+        # the unit log mixes in the previous connection's numbers after every
+        # reauth, and scrolls the header lines off entirely on a long-lived
+        # tunnel.
+        def show(prop):
+            return subprocess.run(
+                ["systemctl", "show", "-p", prop, "--value", "gp-tunnel.service"],
+                capture_output=True, text=True,
+            ).stdout.strip()
+
         active = subprocess.run(
             ["systemctl", "is-active", "gp-tunnel.service"],
             capture_output=True, text=True,
@@ -211,10 +220,11 @@ let
             return {"state": active, "address": None, "expires": None}
         addr = None
         expires = None
+        invocation = show("InvocationID")
         try:
             j = subprocess.run(
-                ["journalctl", "-u", "gp-tunnel.service", "-o", "cat",
-                 "--no-pager", "-n", "400"],
+                ["journalctl", "_SYSTEMD_INVOCATION_ID=" + invocation,
+                 "-o", "cat", "--no-pager"],
                 capture_output=True, text=True,
             ).stdout
             for line in j.splitlines():
@@ -226,7 +236,13 @@ let
                     expires = me.group(1).strip()
         except Exception:
             pass
-        return {"state": "up", "address": addr, "expires": expires}
+        # openconnect is "active" from the moment it forks, but SAML, HIP and
+        # the gateway handshake take a few seconds. Reporting "up" during that
+        # window is what made a fresh reauth show a connected tunnel with no
+        # address and no expiry.
+        state = "up" if addr else "connecting"
+        return {"state": state, "address": addr, "expires": expires,
+                "since": show("ActiveEnterTimestamp") or None}
 
 
     class H(BaseHTTPRequestHandler):
