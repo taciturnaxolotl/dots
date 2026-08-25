@@ -664,6 +664,16 @@
         runtime = "runsc";
         dockerHost = "ssh://kloe@prattle";
         network = true;
+        # A chat's /workspace is a directory on prattle's pool rather than
+        # scratch inside the container, so a conversation's files outlive the
+        # sandbox being stopped, a policy change, a deploy, and a reboot — and
+        # they sit somewhere snapshottable instead of in docker's storage. The
+        # path is declared there (systemd.tmpfiles); kloe fills it.
+        #
+        # The container itself sleeps after 10 idle minutes and is kept for 30
+        # days of no use, with at most 50 asleep at once — kloe's defaults,
+        # left alone deliberately.
+        workspaceRoot = "/storage/kloe/workspaces";
       };
 
       providers = [

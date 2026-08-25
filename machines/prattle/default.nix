@@ -344,6 +344,38 @@
   # share the host clock) and keeps such a runtime from choking on it.
   virtualisation.docker.daemon.settings.features.time-namespaces = false;
 
+  # Docker's storage lives on the pool, not on the 240G root SSD. Images, the
+  # build cache, and a writable layer per container all land under data-root,
+  # and kloe now lets a chat's sandbox sleep rather than die — a stopped
+  # container per dormant conversation, kept for up to a month. That is exactly
+  # the growth the small disk should not be absorbing.
+  #
+  # overlay2 stays the driver: the pool is created with xattr=sa and
+  # acltype=posixacl, which is what overlayfs wants from ZFS. Switching to the
+  # `zfs` driver would need a dedicated dataset and a migration no driver can
+  # read across, for no gain here.
+  #
+  # One-time, by hand, because nothing declarative can move bytes: stop docker,
+  # `mv /var/lib/docker /storage/docker`, switch. Skipping the move is survivable
+  # — the daemon starts empty, images re-pull and the ARM container is recreated
+  # on the next activation — but every live sandbox loses whatever it installed.
+  virtualisation.docker.daemon.settings.data-root = "/storage/docker";
+  # Nothing in docker's unit knows the pool exists, and a daemon that starts
+  # before /storage is mounted would quietly build its whole store on the root
+  # filesystem, under a directory the mount then hides.
+  systemd.services.docker.unitConfig.RequiresMountsFor = "/storage";
+
+  # The weekly `docker system prune -f` (enabled with ARM) removes every STOPPED
+  # container, which is precisely how kloe now parks an idle conversation's
+  # sandbox. Left alone it would quietly undo the warm tier once a week and hand
+  # people back an empty environment. kloe ages its own containers out (a 30-day
+  # TTL renewed by use, and a cap on how many sleep at once), so the prune only
+  # has to leave them alone.
+  virtualisation.docker.autoPrune.flags = [
+    "--filter"
+    "label!=kloe-sandbox=1"
+  ];
+
   # The identity kloe (on terebithia) lands as. It exists here only to hold a
   # login and the docker group; the tailnet ACL is what decides who may become
   # it, and docker's `dial-stdio` needs a shell to be spawned from.
@@ -414,6 +446,13 @@
     "d /storage/s3 0750 garage garage -"
     "d /storage/s3/meta 0750 garage garage -"
     "d /storage/s3/data 0750 garage garage -"
+    "d /storage/docker 0710 root root -"
+    # The durable half of kloe's sandboxes: one directory per conversation,
+    # bind-mounted at /workspace (sandbox.workspaceRoot, set on terebithia).
+    # kloe creates each chat's directory and reaps it when the chat's sandbox is
+    # gone; this is only the root they live under.
+    "d /storage/kloe 0755 root root -"
+    "d /storage/kloe/workspaces 0711 root root -"
   ];
 
   # ── Recyclarr (TRaSH Guides sync) ─────────────────────────────────────
