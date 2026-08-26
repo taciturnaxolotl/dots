@@ -822,6 +822,36 @@
     '';
   };
 
+  # ── Beef reverse proxy (over Tailscale) ──────────────────────────────
+  # integrand serves its own landing page, so there is only one thing to proxy.
+  services.caddy.virtualHosts."integrand.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
+
+      # /v1/snip runs a model on beef's CPU for whoever asks, so meter the API
+      # and leave the page alone.
+      @api path /v1/*
+      rate_limit @api {
+        zone integrand_api {
+          key {http.request.remote_ip}
+          events 20
+          window 1m
+        }
+      }
+
+      request_body {
+        max_size 2MB
+      }
+
+      reverse_proxy beef:8765
+    '';
+  };
+
   swapDevices = [
     {
       device = "/var/swapfile";
