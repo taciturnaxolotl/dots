@@ -180,3 +180,44 @@ func TestPluralDropsTheSForOne(t *testing.T) {
 		}
 	}
 }
+
+// Bun and friends bind to ::1 alone, which the browser reaches and the v4
+// literal does not. The relay should find it anyway.
+func TestTCPRelayReachesAnIPv6OnlyService(t *testing.T) {
+	listener, err := net.Listen("tcp", "[::1]:0")
+	if err != nil {
+		t.Skip("no ipv6 loopback here")
+	}
+	t.Cleanup(func() { listener.Close() })
+	go func() {
+		for {
+			conn, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			conn.Write([]byte("v6"))
+			conn.Close()
+		}
+	}()
+
+	ev, _, _ := collect()
+	port, err := startTCP(listener.Addr().(*net.TCPAddr).Port, ev)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	conn, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer conn.Close()
+
+	buf := make([]byte, 8)
+	n, err := conn.Read(buf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := string(buf[:n]); got != "v6" {
+		t.Errorf("relayed %q, want %q", got, "v6")
+	}
+}

@@ -81,7 +81,7 @@ func startInspector(target int, ev events) (*inspector, error) {
 	}
 	in := &inspector{target: target, port: listener.Addr().(*net.TCPAddr).Port, sink: ev.request}
 
-	upstream, err := url.Parse(fmt.Sprintf("http://127.0.0.1:%d", target))
+	upstream, err := url.Parse("http://" + local(target))
 	if err != nil {
 		return nil, err
 	}

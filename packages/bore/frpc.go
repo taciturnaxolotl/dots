@@ -166,7 +166,7 @@ func freePort() (int, error) {
 // listening reports whether anything is serving on the local port, so we can
 // warn before opening a tunnel to nothing.
 func listening(port int) bool {
-	conn, err := net.DialTimeout("tcp", fmt.Sprintf("127.0.0.1:%d", port), time.Second)
+	conn, err := net.DialTimeout("tcp", local(port), time.Second)
 	if err != nil {
 		return false
 	}

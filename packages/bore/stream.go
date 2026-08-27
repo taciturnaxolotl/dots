@@ -58,6 +58,15 @@ func startStream(protocol string, target int, ev events) (int, error) {
 	return startTCP(target, ev)
 }
 
+// local names the user's service. It is deliberately a hostname and not
+// 127.0.0.1: a server bound only to ::1 is a normal thing for a dev server to
+// do, and dialing the v4 literal gets a connection refused from a port the
+// browser reaches perfectly well. Go tries every address "localhost" resolves
+// to, so either family answers.
+func local(port int) string {
+	return fmt.Sprintf("localhost:%d", port)
+}
+
 func startTCP(target int, ev events) (int, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
@@ -80,7 +89,7 @@ func relay(from net.Conn, target int, ev events) {
 	started := time.Now()
 	defer from.Close()
 
-	to, err := net.Dial("tcp", fmt.Sprintf("127.0.0.1:%d", target))
+	to, err := net.Dial("tcp", local(target))
 	if err != nil {
 		ev.notice(notice{label: "local", text: fmt.Sprintf("nothing is listening on localhost:%d", target)})
 		ev.flow(flow{
@@ -175,6 +184,8 @@ func startUDP(target int, ev events) (int, error) {
 			mu.Lock()
 			p, known := peers[addr.String()]
 			if !known {
+				// v4 literal on purpose: a udp dial never fails, so
+				// there is no refusal to fall back from.
 				conn, err := net.Dial("udp", fmt.Sprintf("127.0.0.1:%d", target))
 				if err != nil {
 					mu.Unlock()
