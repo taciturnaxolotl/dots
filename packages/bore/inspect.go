@@ -8,6 +8,7 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"charm.land/lipgloss/v2"
@@ -22,6 +23,12 @@ import (
 type inspector struct {
 	target int
 	port   int
+	// rewrite sends the local service a Host it recognises instead of the one
+	// the visitor typed.
+	rewrite bool
+	note    func(notice)
+	// hinted keeps the host-header suggestion to one appearance.
+	hinted sync.Once
 	// sink receives every request. The plain renderer prints them; the TUI
 	// keeps them in a list under a header that stays put.
 	sink func(request)
@@ -74,12 +81,18 @@ func (r request) render(width int) string {
 	}.render(width)
 }
 
-func startInspector(target int, ev events) (*inspector, error) {
+func startInspector(target int, rewrite bool, ev events) (*inspector, error) {
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, err
 	}
-	in := &inspector{target: target, port: listener.Addr().(*net.TCPAddr).Port, sink: ev.request}
+	in := &inspector{
+		target:  target,
+		port:    listener.Addr().(*net.TCPAddr).Port,
+		rewrite: rewrite,
+		note:    ev.notice,
+		sink:    ev.request,
+	}
 
 	upstream, err := url.Parse("http://" + local(target))
 	if err != nil {
@@ -101,12 +114,20 @@ func startInspector(target int, ev events) (*inspector, error) {
 		w.WriteHeader(http.StatusBadGateway)
 		fmt.Fprintf(w, "bore: could not reach localhost:%d", target)
 	}
-	// The upstream should see the host the visitor asked for.
+	// The upstream should see the host the visitor asked for, unless it is one
+	// of the dev servers that refuse a Host they were not started with. Either
+	// way the public name and scheme travel in the forwarded headers, so an app
+	// building absolute urls can still find them.
 	director := proxy.Director
 	proxy.Director = func(r *http.Request) {
 		host := r.Host
 		director(r)
+		r.Header.Set("X-Forwarded-Host", host)
+		r.Header.Set("X-Forwarded-Proto", "https")
 		r.Host = host
+		if rewrite {
+			r.Host = local(target)
+		}
 	}
 
 	server := &http.Server{
@@ -126,7 +147,20 @@ func (in *inspector) record(next http.Handler) http.Handler {
 
 		next.ServeHTTP(recorder, r)
 
+		in.hint(recorder.status)
 		in.print(r, recorder, time.Since(started))
+	})
+}
+
+// hint explains the one refusal people cannot guess from the status alone.
+// Vite, Bun and friends answer 403 to a Host they do not know, as protection
+// against dns rebinding, and the tunnel looks broken when it is only unfamiliar.
+func (in *inspector) hint(status int) {
+	if status != http.StatusForbidden || in.rewrite {
+		return
+	}
+	in.hinted.Do(func() {
+		in.note(notice{label: "local", text: "the service may be refusing the tunnel's Host; try --rewrite-host"})
 	})
 }
 

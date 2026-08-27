@@ -44,6 +44,9 @@ The tunnel lasts as long as the command runs. Stop it with ctrl-c.
 **-s**, **--saved**
 : List the tunnels saved in this directory's **bore.toml**.
 
+**--rewrite-host**
+: Send the local service **Host: localhost:PORT** instead of the public name. Dev servers such as Vite and Bun refuse a Host they were not started with, as protection against dns rebinding, and answer 403 to everything through the tunnel. The public name and scheme are always passed on in **X-Forwarded-Host** and **X-Forwarded-Proto**, so an app building absolute urls can still find them.
+
 **--no-inspect**
 : Point the tunnel straight at the local port instead of through bore. Traffic stops being listed; use it if the extra hop is in the way.
 

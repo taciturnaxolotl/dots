@@ -111,6 +111,7 @@ An http tunnel is published at NAME.` + domain + `. A tcp or udp tunnel gets a p
 	f.BoolVarP(&opts.auth, "auth", "a", false, "require Indiko sign-in to reach the tunnel")
 	f.BoolVar(&opts.save, "save", false, "save this tunnel to "+ConfigFile)
 	f.BoolVarP(&opts.verbose, "verbose", "v", false, "pass frpc's own logs through untouched")
+	f.BoolVar(&opts.rewriteHost, "rewrite-host", false, "send the local service a Host it recognises, for dev servers that refuse unfamiliar ones")
 	f.BoolVar(&opts.noInspect, "no-inspect", false, "do not show requests; point the tunnel straight at the port")
 
 	cmd.MarkFlagsMutuallyExclusive("list", "saved")

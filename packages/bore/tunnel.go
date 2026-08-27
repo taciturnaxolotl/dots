@@ -27,6 +27,7 @@ type tunnelOptions struct {
 	authGiven     bool
 	verbose       bool
 	noInspect     bool
+	rewriteHost   bool
 }
 
 func runTunnel(ctx context.Context, opts tunnelOptions) error {
@@ -243,9 +244,9 @@ type events struct {
 
 // interpose puts a counter in front of the local port, whatever it speaks, and
 // returns the port frpc should use instead.
-func interpose(protocol string, target int, ev events) (int, error) {
+func interpose(protocol string, target int, rewriteHost bool, ev events) (int, error) {
 	if protocol == "http" {
-		in, err := startInspector(target, ev)
+		in, err := startInspector(target, rewriteHost, ev)
 		if err != nil {
 			return 0, err
 		}
@@ -315,7 +316,7 @@ func start(root context.Context, t *Tunnel, opts tunnelOptions) error {
 	// going through passes something that can count it.
 	localPort := t.Port
 	if !opts.noInspect {
-		port, err := interpose(t.protocolOrDefault(), t.Port, ev)
+		port, err := interpose(t.protocolOrDefault(), t.Port, opts.rewriteHost, ev)
 		if err != nil {
 			return err
 		}
