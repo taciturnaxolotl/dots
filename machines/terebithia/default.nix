@@ -352,6 +352,22 @@
         reverse_proxy localhost:8084
       '';
     };
+    # kloe's HTML artifacts, run on a host that owns nothing: one path, and no
+    # to everything else.
+    virtualHosts."artifactory.dunkirk.sh" = {
+      extraConfig = ''
+        tls {
+          dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+        }
+
+        handle /a/* {
+          reverse_proxy localhost:${toString config.atelier.services.kloe.port}
+        }
+        handle {
+          respond "404 - this door is for artifacts" 404
+        }
+      '';
+    };
     extraConfig = ''
       # Default response for unhandled domains
       :80 {
@@ -567,54 +583,25 @@
         issuer = "https://indiko.dunkirk.sh";
         clientId = "ikc_cskXitSS6XFSDzvyq3NBA";
         clientSecret = "$KLOE_CLIENT_SECRET";
-        # Anyone with an indiko account may sign in; roles decide what they
-        # get. A role is held by name or by what indiko calls someone, and a
-        # name wins: indiko only reports a role during a fresh login, where a
-        # name here applies the moment it deploys.
         allowedSubs = [ ];
         roles = {
           owner = {
             admin = true;
             sandbox = true;
             publish = true;
-            # Everything this instance can reach; which of those show up in a
-            # picker is each person's own business, set in settings.
             models = [ "*" ];
             search = [ "*" ];
             subs = [ "https://dunkirk.sh/" ];
-            # "admin" is what the kloe client offers in indiko; "owner" is kept
-            # in case the client is ever renamed to match this side.
             providerRoles = [
               "admin"
               "owner"
             ];
           };
-          # Everyone else gets the cheapest thing hyper serves and a sandbox.
-          #
-          # deepseek-v4-flash-0731 is $0.13/$0.26 per 1M with a 1M window. Note
-          # the id: plain "deepseek-v4-flash" is the same weights (both are
-          # DeepSeek-V4-Flash-0731 upstream) at $0.20/$0.40. Hyper's "prism"
-          # looks free in the catalogue and is not — it is the Emissary router,
-          # and the bill follows whichever model it picks.
-          #
-          # No public links: those are this domain. The sandbox is this
-          # machine's compute, given deliberately — gVisor on prattle is what
-          # stands between a guest's shell command and the host.
+
           guest = {
             models = [ "hyper/deepseek-v4-flash-0731" ];
-            # DuckDuckGo only: it needs no key, so a guest can search and
-            # research without spending the Exa or Ceramic credits this
-            # instance pays for. An engine they connect themselves is theirs.
             search = [ "duckduckgo" ];
             sandbox = true;
-            # A day's worth, in a rolling 24 hours. At $0.13/$0.26 per 1M that
-            # is a few million tokens of conversation, which is a generous
-            # afternoon and a cheap month. Whichever bound is hit first stops
-            # the next run; a run already going finishes.
-            #
-            # Neither counts what someone spends on an account they connected
-            # themselves. That is the escape hatch, and it is the one the
-            # refusal points at.
             usdPerDay = 0.5;
             tokensPerDay = 4000000;
             providerRoles = [ "guest" ];
@@ -622,10 +609,10 @@
         };
       };
 
-      # Encrypts the provider credentials users hand over (their own hyper
-      # grant, a pasted key). Without it kloe refuses to store one rather than
-      # writing it into a database that gets backed up offsite.
+      # Encrypts the provider credentials users hand over
       security.credentialKey = "$KLOE_CREDENTIAL_KEY";
+
+      server.artifactOrigin = "https://artifactory.dunkirk.sh";
 
       lard = {
         enabled = true;
@@ -644,8 +631,6 @@
             apiKey = "$CERAMIC_API_KEY";
           }
         ];
-        # Asked of each backend and kept after fusion. Ceramic will go to 50;
-        # this is the dial that decides how much of a search the model reads.
         maxResults = 10;
       };
 
@@ -655,24 +640,13 @@
         timeoutMs = 60000;
       };
 
-      # Runs on prattle's docker under gVisor, reached over Tailscale SSH as
-      # the kloe user declared there. The tailnet ACL is the thing that has to
-      # allow the hop; nothing here can grant it.
+      # Runs on prattle's docker under gVisor
       sandbox = {
         enabled = true;
         image = "buildpack-deps:bookworm-scm";
         runtime = "runsc";
         dockerHost = "ssh://kloe@prattle";
         network = true;
-        # A chat's /workspace is a directory on prattle's pool rather than
-        # scratch inside the container, so a conversation's files outlive the
-        # sandbox being stopped, a policy change, a deploy, and a reboot — and
-        # they sit somewhere snapshottable instead of in docker's storage. The
-        # path is declared there (systemd.tmpfiles); kloe fills it.
-        #
-        # The container itself sleeps after 10 idle minutes and is kept for 30
-        # days of no use, with at most 50 asleep at once — kloe's defaults,
-        # left alone deliberately.
         workspaceRoot = "/storage/kloe/workspaces";
       };
 
@@ -683,8 +657,6 @@
           apiEndpoint = "https://hyper.charm.land/v1";
           type = "hyper";
           maxConcurrency = 4;
-          # The device endpoints sit at the app root, not under /v1, so a user
-          # can approve kloe from hyper's own page and spend their own credits.
           oauth = {
             flow = "hyper-device";
             baseUrl = "https://hyper.charm.land";
@@ -719,8 +691,6 @@
       hostname = "knot.dunkirk.sh";
       syncSecretsFile = config.age.secrets.github-knot-sync.path;
     };
-    # Spindle moved to prattle (bare-metal x86_64 with KVM → real microVMs).
-    # terebithia is a nested VM without EL2, so it has no /dev/kvm.
     spindle = {
       enable = false;
       hostname = "spindle.dunkirk.sh";
@@ -733,7 +703,7 @@
     port = 9090;
   };
 
-  # FlareSolverr — Cloudflare bypass proxy for GasBuddy scraping
+  # FlareSolverr
   virtualisation.docker.enable = true;
   virtualisation.oci-containers.backend = "docker";
   virtualisation.oci-containers.containers.flaresolverr = {
@@ -863,10 +833,7 @@
   boot.loader.efi.canTouchEfiVariables = true;
   boot.kernelParams = [ "console=ttyS0" ];
 
-  # Uncapped journald defaults to 10% of the filesystem, which is ~14G here, and
-  # 30 services on a public IP fill that faster than you'd think (it was at 3.9G).
-  # More headroom than prattle's 100M/7day on purpose: this box is the one facing
-  # the internet, so fail2ban and auth history are worth keeping around longer.
+  # Uncapped journald defaults to 10% of the filesystem which is far too much
   services.journald.extraConfig = ''
     SystemMaxUse=1G
     MaxRetentionSec=14day
