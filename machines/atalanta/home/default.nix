@@ -4,6 +4,22 @@
   osConfig,
   ...
 }:
+let
+  # Slack's huddle window sits above the normal window level and is sticky;
+  # everything else about it looks like a regular window. Poll briefly, since
+  # the level is set a beat after the window appears.
+  floatSlackOverlay = pkgs.writeShellScript "yabai-float-slack-overlay" ''
+    for _ in 1 2 3 4 5 6 7 8 9 10; do
+      win=$(${pkgs.yabai}/bin/yabai -m query --windows --window "$YABAI_WINDOW_ID" 2>/dev/null) || exit 0
+      if ${pkgs.jq}/bin/jq -e '.level > 0 or ."is-sticky"' >/dev/null <<<"$win"; then
+        ${pkgs.jq}/bin/jq -e '."is-floating"' >/dev/null <<<"$win" ||
+          ${pkgs.yabai}/bin/yabai -m window "$YABAI_WINDOW_ID" --toggle float
+        exit 0
+      fi
+      sleep 0.1
+    done
+  '';
+in
 {
   imports = [
     (inputs.import-tree ../../../modules/home)
@@ -73,6 +89,14 @@
       ];
     };
     skhdConfig = builtins.readFile ../../../dots/skhdrc;
+    # Slack huddle windows are plain AXStandardWindows with an ordinary
+    # "channel - workspace - Slack" title, so no rule can pick them out.
+    # What marks them is that Slack raises them above the normal window
+    # level and makes them sticky. Catch that after creation instead.
+    extraConfig = ''
+      yabai -m signal --add label=slack_overlay_float event=window_created app="^Slack$" \
+        action="${floatSlackOverlay}"
+    '';
   };
 
   atelier = {
