@@ -39,6 +39,13 @@ in
       description = "Directory to store cap data";
     };
 
+    healthUrl = lib.mkOption {
+      type = lib.types.nullOr lib.types.str;
+      default = "https://${cfg.domain}";
+      defaultText = lib.literalExpression ''"https://\${cfg.domain}"'';
+      description = "Health check URL for monitoring. Cap serves its admin UI at the root and has no dedicated health route.";
+    };
+
     adminKeyFile = lib.mkOption {
       type = lib.types.path;
       description = "Environment file defining ADMIN_KEY for the cap admin UI";
