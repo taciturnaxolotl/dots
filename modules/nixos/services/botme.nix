@@ -56,6 +56,9 @@ let
         atelier.services.botme = {
           environment = {
             DATABASE_PATH = "${cfg.dataDir}/data/botme.db";
+            # Python buffers stdout when it is not a tty, which loses whatever
+            # the app logged in the seconds before a crash.
+            PYTHONUNBUFFERED = "1";
             UV_PYTHON_DOWNLOADS = "never";
           };
 
