@@ -27,6 +27,9 @@ in
   "cap.age".publicKeys = [
     kierank
   ];
+  "botme-deploy-key.age".publicKeys = [
+    kierank
+  ];
   "hn-alerts.age".publicKeys = [
     kierank
   ];

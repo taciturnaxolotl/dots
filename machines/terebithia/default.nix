@@ -114,6 +114,11 @@
     cap = {
       file = ../../secrets/cap.age;
     };
+    botme-deploy-key = {
+      file = ../../secrets/botme-deploy-key.age;
+      owner = "botme";
+      mode = "0400";
+    };
     cachet = {
       file = ../../secrets/cachet.age;
       owner = "cachet";
@@ -393,7 +398,8 @@
   atelier.services.botme = {
     enable = true;
     domain = "botme.idk.dunkirk.sh";
-    repository = "https://github.com/opticaldrive/BotThisSite";
+    repository = "git@github.com:opticaldrive/BotThisSite.git";
+    deployKeyFile = config.age.secrets.botme-deploy-key.path;
     secretsFile = config.age.secrets.botme.path;
     healthUrl = "https://botme.idk.dunkirk.sh/health";
   };
