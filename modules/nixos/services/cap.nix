@@ -128,7 +128,15 @@ in
           dns cloudflare {env.CLOUDFLARE_API_TOKEN}
         }
 
-        reverse_proxy localhost:${toString cfg.port}
+        reverse_proxy localhost:${toString cfg.port} {
+          # cap keys its rate limit and blocklist on the *leftmost*
+          # X-Forwarded-For value, which is whatever the client sent. Replacing
+          # the header instead of appending to it leaves cap one value it can
+          # trust: the peer caddy actually talked to. {client_ip} is the right
+          # source for it because dunkirk.sh is DNS-only, so caddy's peer is
+          # the visitor rather than a CDN edge.
+          header_up X-Forwarded-For {client_ip}
+        }
       '';
     };
 
