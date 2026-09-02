@@ -107,6 +107,13 @@
       path = "/home/kierank/.wakatime.cfg";
       owner = "kierank";
     };
+    botme = {
+      file = ../../secrets/botme.age;
+      owner = "botme";
+    };
+    cap = {
+      file = ../../secrets/cap.age;
+    };
     cachet = {
       file = ../../secrets/cachet.age;
       owner = "cachet";
@@ -381,6 +388,20 @@
 
   systemd.services.caddy.serviceConfig = {
     EnvironmentFile = config.age.secrets.cloudflare.path;
+  };
+
+  atelier.services.botme = {
+    enable = true;
+    domain = "botme.idk.dunkirk.sh";
+    repository = "https://github.com/opticaldrive/BotThisSite";
+    secretsFile = config.age.secrets.botme.path;
+    healthUrl = "https://botme.idk.dunkirk.sh/health";
+  };
+
+  atelier.services.cap = {
+    enable = true;
+    domain = "cap.dunkirk.sh";
+    adminKeyFile = config.age.secrets.cap.path;
   };
 
   atelier.services.cachet = {

@@ -25,7 +25,7 @@ Each service repo has a minimal workflow calling the reusable `.github/workflows
 1. Connects to Tailscale (`tag:deploy`)
 2. SSHes as the **service user** (e.g., `cachet@terebithia`) via Tailscale SSH
 3. Snapshots the SQLite DB (if `db_path` is provided)
-4. `git pull` + `bun install --frozen-lockfile` + `sudo systemctl restart`
+4. `git pull` + install (`bun install --frozen-lockfile`, or whatever `install_command` says) + `sudo systemctl restart`
 5. Health check (HTTP URL or systemd status fallback)
 6. Auto-rollback on failure (restores DB snapshot + reverts to previous commit)
 
@@ -50,6 +50,7 @@ jobs:
 ```
 
 Omit `health_url` to fall back to `systemctl is-active`. Omit `db_path` for stateless services.
+Set `install_command` for anything that is not bun, e.g. `env UV_PYTHON_DOWNLOADS=never uv sync --frozen` for python/uv services (see `botme`).
 
 ## Adding a new service
 

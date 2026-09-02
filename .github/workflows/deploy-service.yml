@@ -29,6 +29,11 @@ on:
         type: string
         default: "."
         description: "Subdirectory to run install/build from (relative to ~/app)"
+      install_command:
+        required: false
+        type: string
+        default: "bun install --frozen-lockfile"
+        description: "Dependency install command (e.g. 'uv sync --frozen' for python services)"
       build_command:
         required: false
         type: string
@@ -123,7 +128,7 @@ jobs:
           ssh ${{ inputs.service }}@${{ inputs.host }} << INSTALL
             set -e
             cd ~/app/${{ inputs.work_dir }}
-            bun install --frozen-lockfile
+            ${{ inputs.install_command }}
             ${{ inputs.build_command }}
             sudo /run/current-system/sw/bin/systemctl restart ${{ inputs.service }}.service
           INSTALL
@@ -242,7 +247,7 @@ jobs:
 
             git reset --hard "$PREV" --quiet
             cd ~/app/${{ inputs.work_dir }}
-            bun install --frozen-lockfile 2>&1 | tail -1
+            ${{ inputs.install_command }} 2>&1 | tail -1
             ${{ inputs.build_command }}
             sudo /run/current-system/sw/bin/systemctl restart ${{ inputs.service }}.service
 
