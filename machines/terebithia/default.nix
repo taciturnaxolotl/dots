@@ -402,6 +402,9 @@
     deployKeyFile = config.age.secrets.botme-deploy-key.path;
     secretsFile = config.age.secrets.botme.path;
     healthUrl = "https://botme.idk.dunkirk.sh/health";
+    # Cap namespaces every route under the site key, so the key travels with
+    # the host. Not a secret; the widget ships it to every visitor.
+    environment.CAP_API_ENDPOINT = "https://cap.dunkirk.sh/cbe403f57a";
   };
 
   atelier.services.cap = {
