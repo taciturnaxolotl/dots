@@ -41,9 +41,16 @@ let
         # uv resolves at deploy time over SSH, python311 is what the venv links
         # against. uv's own managed interpreters are unpatched binaries and do
         # not run on NixOS, hence UV_PYTHON_DOWNLOADS=never everywhere uv runs.
+        # The interpreter goes in through symlinkJoin rather than directly:
+        # this machine installs "doc" outputs, and `python311.doc` is a
+        # separate sphinx build that fails to build. The join has no such
+        # attribute, so system-path stops at the interpreter.
         environment.systemPackages = [
           pkgs.uv
-          pkgs.python311
+          (pkgs.symlinkJoin {
+            name = "python311-interpreter";
+            paths = [ pkgs.python311 ];
+          })
         ];
 
         atelier.services.botme = {
