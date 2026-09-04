@@ -114,7 +114,15 @@
     atticd-env = {
       file = ../../secrets/atticd-env.age;
     };
+    # Console recovery only. SSH is key-only and sudo needs no password, so this
+    # exists purely so a broken boot is something you can log into instead of
+    # stare at. Kept in agenix rather than as a hash in a public repo.
+    root-password = {
+      file = ../../secrets/root-password.age;
+    };
   };
+
+  users.users.root.hashedPasswordFile = config.age.secrets.root-password.path;
 
   programs.nh = {
     enable = true;
@@ -180,6 +188,20 @@
       "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCzEEjvbL/ttqmYoDjxYQmDIq36BabROJoXgQKeh9liBxApwp+2PmgxROzTg42UrRc9pyrkq5kVfxG5hvkqCinhL1fMiowCSEs2L2/Cwi40g5ZU+QwdcwI8a4969kkI46PyB19RHkxg54OUORiIiso/WHGmqQsP+5wbV0+4riSnxwn/JXN4pmnE//stnyAyoiEZkPvBtwJjKb3Ni9n3eNLNs6gnaXrCtaygEZdebikr9kS2g9mM696HvIFgM6cdR/wZ7DcLbG3IdTXuHN7PC3xxL+Y4ek5iMreQIPmuvs4qslbthPGYoYbYLUQiRa9XO5s/ksIj5Z14f7anHE6cuTQVpvNWdGDOigyIVS5qU+4ZF7j+rifzOXVL48gmcAvw/uV68m5Wl/p0qsC/d8vI3GYwEsWG/EzpAlc07l8BU2LxWgN+d7uwBFaJV9VtmUDs5dcslsh8IbzmtC9gq3OLGjklxTfIl6qPiL8U33oc/UwqzvZUrI2BlbagvIZYy6rP+q0= kierank@mockingjay"
     ];
   };
+
+  # ── Pinned ids ───────────────────────────────────────────────────────
+  # These own files on /storage and were allocated dynamically, which means any
+  # unrelated new service can shove them sideways. Adding dnsmasq for the
+  # gp-gateway took 998 and pushed garage and kloe down one apiece, which would
+  # have handed /storage/s3 to the wrong user on the next restore. The static
+  # ids in nixpkgs (jellyfin 146, sonarr 274, radarr 275, …) never moved; only
+  # these did. Pinned to what the pool was actually written with.
+  users.users.garage.uid = 998;
+  users.groups.garage.gid = 997;
+  users.users.kloe.uid = 997;
+  users.groups.kloe.gid = 996;
+  users.users.arm.uid = 990;
+  users.groups.arm.gid = 990;
 
   security.sudo.wheelNeedsPassword = false;
 
