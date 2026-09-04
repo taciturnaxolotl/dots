@@ -216,6 +216,21 @@
     useRoutingFeatures = "client";
   };
 
+  # ── Boot ─────────────────────────────────────────────────────────────
+  # This machine puts its NVMe behind Intel VMD: the drive lives in synthetic
+  # PCI domain 0x10000 behind the VMD endpoint at 0000:bc:05.5, so `nvme` has
+  # nothing to bind to until `vmd` has exposed that domain. The facter report
+  # now covers both, but they are named here anyway — an initrd that cannot see
+  # the root disk is an expensive way to discover the hardware report drifted.
+  boot.initrd.availableKernelModules = [
+    "vmd"
+    "nvme"
+  ];
+
+  # A locked root account plus a mount that never appears is an unrecoverable
+  # console: sulogin refuses, and there is no way in without rebuilding.
+  boot.initrd.systemd.emergencyAccess = true;
+
   # ── Storage ──────────────────────────────────────────────────────────
   # All of it is bcachefs now. nixpkgs builds the out-of-tree module against
   # this kernel at build time, so a mismatch fails the rebuild, not the boot;
