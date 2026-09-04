@@ -143,6 +143,8 @@
 
   networking = {
     hostName = "prattle";
+    # Only here because ZFS demands it, and ZFS is only here for the migration
+    # escape hatch below. Both come out together once bcachefs has proven itself.
     hostId = "4e4de3a2";
     useDHCP = true;
     networkmanager.enable = false;
@@ -214,18 +216,60 @@
     useRoutingFeatures = "client";
   };
 
-  # ── Storage health ───────────────────────────────────────────────────
-  services.zfs.autoScrub = {
-    enable = true;
-    interval = "monthly";
-  };
-  services.zfs.zed.settings.ZED_DEBUG_LOG = "/var/log/zed.log";
-
-  # Root lives on bcachefs. nixpkgs builds the out-of-tree module against this
-  # kernel at build time, so a mismatch fails the rebuild, not the boot; the
-  # previous generation stays bootable either way.
+  # ── Storage ──────────────────────────────────────────────────────────
+  # All of it is bcachefs now. nixpkgs builds the out-of-tree module against
+  # this kernel at build time, so a mismatch fails the rebuild, not the boot;
+  # the previous generation stays bootable either way.
   boot.supportedFilesystems.bcachefs = true;
   boot.initrd.supportedFilesystems.bcachefs = true;
+
+  # Migration escape hatch, temporary. The 6T pair still carries the old ZFS
+  # pool, cleanly exported, right up until it gets formatted. Keeping the module
+  # here means a bad restore is answered with `zpool import storage` rather than
+  # with a live USB, and the box can simply keep running the old layout on the
+  # new hardware while the problem gets sorted out. Delete this line and the
+  # hostId above once the bcachefs pool is populated and verified.
+  boot.supportedFilesystems.zfs = true;
+  boot.zfs.forceImportRoot = false;
+
+  # ── TODO: uncomment once the bcachefs pool exists ────────────────────
+  # Both of these are held back until the migration off ZFS creates the
+  # filesystem and we know its UUID. Declaring them earlier would leave a mount
+  # unit waiting on a device that does not exist and a tiering unit that fails
+  # because it requires that mount.
+  # # Four devices in one tiered filesystem: both SSDs labelled `ssd`, both 6T
+  # # spinners labelled `hdd`, replicas=2. Created by hand during the migration
+  # # off ZFS rather than by disko, so nothing in this flake is capable of
+  # # reformatting it. `nofail` keeps a bad mount from wedging the boot; the
+  # # services that need it already wait on storage.mount via RequiresMountsFor.
+  # fileSystems."/storage" = {
+  #   device = "UUID=REPLACE-storage-uuid";
+  #   fsType = "bcachefs";
+  #   options = [ "nofail" ];
+  # };
+  #
+  # # The filesystem-wide policy is writeback: writes land on flash, rebalance
+  # # drains them to the platters, hot reads are promoted back. That is right for
+  # # the arr databases and kloe's workspaces, and wrong for bulk media, which
+  # # would push every downloaded byte through the SSDs to be read once. So the
+  # # two bulk trees are pinned to writearound instead: written straight to rust,
+  # # promoted to flash only when something actually reads them. Options set on a
+  # # directory are inherited by everything created beneath it, so this runs once
+  # # and covers future files.
+  # systemd.services.storage-tiering = {
+  #   description = "bcachefs tiering policy for /storage";
+  #   after = [ "storage.mount" ];
+  #   requires = [ "storage.mount" ];
+  #   wantedBy = [ "multi-user.target" ];
+  #   serviceConfig = {
+  #     Type = "oneshot";
+  #     RemainAfterExit = true;
+  #   };
+  #   script = ''
+  #     ${pkgs.bcachefs-tools}/bin/bcachefs setattr \
+  #       --foreground_target=hdd /storage/media /storage/torrents
+  #   '';
+  # };
 
   services.bcachefs.autoScrub = {
     enable = true;
@@ -763,8 +807,6 @@
     environmentFile = config.age.secrets.atticd-env.path;
     settings.listen = "[::]:8091";
   };
-
-  boot.zfs.forceImportRoot = false;
 
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
