@@ -113,7 +113,11 @@ in
       };
 
       cap = {
-        image = "tiago2/cap:latest";
+        # Pinned, not :latest. oci-containers only pulls a tag it does not
+        # already have locally, so a floating tag silently freezes at whatever
+        # was first pulled — this box sat on 3.1.10 for a week thinking it was
+        # current. A version here means the bump is a reviewable diff.
+        image = "tiago2/cap:3.1.11";
         ports = [ "127.0.0.1:${toString cfg.port}:3000" ];
         environment.REDIS_URL = "redis://cap-valkey:6379";
         environmentFiles = [ cfg.adminKeyFile ];

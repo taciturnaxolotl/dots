@@ -272,6 +272,31 @@
   # console: sulogin refuses, and there is no way in without rebuilding.
   boot.initrd.systemd.emergencyAccess = true;
 
+  # ── GPU ──────────────────────────────────────────────────────────────
+  # Quadro P4000 (GP104, Pascal). nouveau cannot drive NVENC, and NVENC is the
+  # entire reason the card is in this box: jellyfin transcodes in hardware, and
+  # a Quadro carries no concurrent-session cap the way GeForce does.
+  #
+  # legacy_580 rather than `production`, and this is not a conservatism thing:
+  # 580 is the last branch NVIDIA shipped with Maxwell/Pascal/Volta support, so
+  # the current production driver (595) would refuse to bind to this GP104 at
+  # all. Quadro Pascal keeps security updates on 580 through October 2028.
+  # `open = false` for the same generational reason — the open kernel modules
+  # want Turing or newer.
+  hardware.nvidia = {
+    package = config.boot.kernelPackages.nvidiaPackages.legacy_580;
+    open = false;
+    modesetting.enable = true;
+    nvidiaSettings = false; # headless; nothing to point a control panel at
+    powerManagement.enable = false;
+  };
+  # The idiomatic switch for loading the driver, X or no X.
+  services.xserver.videoDrivers = [ "nvidia" ];
+  hardware.graphics.enable = true;
+
+  # ARM rips inside a container, so the runtime has to hand the GPU through.
+  hardware.nvidia-container-toolkit.enable = true;
+
   # ── Storage ──────────────────────────────────────────────────────────
   # All of it is bcachefs now. nixpkgs builds the out-of-tree module against
   # this kernel at build time, so a mismatch fails the rebuild, not the boot;
@@ -549,7 +574,7 @@
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
   atelier.services.arm = {
     enable = true;
-    nvidiaGpu = false;
+    nvidiaGpu = true;
     tmdbApiKey = "d02571bf8c4e4d232a05dc9a764992db";
     makemkvKey = "T-BSaJ6gwgMx4eIggWkVYXiVP_6zehm7WAO9dEydvzOHFHoZ6YQ82BL5cGpYDxvyRWnS";
   };
