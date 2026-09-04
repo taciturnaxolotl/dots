@@ -25,6 +25,9 @@
     zfs = true;
     ntfs = true;
   };
+  # Never force-import a pool on rescue media. If a pool looks like it is still
+  # owned by another host, that is information, not an obstacle to bulldoze.
+  boot.zfs.forceImportRoot = false;
 
   services.openssh = {
     enable = true;
