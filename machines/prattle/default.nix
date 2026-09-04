@@ -299,15 +299,12 @@
     options = [ "nofail" ];
   };
 
-  # The filesystem-wide policy is writeback: writes land on flash, rebalance
-  # drains them to the platters, hot reads are promoted back. That is right for
-  # the arr databases and kloe's workspaces, and wrong for bulk media, which
-  # would push every downloaded byte through the SSDs to be read once. So the
-  # two bulk trees are pinned to writearound instead: written straight to rust,
-  # promoted to flash only when something actually reads them. Options set on a
-  # directory propagate recursively to existing children and are inherited by
-  # new files, so this runs once and covers everything after. (The subcommand is
-  # set-file-option; older bcachefs-tools called it setattr.)
+  # Writeback tiering: writes land on flash, rebalance drains them to the
+  # platters, hot reads get promoted back. That is right for the arr databases
+  # and kloe's workspaces, and wrong for bulk media, which would push every
+  # downloaded byte through the SSD to be read once. So the two bulk trees are
+  # pinned to writearound instead: straight to rust, promoted to flash only when
+  # something actually reads them.
   systemd.services.storage-tiering = {
     description = "bcachefs tiering policy for /storage";
     after = [ "storage.mount" ];
@@ -318,6 +315,35 @@
       RemainAfterExit = true;
     };
     script = ''
+      set -euo pipefail
+
+      # Filesystem-wide options live in the superblock, and `set-fs-option`
+      # refuses a mounted filesystem ("Device or resource busy"). sysfs is the
+      # live path and writes through to the superblock just the same. Asserting
+      # them here keeps the whole policy readable in one place rather than
+      # discoverable only through show-super.
+      #
+      # sysfs keys filesystems by first-device name, and /dev/sdX has reshuffled
+      # on nearly every boot of this machine, so find ours by device label.
+      fs=""
+      for d in /sys/fs/bcachefs/*/; do
+        for l in "$d"dev-*/label; do
+          [ -r "$l" ] || continue
+          case "$(cat "$l")" in
+            ssd.*|hdd.*) fs="$d"; break 2 ;;
+          esac
+        done
+      done
+      [ -n "$fs" ] || { echo "no bcachefs fs with hdd./ssd. labels" >&2; exit 1; }
+
+      echo ssd > "$fs/options/foreground_target"
+      echo ssd > "$fs/options/promote_target"
+      echo hdd > "$fs/options/background_target"
+
+      # Per-directory overrides. Propagate recursively to existing children and
+      # are inherited by new files, so this covers everything written later.
+      # (The subcommand is set-file-option; older bcachefs-tools called it
+      # setattr.)
       ${pkgs.bcachefs-tools}/bin/bcachefs set-file-option \
         --foreground_target=hdd /storage/media /storage/torrents
     '';
