@@ -122,7 +122,23 @@
     };
   };
 
-  users.users.root.hashedPasswordFile = config.age.secrets.root-password.path;
+  # `hashedPasswordFile` is a no-op while users.mutableUsers is true: NixOS only
+  # applies it when the account is created and defers to local changes after.
+  # Setting mutableUsers = false would fix that declaratively but would also
+  # lock the console for kierank, who has no hashedPassword at all. So sync it
+  # here instead — idempotent, runs after agenix has decrypted, and keeps the
+  # committed secret as the single source of truth.
+  system.activationScripts.rootPasswordFromAgenix = {
+    deps = [
+      "agenixInstall"
+      "users"
+    ];
+    text = ''
+      if [ -r "${config.age.secrets.root-password.path}" ]; then
+        ${pkgs.shadow}/bin/usermod -p "$(cat ${config.age.secrets.root-password.path})" root
+      fi
+    '';
+  };
 
   programs.nh = {
     enable = true;
