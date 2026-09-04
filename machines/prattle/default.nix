@@ -120,6 +120,9 @@
     root-password = {
       file = ../../secrets/root-password.age;
     };
+    "restic/env".file = ../../secrets/restic/env.age;
+    "restic/repo".file = ../../secrets/restic/repo.age;
+    "restic/password".file = ../../secrets/restic/password.age;
   };
 
   # `hashedPasswordFile` is a no-op while users.mutableUsers is true: NixOS only
@@ -318,6 +321,42 @@
       ${pkgs.bcachefs-tools}/bin/bcachefs set-file-option \
         --foreground_target=hdd /storage/media /storage/torrents
     '';
+  };
+
+  # ── Backups ──────────────────────────────────────────────────────────
+  # The bcachefs mirror survives a disk dying. It does not survive a filesystem
+  # bug, a stray rm, or the PSU taking both spindles at once, and every copy of
+  # this data now lives in one chassis. What is actually irreplaceable is small:
+  # ~800M of arr databases and watch history, and ~460M of kloe workspaces. The
+  # 250G of media is not backed up on purpose — the arrs can re-fetch it, and
+  # paying to store it offsite would buy nothing a re-download does not.
+  atelier.backup = {
+    enable = true;
+
+    # sqlite, so the writers stop for the length of the snapshot. It runs
+    # between 02:00 and 04:00 and moves well under a gigabyte, so the outage is
+    # seconds. Consistency is worth more here than an uninterrupted 3am stream.
+    services.nixarr = {
+      enable = true;
+      paths = [ "/storage/.state/nixarr" ];
+      exclude = [
+        "*-wal"
+        "*-shm"
+        "*.log"
+        "*/transcodes/*"
+        "*/cache/*"
+        "*/log/*"
+      ];
+      preBackup = "systemctl stop sonarr radarr prowlarr bazarr seerr jellyfin";
+      postBackup = "systemctl start sonarr radarr prowlarr bazarr seerr jellyfin";
+    };
+
+    # Files at rest between conversations; kloe reaps these itself, so whatever
+    # is here is live work. No writers to quiesce.
+    services.kloe = {
+      enable = true;
+      paths = [ "/storage/kloe/workspaces" ];
+    };
   };
 
   services.bcachefs.autoScrub = {
