@@ -572,8 +572,13 @@
   };
 
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
+  # Off until this chassis has an optical drive. The 5820 arrived without one,
+  # so /dev/sr0 does not exist, and docker refuses to start a container with a
+  # --device that is not there — which is why this unit has been failing on
+  # every boot since the move. Flip it back on once the 5.25" ODD bay is
+  # populated; nvidiaGpu below is already right for the P4000.
   atelier.services.arm = {
-    enable = true;
+    enable = false;
     nvidiaGpu = true;
     tmdbApiKey = "d02571bf8c4e4d232a05dc9a764992db";
     makemkvKey = "T-BSaJ6gwgMx4eIggWkVYXiVP_6zehm7WAO9dEydvzOHFHoZ6YQ82BL5cGpYDxvyRWnS";
