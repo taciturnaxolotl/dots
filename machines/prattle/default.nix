@@ -285,44 +285,39 @@
   boot.supportedFilesystems.zfs = true;
   boot.zfs.forceImportRoot = false;
 
-  # ── TODO: uncomment once the bcachefs pool exists ────────────────────
-  # Both of these are held back until the migration off ZFS creates the
-  # filesystem and we know its UUID. Declaring them earlier would leave a mount
-  # unit waiting on a device that does not exist and a tiering unit that fails
-  # because it requires that mount.
-  # # Four devices in one tiered filesystem: both SSDs labelled `ssd`, both 6T
-  # # spinners labelled `hdd`, replicas=2. Created by hand during the migration
-  # # off ZFS rather than by disko, so nothing in this flake is capable of
-  # # reformatting it. `nofail` keeps a bad mount from wedging the boot; the
-  # # services that need it already wait on storage.mount via RequiresMountsFor.
-  # fileSystems."/storage" = {
-  #   device = "UUID=REPLACE-storage-uuid";
-  #   fsType = "bcachefs";
-  #   options = [ "nofail" ];
-  # };
-  #
-  # # The filesystem-wide policy is writeback: writes land on flash, rebalance
-  # # drains them to the platters, hot reads are promoted back. That is right for
-  # # the arr databases and kloe's workspaces, and wrong for bulk media, which
-  # # would push every downloaded byte through the SSDs to be read once. So the
-  # # two bulk trees are pinned to writearound instead: written straight to rust,
-  # # promoted to flash only when something actually reads them. Options set on a
-  # # directory are inherited by everything created beneath it, so this runs once
-  # # and covers future files.
-  # systemd.services.storage-tiering = {
-  #   description = "bcachefs tiering policy for /storage";
-  #   after = [ "storage.mount" ];
-  #   requires = [ "storage.mount" ];
-  #   wantedBy = [ "multi-user.target" ];
-  #   serviceConfig = {
-  #     Type = "oneshot";
-  #     RemainAfterExit = true;
-  #   };
-  #   script = ''
-  #     ${pkgs.bcachefs-tools}/bin/bcachefs setattr \
-  #       --foreground_target=hdd /storage/media /storage/torrents
-  #   '';
-  # };
+  # Four devices in one tiered filesystem: both SSDs labelled `ssd`, both 6T
+  # spinners labelled `hdd`, replicas=2. Created by hand during the migration
+  # off ZFS rather than by disko, so nothing in this flake is capable of
+  # reformatting it. `nofail` keeps a bad mount from wedging the boot; the
+  # services that need it already wait on storage.mount via RequiresMountsFor.
+  fileSystems."/storage" = {
+    device = "UUID=39cb03fc-f9b6-4b3b-970c-07d330d745d2";
+    fsType = "bcachefs";
+    options = [ "nofail" ];
+  };
+
+  # The filesystem-wide policy is writeback: writes land on flash, rebalance
+  # drains them to the platters, hot reads are promoted back. That is right for
+  # the arr databases and kloe's workspaces, and wrong for bulk media, which
+  # would push every downloaded byte through the SSDs to be read once. So the
+  # two bulk trees are pinned to writearound instead: written straight to rust,
+  # promoted to flash only when something actually reads them. Options set on a
+  # directory are inherited by everything created beneath it, so this runs once
+  # and covers future files.
+  systemd.services.storage-tiering = {
+    description = "bcachefs tiering policy for /storage";
+    after = [ "storage.mount" ];
+    requires = [ "storage.mount" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      ${pkgs.bcachefs-tools}/bin/bcachefs setattr \
+        --foreground_target=hdd /storage/media /storage/torrents
+    '';
+  };
 
   services.bcachefs.autoScrub = {
     enable = true;
