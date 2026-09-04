@@ -484,13 +484,21 @@ in
         no-resolv = true;
         servers-file = dnsServersFile;
         listen-address = "127.0.0.1,${cfg.bindAddr}";
-        bind-interfaces = true;
+        # bind-dynamic, not bind-interfaces. bindAddr is the tailnet address,
+        # which does not exist until tailscaled has brought the interface up, and
+        # bind-interfaces binds everything at startup and exits 2 on the first
+        # missing one ("Cannot assign requested address"). bind-dynamic binds
+        # addresses as they appear, so a cold boot no longer races tailscale.
+        bind-dynamic = true;
         cache-size = 1000;
       };
     };
 
     systemd.services.dnsmasq = lib.mkIf cfg.dns.enable {
-      after = [ "gp-dns-init.service" ];
+      after = [
+        "gp-dns-init.service"
+        "tailscaled.service"
+      ];
       wants = [ "gp-dns-init.service" ];
     };
 

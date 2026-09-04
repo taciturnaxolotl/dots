@@ -162,7 +162,11 @@ in
         (map (dev: "--device=${dev}:${dev}") cfg.devices)
         ++ [ "--privileged" ]
         ++ lib.optionals cfg.nvidiaGpu [
-          "--gpus=all"
+          # The nvidia CDI spec by name, not --gpus=all. With the container
+          # toolkit generating CDI specs, --gpus=all makes docker enumerate every
+          # vendor and fail with "AMD CDI spec not found" on a machine that has
+          # only an nvidia card.
+          "--device=nvidia.com/gpu=all"
           "--env=NVIDIA_DRIVER_CAPABILITIES=all"
         ];
     };
