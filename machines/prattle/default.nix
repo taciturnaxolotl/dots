@@ -302,8 +302,9 @@
   # would push every downloaded byte through the SSDs to be read once. So the
   # two bulk trees are pinned to writearound instead: written straight to rust,
   # promoted to flash only when something actually reads them. Options set on a
-  # directory are inherited by everything created beneath it, so this runs once
-  # and covers future files.
+  # directory propagate recursively to existing children and are inherited by
+  # new files, so this runs once and covers everything after. (The subcommand is
+  # set-file-option; older bcachefs-tools called it setattr.)
   systemd.services.storage-tiering = {
     description = "bcachefs tiering policy for /storage";
     after = [ "storage.mount" ];
@@ -314,7 +315,7 @@
       RemainAfterExit = true;
     };
     script = ''
-      ${pkgs.bcachefs-tools}/bin/bcachefs setattr \
+      ${pkgs.bcachefs-tools}/bin/bcachefs set-file-option \
         --foreground_target=hdd /storage/media /storage/torrents
     '';
   };
