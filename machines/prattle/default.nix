@@ -219,8 +219,16 @@
   users.groups.garage.gid = 997;
   users.users.kloe.uid = 997;
   users.groups.kloe.gid = 996;
-  users.users.arm.uid = 990;
+  # arm's module is off (no optical drive) so it no longer declares this user,
+  # but /storage/arm is owned by 990 and something else would eventually be
+  # handed that id. Declaring it here keeps the tree resolving to a real account
+  # and means re-enabling ARM later does not renumber anything.
   users.groups.arm.gid = 990;
+  users.users.arm = {
+    uid = 990;
+    group = "arm";
+    isSystemUser = true;
+  };
 
   security.sudo.wheelNeedsPassword = false;
 
