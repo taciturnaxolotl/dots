@@ -305,6 +305,54 @@
   # ARM rips inside a container, so the runtime has to hand the GPU through.
   hardware.nvidia-container-toolkit.enable = true;
 
+  # Jellyfin keeps hardware acceleration in its own encoding.xml, which nixarr
+  # does not manage, so without this it is a checkbox somebody clicked once in a
+  # web UI and nothing records why. Patch the specific keys before jellyfin
+  # starts. Surgical rather than templating the whole file: every other encoding
+  # setting stays whatever jellyfin last wrote.
+  #
+  # The codec list is what a GP104 can actually do. vp9 is absent because this
+  # ffmpeg has no vp9_cuvid, and av1 because Pascal has no AV1 decoder at all —
+  # ffmpeg advertising av1_cuvid says nothing about the silicon. mpeg4 is left
+  # off deliberately; NVDEC's mpeg4 path is unreliable on ASP content.
+  #
+  # Consequence worth knowing: changing these five in the UI will not survive a
+  # restart. Everything else in that file still will.
+  systemd.services.jellyfin-hwaccel = {
+    description = "Point jellyfin at NVENC";
+    wantedBy = [ "multi-user.target" ];
+    before = [ "jellyfin.service" ];
+    after = [ "storage.mount" ];
+    requires = [ "storage.mount" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      set -euo pipefail
+      E=/storage/.state/nixarr/jellyfin/config/encoding.xml
+      # Jellyfin writes this on first run; nothing to patch before then.
+      [ -f "$E" ] || exit 0
+      X=${pkgs.xmlstarlet}/bin/xmlstarlet
+
+      "$X" ed -L \
+        -u "/EncodingOptions/HardwareAccelerationType"   -v nvenc \
+        -u "/EncodingOptions/EnableHardwareEncoding"     -v true \
+        -u "/EncodingOptions/EnableEnhancedNvdecDecoder" -v true \
+        -u "/EncodingOptions/EnableTonemapping"          -v true \
+        "$E"
+
+      "$X" ed -L -d "/EncodingOptions/HardwareDecodingCodecs/string" "$E"
+      for c in h264 hevc mpeg2video vc1; do
+        "$X" ed -L -s "/EncodingOptions/HardwareDecodingCodecs" \
+          -t elem -n string -v "$c" "$E"
+      done
+
+      chown jellyfin:media "$E"
+      chmod 600 "$E"
+    '';
+  };
+
   # ── Storage ──────────────────────────────────────────────────────────
   # All of it is bcachefs now. nixpkgs builds the out-of-tree module against
   # this kernel at build time, so a mismatch fails the rebuild, not the boot;
