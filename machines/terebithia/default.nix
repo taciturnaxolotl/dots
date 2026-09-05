@@ -271,6 +271,18 @@
   # Allow passwordless sudo for wheel group (needed for deploy-rs)
   security.sudo.wheelNeedsPassword = false;
 
+  atelier.serviceAdmins.idk = {
+    keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN/587UmFEqNTCKARWmTPwbBYQl/86SYTGEGvCCNxVH4"
+    ];
+    units = [
+      "botme.service"
+      "docker-cap.service"
+      "docker-cap-valkey.service"
+    ];
+    accounts = [ "botme" ];
+  };
+
   services.openssh = {
     enable = true;
     openFirewall = true;
