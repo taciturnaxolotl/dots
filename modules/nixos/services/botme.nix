@@ -28,7 +28,10 @@ let
       };
     };
 
-    startCommand = "${cfg.dataDir}/app/.venv/bin/uvicorn main:app --host 127.0.0.1 --port ${toString cfg.port}";
+    # --no-access-log: uvicorn's access log is one journald line per request,
+    # which at solver load is a few hundred writes a second of nothing anyone
+    # reads. Caddy already logs the same requests in front of it.
+    startCommand = "${cfg.dataDir}/app/.venv/bin/uvicorn main:app --host 127.0.0.1 --port ${toString cfg.port} --no-access-log";
 
     extraConfig =
       cfg:
