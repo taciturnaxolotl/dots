@@ -422,6 +422,13 @@
     # Cap namespaces every route under the site key, so the key travels with
     # the host. Not a secret; the widget ships it to every visitor.
     environment.CAP_API_ENDPOINT = "https://cap.dunkirk.sh/cbe403f57a";
+    # The widget needs the public name; siteverify does not, and cap is right
+    # here on loopback. Going out to the public address and back in cost a TLS
+    # handshake and a trip through caddy for every solve: cap answers in ~50ms,
+    # the proxied call measured 1-6s once caddy was busy. Same path, no rewrite
+    # in cap's vhost, so only the scheme and host differ.
+    environment.CAP_VERIFY_ENDPOINT =
+      "http://127.0.0.1:${toString config.atelier.services.cap.port}/cbe403f57a";
   };
 
   atelier.services.cap = {
