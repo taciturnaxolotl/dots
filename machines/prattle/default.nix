@@ -133,6 +133,9 @@
       owner = "botme";
       mode = "0400";
     };
+    cap = {
+      file = ../../secrets/cap.age;
+    };
   };
 
   # `hashedPasswordFile` is a no-op while users.mutableUsers is true: NixOS only
@@ -589,6 +592,7 @@
     6555
     8091 # atticd (Nix binary cache), tailnet-only
     3012 # botme, fronted by terebithia's caddy
+    3013 # cap, likewise
     2222 # sshd for accounts without a tailnet identity (see services.openssh)
   ];
 
@@ -611,17 +615,35 @@
     # Cap namespaces every route under the site key, so the key travels with
     # the host. Not a secret; the widget ships it to every visitor.
     environment.CAP_API_ENDPOINT = "https://cap.dunkirk.sh/cbe403f57a";
-    # The widget needs the public name; siteverify does not. cap stayed on
-    # terebithia, so this is one tailnet hop to the port it publishes there
-    # rather than a TLS round trip back through caddy.
-    environment.CAP_VERIFY_ENDPOINT = "http://100.105.182.50:3013/cbe403f57a";
+    # The widget needs the public name; siteverify does not, and cap runs here
+    # too, so this is loopback. botme calls it once per solve: measured 2.3ms
+    # here against 51ms when cap was a tailnet hop away and 1-6s through caddy.
+    environment.CAP_VERIFY_ENDPOINT =
+      "http://127.0.0.1:${toString config.atelier.services.cap.port}/cbe403f57a";
+  };
+
+  # cap follows botme: they talk once per solve, so they belong on one box.
+  # terebithia keeps the public name because it has the address and the cert.
+  atelier.services.cap = {
+    enable = true;
+    domain = "cap.dunkirk.sh";
+    adminKeyFile = config.age.secrets.cap.path;
+    serveVhost = false;
+    listenAddresses = [
+      "127.0.0.1" # botme's siteverify
+      "100.105.247.54" # terebithia's caddy, fronting the public name
+    ];
   };
 
   atelier.serviceAdmins.idk = {
     keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN/587UmFEqNTCKARWmTPwbBYQl/86SYTGEGvCCNxVH4"
     ];
-    units = [ "botme.service" ];
+    units = [
+      "botme.service"
+      "docker-cap.service"
+      "docker-cap-valkey.service"
+    ];
     accounts = [ "botme" ];
   };
 

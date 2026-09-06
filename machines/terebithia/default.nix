@@ -107,9 +107,6 @@
       path = "/home/kierank/.wakatime.cfg";
       owner = "kierank";
     };
-    cap = {
-      file = ../../secrets/cap.age;
-    };
     cachet = {
       file = ../../secrets/cachet.age;
       owner = "cachet";
@@ -266,13 +263,11 @@
     keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN/587UmFEqNTCKARWmTPwbBYQl/86SYTGEGvCCNxVH4"
     ];
-    # botme itself lives on prattle now, and so does the matching entry there.
-    # What stays here is cap, which botme verifies against, and the access log,
-    # which caddy still writes because this box is still the public face.
-    units = [
-      "docker-cap.service"
-      "docker-cap-valkey.service"
-    ];
+    # botme and cap both live on prattle now, and the matching entry is there.
+    # What stays here is the access log, which caddy still writes because this
+    # box is still the public face, and the account itself, which is the way in:
+    # idk has no tailnet identity, so they jump from here to prattle's sshd on
+    # 2222 (Tailscale SSH owns 22 and would want an identity they do not have).
     logFiles.botme-access = "/var/log/caddy/access-botme.idk.dunkirk.sh.log";
   };
 
@@ -420,22 +415,26 @@
     '';
   };
 
-  atelier.services.cap = {
-    enable = true;
-    domain = "cap.dunkirk.sh";
-    adminKeyFile = config.age.secrets.cap.path;
-    # botme verifies against this cap from prattle. Publishing on the tailnet
-    # keeps that a plain HTTP hop; sending it back through caddy on the public
-    # name is what used to cost seconds per solve.
-    listenAddresses = [
-      "127.0.0.1"
-      "100.105.182.50"
-    ];
-  };
+  # cap runs on prattle now, next to the botme that calls it once per solve.
+  # This box keeps the public name, the certificate, and the userland-proxy work
+  # it no longer has to do.
+  services.caddy.virtualHosts."cap.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
 
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
-    config.atelier.services.cap.port
-  ];
+      reverse_proxy prattle:3013 {
+        # cap keys its rate limit and blocklist on the *leftmost*
+        # X-Forwarded-For value, which is whatever the client sent. Replacing
+        # the header instead of appending to it leaves cap one value it can
+        # trust: the peer caddy actually talked to. {client_ip} is the right
+        # source for it because dunkirk.sh is DNS-only, so caddy's peer is
+        # the visitor rather than a CDN edge.
+        header_up X-Forwarded-For {client_ip}
+      }
+    '';
+  };
 
   atelier.services.cachet = {
     enable = true;

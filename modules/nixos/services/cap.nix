@@ -27,6 +27,16 @@ in
       description = "Domain to serve cap on";
     };
 
+    serveVhost = lib.mkOption {
+      type = lib.types.bool;
+      default = true;
+      description = ''
+        Whether this host also serves the public name. False when the container
+        runs somewhere without a public address or a certificate, and the vhost
+        is written on whichever box fronts it.
+      '';
+    };
+
     port = lib.mkOption {
       type = lib.types.port;
       default = 3013;
@@ -85,9 +95,15 @@ in
     virtualisation.docker.enable = true;
     virtualisation.oci-containers.backend = "docker";
 
+    # valkey's server process is uid 999 in the upstream image, and it writes
+    # its snapshot as 999:1000. Owning this root:root let activation quietly
+    # take the directory back from a container that was already running: the
+    # next background save failed, and valkey answers MISCONF to every write
+    # once a save has failed, so cap returned ERR_REDIS_SERVER_ERROR on all of
+    # them. Numeric because the ids belong to the image, not to this host.
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0750 root root -"
-      "d ${cfg.dataDir}/valkey 0750 root root -"
+      "d ${cfg.dataDir}/valkey 0750 999 1000 -"
     ];
 
     # oci-containers attaches to networks but never creates them, and a missing
@@ -141,8 +157,8 @@ in
       };
     };
 
-    services.caddy.virtualHosts.${cfg.domain} = {
-      extraConfig = ''
+    services.caddy.virtualHosts = lib.mkIf cfg.serveVhost {
+      ${cfg.domain}.extraConfig = ''
         tls {
           dns cloudflare {env.CLOUDFLARE_API_TOKEN}
         }
