@@ -82,6 +82,16 @@ let
           GIT_SSH_COMMAND = sshCommand;
         };
 
+        # systemd hands every unit a 1024 soft limit against a 524288 hard one,
+        # on the theory that a program wanting more will raise its own. Python
+        # never does. At solver load this process holds a socket per in-flight
+        # request in both directions plus three files per sqlite connection, so
+        # it parks on 1024 and every new connection fails with "unable to open
+        # database file" -- sqlite's error for running out of descriptors, which
+        # reads like corruption and is not. Raising the soft limit to the number
+        # the concurrency actually needs is the whole fix.
+        systemd.services.botme.serviceConfig.LimitNOFILE = 65536;
+
         # preStart's PATH is git + openssh only, and uv needs an interpreter to
         # build the venv against.
         systemd.services.botme.path = [ pkgs.python311 ];
