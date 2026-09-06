@@ -302,6 +302,7 @@
       28868 # Minecraft server
     ];
     allowedUDPPorts = [
+      3478 # DERP STUN, never proxied
       28869 # Minecraft voice chat
       443 # HTTP/3: caddy advertises h3 whether or not this is open
     ];
@@ -316,7 +317,10 @@
 
   services.tailscale = {
     enable = true;
-    useRoutingFeatures = "client";
+    # Advertises 0.0.0.0/0 and ::/0 as an exit node, so it needs the server half:
+    # "client" leaves IPv6 forwarding off and the console flags the node as
+    # unable to relay. IPv4 was already on courtesy of docker, hiding the gap.
+    useRoutingFeatures = "both";
   };
 
   services.caddy = {
@@ -764,6 +768,35 @@
       }
 
       reverse_proxy localhost:8191
+    '';
+  };
+
+  # ── DERP ─────────────────────────────────────────────────────────────
+  # Private relay for the tailnet. prattle sits behind campus symmetric NAT with
+  # no port mapping, so it can never hole-punch to an off-LAN peer and always
+  # falls back to a relay. Tailscale's shared ord node ran 33ms at rest and 1.6s
+  # under load; both nodes already reach terebithia directly, so relaying here
+  # trades a hop for an uncontended one.
+  services.tailscale.derper = {
+    enable = true;
+    domain = "derp.dunkirk.sh";
+    # Answer only for our own tailnet, not as an open relay for the internet.
+    verifyClients = true;
+    # Caddy owns 443; the bundled nginx would fight it for the port.
+    configureNginx = false;
+    # Would also expose derper's plaintext port, which only caddy should reach.
+    # STUN's UDP 3478 is opened with the rest of the firewall.
+    openFirewall = false;
+  };
+
+  # DERP rides an HTTP Upgrade on /derp, which reverse_proxy passes through.
+  services.caddy.virtualHosts."derp.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+
+      reverse_proxy localhost:${toString config.services.tailscale.derper.port}
     '';
   };
 

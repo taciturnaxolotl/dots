@@ -29,6 +29,17 @@
 let
   cfg = config.atelier.services.gpGateway;
 
+  # Campus routes live in their own table, not main. 163.11.0.0/16 is also the
+  # NAT pool every on-campus tailnet peer appears from, so with it in main
+  # tailscaled resolved peer endpoints to tun0 and its hole-punch replies
+  # vanished into the tunnel, forcing every campus peer onto a DERP relay.
+  # tailscaled marks its own sockets 0x80000 and Tailscale's rule at pref 5210
+  # sends that mark to main, so keeping campus out of main is the whole fix.
+  # Everything else falls through to the rule below, which sits after
+  # Tailscale's tables so 100.64/10 keeps winning.
+  gpTable = 53;
+  gpRulePref = 5280;
+
   # Install only the routes we care about; drop the gateway's default route and
   # DNS so prattle's own connectivity and the box's resolver are untouched. This
   # is the whole "I don't want the blocked stuff" guarantee: campus never sees
@@ -61,12 +72,18 @@ let
           if [ -n "$orig" ]; then
             set -- $orig
             ip route replace "$VPNGATEWAY/32" via "$1" dev "$2"
+            # Also in the campus table: openconnect's socket is unmarked, so it
+            # would otherwise follow 163.11.0.0/16 into the tunnel it is building.
+            ip route replace "$VPNGATEWAY/32" via "$1" dev "$2" table ${toString gpTable}
             echo "gp-gateway: pinned gateway $VPNGATEWAY via $1 dev $2"
           fi
         fi
         ${lib.concatMapStringsSep "\n" (r: ''
-          ip route replace ${r} dev "$TUNDEV"
+          ip route replace ${r} dev "$TUNDEV" table ${toString gpTable}
         '') cfg.routes}
+        # ip rule add appends blindly, so clear our pref before re-adding.
+        while ip rule del pref ${toString gpRulePref} 2>/dev/null; do :; done
+        ip rule add pref ${toString gpRulePref} lookup ${toString gpTable}
         echo "gp-gateway: up on $TUNDEV as $INTERNAL_IP4_ADDRESS, installed ${toString (lib.length cfg.routes)} route(s)"
         # Always log what the gateway pushed: a standing drift detector. If an
         # internal host stops resolving, grep gp-gateway: to see whether the
@@ -76,9 +93,8 @@ let
         ${lib.optionalString cfg.dns.enable "${dnsSwitch} up"}
         ;;
       disconnect)
-        ${lib.concatMapStringsSep "\n" (r: ''
-          ip route del ${r} dev "$TUNDEV" 2>/dev/null || true
-        '') cfg.routes}
+        while ip rule del pref ${toString gpRulePref} 2>/dev/null; do :; done
+        ip route flush table ${toString gpTable} 2>/dev/null || true
         [ -n "''${VPNGATEWAY:-}" ] && ip route del "$VPNGATEWAY/32" 2>/dev/null || true
         ip addr flush dev "$TUNDEV" 2>/dev/null || true
         ${lib.optionalString cfg.dns.enable "${dnsSwitch} down"}
