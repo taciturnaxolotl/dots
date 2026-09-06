@@ -280,6 +280,7 @@
       "docker-cap.service"
       "docker-cap-valkey.service"
     ];
+    logFiles.botme-access = "/var/log/caddy/access-botme.idk.dunkirk.sh.log";
     accounts = [ "botme" ];
   };
 
