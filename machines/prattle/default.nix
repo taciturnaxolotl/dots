@@ -673,7 +673,7 @@
     # spindle microVM image (spindle resolves <name>/spec.json under imageDir)
     "d /var/lib/spindle/images 0755 root root -"
     "L+ /var/lib/spindle/images/nixos - - - - ${
-      inputs.tangled.packages.${pkgs.system}.spindle-nixos-image
+      inputs.tangled.packages.${pkgs.stdenv.hostPlatform.system}.spindle-nixos-image
     }"
     "d /storage/media/movies 2775 root media -"
     "d /storage/media/tv 2775 root media -"
