@@ -26,12 +26,23 @@ let
         default = null;
         description = "SSH private key used to clone and pull a private repository";
       };
+
+      listenAddress = lib.mkOption {
+        type = lib.types.str;
+        default = "127.0.0.1";
+        example = "100.105.247.54";
+        description = ''
+          Address uvicorn binds. Loopback is right when caddy runs on the same
+          box; set the tailnet address when the proxy lives on another machine,
+          and open the port on tailscale0 to match.
+        '';
+      };
     };
 
     # --no-access-log: uvicorn's access log is one journald line per request,
     # which at solver load is a few hundred writes a second of nothing anyone
     # reads. Caddy already logs the same requests in front of it.
-    startCommand = "${cfg.dataDir}/app/.venv/bin/uvicorn main:app --host 127.0.0.1 --port ${toString cfg.port} --no-access-log";
+    startCommand = "${cfg.dataDir}/app/.venv/bin/uvicorn main:app --host ${cfg.listenAddress} --port ${toString cfg.port} --no-access-log";
 
     extraConfig =
       cfg:

@@ -107,17 +107,8 @@
       path = "/home/kierank/.wakatime.cfg";
       owner = "kierank";
     };
-    botme = {
-      file = ../../secrets/botme.age;
-      owner = "botme";
-    };
     cap = {
       file = ../../secrets/cap.age;
-    };
-    botme-deploy-key = {
-      file = ../../secrets/botme-deploy-key.age;
-      owner = "botme";
-      mode = "0400";
     };
     cachet = {
       file = ../../secrets/cachet.age;
@@ -275,13 +266,14 @@
     keys = [
       "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN/587UmFEqNTCKARWmTPwbBYQl/86SYTGEGvCCNxVH4"
     ];
+    # botme itself lives on prattle now, and so does the matching entry there.
+    # What stays here is cap, which botme verifies against, and the access log,
+    # which caddy still writes because this box is still the public face.
     units = [
-      "botme.service"
       "docker-cap.service"
       "docker-cap-valkey.service"
     ];
     logFiles.botme-access = "/var/log/caddy/access-botme.idk.dunkirk.sh.log";
-    accounts = [ "botme" ];
   };
 
   services.openssh = {
@@ -412,30 +404,38 @@
     EnvironmentFile = config.age.secrets.cloudflare.path;
   };
 
-  atelier.services.botme = {
-    enable = true;
-    domain = "botme.idk.dunkirk.sh";
-    repository = "git@github.com:opticaldrive/BotThisSite.git";
-    deployKeyFile = config.age.secrets.botme-deploy-key.path;
-    secretsFile = config.age.secrets.botme.path;
-    healthUrl = "https://botme.idk.dunkirk.sh/health";
-    # Cap namespaces every route under the site key, so the key travels with
-    # the host. Not a secret; the widget ships it to every visitor.
-    environment.CAP_API_ENDPOINT = "https://cap.dunkirk.sh/cbe403f57a";
-    # The widget needs the public name; siteverify does not, and cap is right
-    # here on loopback. Going out to the public address and back in cost a TLS
-    # handshake and a trip through caddy for every solve: cap answers in ~50ms,
-    # the proxied call measured 1-6s once caddy was busy. Same path, no rewrite
-    # in cap's vhost, so only the scheme and host differ.
-    environment.CAP_VERIFY_ENDPOINT =
-      "http://127.0.0.1:${toString config.atelier.services.cap.port}/cbe403f57a";
+  # botme runs on prattle now: 8 cores at load 0.9 against this box's 2 at 14.
+  # Same shape as the jellyfin vhost below, terebithia keeps the public name and
+  # the certificate while prattle does the work.
+  services.caddy.virtualHosts."botme.idk.dunkirk.sh" = {
+    extraConfig = ''
+      tls {
+        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+      }
+      header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      }
+
+      reverse_proxy prattle:3012
+    '';
   };
 
   atelier.services.cap = {
     enable = true;
     domain = "cap.dunkirk.sh";
     adminKeyFile = config.age.secrets.cap.path;
+    # botme verifies against this cap from prattle. Publishing on the tailnet
+    # keeps that a plain HTTP hop; sending it back through caddy on the public
+    # name is what used to cost seconds per solve.
+    listenAddresses = [
+      "127.0.0.1"
+      "100.105.182.50"
+    ];
   };
+
+  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
+    config.atelier.services.cap.port
+  ];
 
   atelier.services.cachet = {
     enable = true;

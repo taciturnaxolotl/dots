@@ -30,7 +30,22 @@ in
     port = lib.mkOption {
       type = lib.types.port;
       default = 3013;
-      description = "Host port the cap container publishes on loopback";
+      description = "Host port the cap container publishes on";
+    };
+
+    listenAddresses = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ "127.0.0.1" ];
+      example = [
+        "127.0.0.1"
+        "100.105.182.50"
+      ];
+      description = ''
+        Host addresses the container publishes on. Loopback alone is right when
+        everything that calls cap runs here; add the tailnet address when a
+        caller lives on another machine, so its siteverify can reach cap
+        directly instead of going back out through caddy.
+      '';
     };
 
     dataDir = lib.mkOption {
@@ -118,7 +133,7 @@ in
         # was first pulled — this box sat on 3.1.10 for a week thinking it was
         # current. A version here means the bump is a reviewable diff.
         image = "tiago2/cap:3.1.11";
-        ports = [ "127.0.0.1:${toString cfg.port}:3000" ];
+        ports = map (a: "${a}:${toString cfg.port}:3000") cfg.listenAddresses;
         environment.REDIS_URL = "redis://cap-valkey:6379";
         environmentFiles = [ cfg.adminKeyFile ];
         dependsOn = [ "cap-valkey" ];

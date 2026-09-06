@@ -124,6 +124,15 @@
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
     "restic/password".file = ../../secrets/restic/password.age;
+    botme = {
+      file = ../../secrets/botme.age;
+      owner = "botme";
+    };
+    botme-deploy-key = {
+      file = ../../secrets/botme-deploy-key.age;
+      owner = "botme";
+      mode = "0400";
+    };
   };
 
   # `hashedPasswordFile` is a no-op while users.mutableUsers is true: NixOS only
@@ -235,7 +244,19 @@
 
   services.openssh = {
     enable = true;
-    openFirewall = true;
+    # Off because it would open every port in `ports` on every interface, and
+    # 2222 belongs on the tailnet only. 22 is already in allowedTCPPorts below.
+    openFirewall = false;
+    # 2222 exists for people who have an account here but no tailnet identity.
+    # Tailscale SSH claims port 22 on the tailnet address and authenticates the
+    # calling node, so a plain authorized_keys login there never gets a look in.
+    # It claims only 22, so sshd on a second port is reachable by ordinary key
+    # auth over the same tailnet, jumped through a box they can already log into.
+    # Opened on tailscale0 only, below; the LAN still sees 22 alone.
+    ports = [
+      22
+      2222
+    ];
     settings = {
       PermitRootLogin = "no";
       PasswordAuthentication = false;
@@ -567,7 +588,42 @@
   networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
     6555
     8091 # atticd (Nix binary cache), tailnet-only
+    3012 # botme, fronted by terebithia's caddy
+    2222 # sshd for accounts without a tailnet identity (see services.openssh)
   ];
+
+  # Moved here from terebithia, which is 2 cores at load 14 while this box is 8
+  # at under 1. botme is CPU-bound on a single uvicorn worker, so the cores are
+  # the whole point. terebithia keeps the public name and the certificate.
+  atelier.services.botme = {
+    enable = true;
+    domain = "botme.idk.dunkirk.sh";
+    repository = "git@github.com:opticaldrive/BotThisSite.git";
+    deployKeyFile = config.age.secrets.botme-deploy-key.path;
+    secretsFile = config.age.secrets.botme.path;
+    healthUrl = "https://botme.idk.dunkirk.sh/health";
+    # No vhost here: this box has no cloudflare token and is behind campus NAT,
+    # so it could not answer a DNS challenge or take inbound traffic anyway.
+    caddy.enable = false;
+    # The proxy is on terebithia, so loopback would leave it unreachable. The
+    # tailnet address and nothing wider: 3012 is open on tailscale0 only.
+    listenAddress = "100.105.247.54";
+    # Cap namespaces every route under the site key, so the key travels with
+    # the host. Not a secret; the widget ships it to every visitor.
+    environment.CAP_API_ENDPOINT = "https://cap.dunkirk.sh/cbe403f57a";
+    # The widget needs the public name; siteverify does not. cap stayed on
+    # terebithia, so this is one tailnet hop to the port it publishes there
+    # rather than a TLS round trip back through caddy.
+    environment.CAP_VERIFY_ENDPOINT = "http://100.105.182.50:3013/cbe403f57a";
+  };
+
+  atelier.serviceAdmins.idk = {
+    keys = [
+      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN/587UmFEqNTCKARWmTPwbBYQl/86SYTGEGvCCNxVH4"
+    ];
+    units = [ "botme.service" ];
+    accounts = [ "botme" ];
+  };
 
   # microVM host prerequisite: the vsock transport for the spindle's in-guest agent.
   boot.kernelModules = [ "vhost_vsock" ];
