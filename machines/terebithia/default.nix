@@ -5,6 +5,19 @@
   pkgs,
   ...
 }:
+let
+  # Same fields caddy logs by default, minus the two header maps.
+  leanAccessLog = host: ''
+    output file /var/log/caddy/access-${host}.log
+    format filter {
+      wrap json
+      fields {
+        request>headers delete
+        resp_headers delete
+      }
+    }
+  '';
+in
 {
   imports = [
     ./disk-config.nix
@@ -402,6 +415,22 @@
   # botme runs on prattle now: 8 cores at load 0.9 against this box's 2 at 14.
   # Same shape as the jellyfin vhost below, terebithia keeps the public name and
   # the certificate while prattle does the work.
+  # Access logging is most of what caddy does on this two-core box: a 30s CPU
+  # profile put logRequest at 29% against 39% for the whole of ServeHTTP.
+  #
+  # The header maps are the bulk of it, but a `format filter` that deletes them
+  # only saves the write: caddy builds the fields during Check and the filter
+  # runs afterwards, which measured 29% -> 27%. It still shrinks the file by
+  # most of its width, so botme keeps it -- that log is read, by idk, for the
+  # source addresses.
+  #
+  # cap's log is two thirds of the request volume and nobody reads it; the
+  # dashboard's numbers come from stats.db, not from here. Dropping it is the
+  # only thing that actually removes the work. Set it back to
+  # `leanAccessLog "cap.dunkirk.sh"` if that history is ever wanted.
+  services.caddy.virtualHosts."botme.idk.dunkirk.sh".logFormat = leanAccessLog "botme.idk.dunkirk.sh";
+  services.caddy.virtualHosts."cap.dunkirk.sh".logFormat = lib.mkForce null;
+
   services.caddy.virtualHosts."botme.idk.dunkirk.sh" = {
     extraConfig = ''
       tls {
