@@ -321,6 +321,11 @@
             soft-wrap.wrap-at-text-width = true;
           }
           {
+            name = "latex";
+            text-width = 120;
+            soft-wrap.wrap-at-text-width = true;
+          }
+          {
             name = "svelte";
             language-servers = [
               "svelte-language-server"
