@@ -6,6 +6,11 @@
   ...
 }:
 let
+  # prattle already runs flaresolverr as a native service, and reaches this box
+  # over the tailnet. Everything here points at that one instead of a second
+  # copy in docker: same work, off the two cores that also serve every vhost.
+  flaresolverr = "http://prattle:8191";
+
   # Same fields caddy logs by default, minus the two header maps.
   leanAccessLog = host: ''
     output file /var/log/caddy/access-${host}.log
@@ -609,7 +614,7 @@ in
     repository = "https://github.com/taciturnaxolotl/overpass";
     secretsFile = config.age.secrets.overpass.path;
     healthUrl = "https://overpass.dunkirk.sh/health";
-    environment.FLARESOLVERR_URL = "http://localhost:8191";
+    environment.FLARESOLVERR_URL = flaresolverr;
   };
 
   atelier.services.paperless = {
@@ -630,6 +635,7 @@ in
     enable = true;
     domain = "pear.dunkirk.sh";
     healthUrl = "https://pear.dunkirk.sh";
+    environment.FLARESOLVERR_URL = "${flaresolverr}/v1";
   };
 
   atelier.services.potluck = {
@@ -718,7 +724,7 @@ in
 
       fetch.renderer = {
         provider = "flaresolverr";
-        endpoint = "https://flaresolver.dunkirk.sh/v1";
+        endpoint = "${flaresolverr}/v1";
         timeoutMs = 60000;
       };
 
@@ -783,28 +789,6 @@ in
     enable = false;
     domain = "tangle-of-trust.dunkirk.sh";
     port = 9090;
-  };
-
-  # FlareSolverr
-  virtualisation.docker.enable = true;
-  virtualisation.oci-containers.backend = "docker";
-  virtualisation.oci-containers.containers.flaresolverr = {
-    image = "ghcr.io/flaresolverr/flaresolverr:latest";
-    ports = [ "127.0.0.1:8191:8191" ];
-    environment.LOG_LEVEL = "info";
-  };
-
-  services.caddy.virtualHosts."flaresolver.dunkirk.sh" = {
-    extraConfig = ''
-      tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-      }
-      header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-      }
-
-      reverse_proxy localhost:8191
-    '';
   };
 
   # ── DERP ─────────────────────────────────────────────────────────────

@@ -19,7 +19,7 @@ let
     extraConfig = cfg: {
       atelier.services.pear.environment = {
         BASE_URL = "https://${cfg.domain}";
-        FLARESOLVERR_URL = "http://localhost:8191/v1";
+        FLARESOLVERR_URL = lib.mkDefault "http://localhost:8191/v1";
       };
 
       atelier.services.pear.data = {
