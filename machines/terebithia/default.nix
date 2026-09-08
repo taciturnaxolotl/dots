@@ -435,6 +435,10 @@ in
   # `leanAccessLog "cap.dunkirk.sh"` if that history is ever wanted.
   services.caddy.virtualHosts."botme.idk.dunkirk.sh".logFormat = leanAccessLog "botme.idk.dunkirk.sh";
   services.caddy.virtualHosts."cap.dunkirk.sh".logFormat = lib.mkForce null;
+  # bore's wildcard is the worst of both: a dev server behind it turns one page
+  # load into fifty module requests, and each one writes a json line into a log
+  # nobody reads. Same call as cap's, ten times the volume.
+  services.caddy.virtualHosts."*.bore.dunkirk.sh".logFormat = lib.mkForce null;
 
   services.caddy.virtualHosts."botme.idk.dunkirk.sh" = {
     extraConfig = ''
