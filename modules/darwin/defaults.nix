@@ -5,6 +5,9 @@
   config,
   ...
 }:
+let
+  flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+in
 {
   # Common nix-darwin settings for all macOS machines
 
@@ -35,6 +38,13 @@
     "nix-command"
     "flakes"
   ];
+
+  # disable channels if we arent using them
+  nix.registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+  nix.nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+  nix.channel.enable = lib.mkIf config.nix.enable false;
+  nix.settings.flake-registry = "";
+  nix.settings.nix-path = config.nix.nixPath;
 
   # Nix installation management (only when nix-darwin manages nix)
   # Machines using Determinate Nix should set nix.enable = false
