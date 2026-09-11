@@ -449,7 +449,38 @@ in
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
       }
 
-      reverse_proxy prattle:3012
+      reverse_proxy prattle:3012 {
+        # With one upstream and no health checking, caddy dials every request
+        # even when nothing is listening. With botme stopped, the solvers still
+        # knocking put 1667 dials/s in SYN-SENT and 62% of a core into retrying
+        # a socket that was never going to answer. Three failures in ten seconds
+        # takes it out of rotation, which turns that into one probe per ten
+        # seconds and an immediate 503. The cost is that a blip of three errors
+        # serves 503 to everyone for ten seconds; cheaper than the alternative
+        # measured above.
+        fail_duration 10s
+        max_fails 3
+
+        transport http {
+          # Caddy keeps 32 idle upstream connections per host by default. At
+          # solver load there are ~1500 requests in flight, so 32 went back in
+          # the pool and the rest were closed and redialled: 592 new outbound
+          # connections a second against 300 requests, 10k sockets in TIME-WAIT
+          # to this upstream alone and 35k across the box, against an ephemeral
+          # range of 28k. The whole range cycled about every 90 seconds, which
+          # is where the 502s came from, and a 100ms app answered in 3.4s.
+          #
+          # A 25s CPU profile put 28% of caddy in Transport.dialConnFor and 24%
+          # in the connect() syscall alone. Each redial is also a three-way
+          # handshake through tailscaled's userspace wireguard, about a quarter
+          # of the 15.8k packets/s it was pushing.
+          #
+          # Sized above the concurrency the flood actually reaches: a pool
+          # smaller than that degrades to a dial per request again.
+          keepalive_idle_conns 4000
+          keepalive_idle_conns_per_host 2000
+        }
+      }
     '';
   };
 
@@ -463,6 +494,10 @@ in
       }
 
       reverse_proxy prattle:3013 {
+        # Same breaker as botme's vhost, same reason.
+        fail_duration 10s
+        max_fails 3
+
         # cap keys its rate limit and blocklist on the *leftmost*
         # X-Forwarded-For value, which is whatever the client sent. Replacing
         # the header instead of appending to it leaves cap one value it can
@@ -470,6 +505,14 @@ in
         # source for it because dunkirk.sh is DNS-only, so caddy's peer is
         # the visitor rather than a CDN edge.
         header_up X-Forwarded-For {client_ip}
+
+        # Same pool as botme's, for the same reason: cap is the widget half of
+        # every solve, so it sees the flood at the same scale and churned
+        # connections the same way.
+        transport http {
+          keepalive_idle_conns 4000
+          keepalive_idle_conns_per_host 2000
+        }
       }
     '';
   };
