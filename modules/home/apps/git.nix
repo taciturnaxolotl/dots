@@ -63,7 +63,10 @@ in
         pager = "less --mouse -RS";
       };
     };
-    programs.gh.enable = true;
+    programs.gh = {
+      enable = true;
+      extensions = [ pkgs.gh-stack ];
+    };
     home.packages = [ git-prunes ];
     programs.lazygit = {
       enable = true;
