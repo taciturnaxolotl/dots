@@ -42,7 +42,13 @@ let
     # --no-access-log: uvicorn's access log is one journald line per request,
     # which at solver load is a few hundred writes a second of nothing anyone
     # reads. Caddy already logs the same requests in front of it.
-    startCommand = "${cfg.dataDir}/app/.venv/bin/uvicorn main:app --host ${cfg.listenAddress} --port ${toString cfg.port} --no-access-log";
+    #
+    # --timeout-keep-alive: uvicorn hangs up on an idle connection after 5s by
+    # default, which is shorter than the 2m caddy holds one in its pool. Caddy
+    # then hands a request to a socket the server has already closed and has to
+    # dial again. 180s is longer than caddy's side, so the pool decides when a
+    # connection dies and the dial happens once instead of twice.
+    startCommand = "${cfg.dataDir}/app/.venv/bin/uvicorn main:app --host ${cfg.listenAddress} --port ${toString cfg.port} --no-access-log --timeout-keep-alive 180";
 
     extraConfig =
       cfg:
