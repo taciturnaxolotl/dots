@@ -747,6 +747,30 @@
   services.sonarr.settings.auth.required = "DisabledForLocalAddresses";
   services.radarr.settings.auth.required = "DisabledForLocalAddresses";
 
+  # nixarr's settings-sync runs as a oneshot wanted by prowlarr.service, so it
+  # fires while prowlarr is still coming up from the same activation. On
+  # 2026-09-11 it caught prowlarr mid-migration, got "database is locked" out of
+  # sqlite, and exited non-zero. switch-to-configuration reports a failed unit,
+  # deploy-rs reads that as a failed activation, and the whole generation rolls
+  # back -- which is how a tag sync for an indexer took botme, cap, jellyfin and
+  # docker down with it.
+  #
+  # Retrying covers the lock, which clears in seconds. The second half matters
+  # more than the first: if every retry fails the unit ends up failed on its own
+  # after activation has moved on, so the machine keeps the generation. A
+  # convenience sync for indexer settings should not be able to roll back the
+  # host, and Restart= is what buys that, not just the retries.
+  systemd.services.prowlarr-sync-config = {
+    serviceConfig = {
+      Restart = "on-failure";
+      RestartSec = "15s";
+    };
+    unitConfig = {
+      StartLimitIntervalSec = "10m";
+      StartLimitBurst = 10;
+    };
+  };
+
   # Media/torrent directory structure (hardlinks require same filesystem)
   systemd.tmpfiles.rules = [
     # spindle microVM image (spindle resolves <name>/spec.json under imageDir)
