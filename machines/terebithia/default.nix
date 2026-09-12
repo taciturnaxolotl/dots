@@ -11,9 +11,25 @@ let
   # copy in docker: same work, off the two cores that also serve every vhost.
   flaresolverr = "http://prattle:8191";
 
-  # Same fields caddy logs by default, minus the two header maps.
+  # Same fields caddy logs by default, minus the two header maps, and sampled.
+  #
+  # A 30s CPU profile with the upstream dialling fixed put the logging path at
+  # ~16% of caddy: logRequest 16.3%, and under it zap's Check -> lazyWithCore
+  # initOnce -> Field.AddTo materialising every field before the filter above
+  # gets to delete most of them. That is the same 27-29% the earlier profile
+  # found, and the filter cannot avoid it because the fields are built first.
+  #
+  # Sampling is the only thing that skips the work rather than undoing it: log
+  # the first 100 in each second, then every 10th. At the 550 req/s peak that
+  # is ~145 lines a second instead of 550. What it costs is completeness --
+  # the log is read for source addresses, and a sample is a sample.
   leanAccessLog = host: ''
     output file /var/log/caddy/access-${host}.log
+    sampling {
+      interval 1s
+      first 100
+      thereafter 10
+    }
     format filter {
       wrap json
       fields {
@@ -462,6 +478,21 @@ in
 
   systemd.services.caddy.serviceConfig = {
     EnvironmentFile = config.age.secrets.cloudflare.path;
+
+    # Go collects when the heap doubles, which at the default GOGC=100 and a
+    # 426MB live heap means a cycle every 426MB of allocation. The profile put
+    # mallocgc at 18% cumulative, much of it the per-request logging fields and
+    # the read/write buffers for a few thousand open connections. Trading some
+    # of the 8GB this box is not using for a third of the collections is the
+    # cheapest CPU on offer here.
+    #
+    # GOMEMLIMIT is the backstop, not the target: it makes the collector get
+    # aggressive again before RSS can run away on a 12GB box. Caddy was at
+    # ~1GB RSS when this went in.
+    Environment = [
+      "GOGC=300"
+      "GOMEMLIMIT=3GiB"
+    ];
   };
 
   # botme runs on prattle now: 8 cores at load 0.9 against this box's 2 at 14.
