@@ -82,6 +82,7 @@ in
     doggo
     inetutils
     mosh
+    ethtool
     # nix_tools
     inputs.nixvim.packages.aarch64-linux.default
     nixd
@@ -327,6 +328,47 @@ in
     # "client" leaves IPv6 forwarding off and the console flags the node as
     # unable to relay. IPv4 was already on courtesy of docker, hiding the gap.
     useRoutingFeatures = "both";
+  };
+
+  # tailscale's wireguard runs in userspace, so every packet over the tunnel is
+  # a syscall and a copy rather than kernel crypto. UDP GRO forwarding lets the
+  # kernel coalesce segments before handing them over, which upstream documents
+  # as the tuning for nodes that forward -- this one is an exit node, and it also
+  # carries every botme request to prattle. tailscaled was sitting at 45% of one
+  # of the two cores while doing it.
+  #
+  # rx-gro-list goes off in the same breath: the two are mutually exclusive and
+  # leaving both on drops packets.
+  #
+  # The device is looked up rather than hardcoded so a NIC rename cannot silently
+  # stop tuning anything, and a driver that will not take the setting logs and
+  # exits 0. A failed unit here would fail the activation and roll the whole
+  # generation back, which is how a prowlarr settings sync took the homelab down
+  # on 2026-09-11. Tuning is not worth that.
+  systemd.services.tailscale-udp-offload = {
+    description = "UDP GRO forwarding for the tailscale datapath";
+    after = [
+      "network-online.target"
+      "tailscaled.service"
+    ];
+    wants = [ "network-online.target" ];
+    wantedBy = [ "multi-user.target" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      dev=$(${pkgs.iproute2}/bin/ip -o route get 1.1.1.1 | ${pkgs.gnused}/bin/sed -n 's/.* dev \([^ ]*\).*/\1/p')
+      if [ -z "$dev" ]; then
+        echo "no default route; nothing to tune"
+        exit 0
+      fi
+      if ${pkgs.ethtool}/bin/ethtool -K "$dev" rx-udp-gro-forwarding on rx-gro-list off; then
+        echo "tuned $dev"
+      else
+        echo "$dev will not take rx-udp-gro-forwarding; leaving it alone"
+      fi
+    '';
   };
 
   services.caddy = {
