@@ -332,10 +332,15 @@ in
 
   # tailscale's wireguard runs in userspace, so every packet over the tunnel is
   # a syscall and a copy rather than kernel crypto. UDP GRO forwarding lets the
-  # kernel coalesce segments before handing them over, which upstream documents
-  # as the tuning for nodes that forward -- this one is an exit node, and it also
-  # carries every botme request to prattle. tailscaled was sitting at 45% of one
-  # of the two cores while doing it.
+  # kernel coalesce segments first, which upstream documents as the tuning for
+  # nodes that forward. This one is an exit node, so it is worth having.
+  #
+  # It does NOT help the botme proxy path, which is the reason it went in.
+  # Measured either side of the change at a matched packet rate: 29.7 us of cpu
+  # per packet before, 30-32 us after, across three runs. GRO coalesces packets
+  # arriving on the NIC to be *forwarded* through the tunnel; caddy's upstream
+  # connections are originated locally and never cross that path. Keep it for
+  # the exit node, do not expect it to buy the reverse proxy anything.
   #
   # rx-gro-list goes off in the same breath: the two are mutually exclusive and
   # leaving both on drops packets.
