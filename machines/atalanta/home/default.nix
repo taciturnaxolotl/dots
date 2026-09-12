@@ -83,6 +83,9 @@ in
         "app=\"^Alcove$\" manage=off"
         "app=\"^qemu-system\" manage=off"
         "app=\"^zoom.us$\" manage=off"
+        # The LVGL simulator is an SDL window; its binary is just "main",
+        # so pin the rule to the title too.
+        "app=\"^main$\" title=\"^LVGL Simulator$\" manage=off"
         "app=\"^Finder$\" subrole=\"AXDialog\" manage=off"
         "app=\"^Finder$\" title=\"^Copy$\" manage=off"
         "app=\"^Finder$\" title=\"^Trash$\" manage=off"
