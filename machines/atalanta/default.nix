@@ -101,6 +101,16 @@
     harddisk = 10;
   };
 
+  # CedarPrint is found over wide-area DNS-SD, which starts by asking for
+  # b._dns-sd._udp.cedarville.edu. Tailscale never forwards that: forwarder.go
+  # NXDOMAINs anything matching {b,db,r,dr,lb}._dns-sd._udp. to save phone
+  # battery. Scoping just those labels to campus DNS restores discovery and
+  # leaves the rest of cedarville.edu on the split route to prattle.
+  environment.etc."resolver/_dns-sd._udp.cedarville.edu".text = ''
+    nameserver 163.11.75.113
+    nameserver 163.11.75.119
+  '';
+
   # GP Relay menu bar applet: launch at login, keep alive.
   launchd.user.agents.gp-relay = {
     serviceConfig = {
