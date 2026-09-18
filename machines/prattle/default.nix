@@ -578,10 +578,11 @@
       # Tailscale; the port is restricted to tailscale0 in the firewall below,
       # so it isn't exposed on the LAN.
       bindAddr = "0.0.0.0";
-      # 8 logical CPUs / 31 GiB here, shared with the media stack. At 4 GiB +
-      # 2 vCPU per microVM, 4 jobs is ~16 GiB / 8 vCPU worst case, leaving RAM
-      # (+ swap) and CPU headroom for jellyfin/nixarr/minio.
-      maxJobCount = 4;
+      # 8 logical CPUs / 31 GiB here, shared with the media stack. Budgets two
+      # ways per job: 4 GiB + 2 vCPU per microVM, 6 GiB per nixery workflow. At
+      # 2 jobs that is 20 GiB worst case, which fits alongside the arrs. It was
+      # 4, which could ask for 40 and livelocked the box.
+      maxJobCount = 2;
     };
   };
 
@@ -647,8 +648,12 @@
     accounts = [ "botme" ];
   };
 
-  # microVM host prerequisite: the vsock transport for the spindle's in-guest agent.
-  boot.kernelModules = [ "vhost_vsock" ];
+  # microVM host prerequisite: the vsock transport for the spindle's in-guest
+  # agent. iTCO_wdt is the chipset watchdog, see hang recovery below.
+  boot.kernelModules = [
+    "vhost_vsock"
+    "iTCO_wdt"
+  ];
 
   # ── gVisor (runsc): sandbox runtime for kloe's shell tool ─────────────
   # kloe runs its per-conversation sandbox in a docker container here over
@@ -1116,6 +1121,37 @@
   zramSwap = {
     enable = true;
     memoryPercent = 50;
+  };
+
+  # ── OOM and hang recovery ────────────────────────────────────────────
+  # The box livelocked under memory pressure and stayed down until someone
+  # hit the power button. Three layers, each catching what the last misses.
+
+  # Kills the worst cgroup on sustained pressure. Enabled by default, but
+  # the slices that opt into it are not.
+  systemd.oomd = {
+    enableRootSlice = true;
+    enableSystemSlice = true;
+    enableUserSlices = true;
+  };
+
+  # Reboot on a stuck kernel rather than halt forever, which is the default.
+  # page-cluster 0 drops swap readahead, wasted work against zram.
+  boot.kernel.sysctl = {
+    "kernel.panic" = 10;
+    "kernel.panic_on_oops" = 1;
+    "kernel.hung_task_panic" = 1;
+    "kernel.softlockup_panic" = 1;
+    "vm.page-cluster" = 0;
+  };
+
+  # Chipset watchdog, for a kernel too wedged to panic. The firmware ships it
+  # fused shut; unlocked out of band, once, and it persists in NVRAM:
+  # `cctk --WatchdogTimer=Enabled` (Dell Command | Configure).
+  systemd.watchdog = {
+    device = "/dev/watchdog0";
+    runtimeTime = "60s";
+    rebootTime = "10min";
   };
 
   services.journald.extraConfig = ''
