@@ -49,7 +49,10 @@
 
   systemd.services.tailscale-rescue-login = {
     description = "Bring the rescue stick onto the tailnet and print a login QR";
-    after = [ "tailscaled.service" "network-online.target" ];
+    after = [
+      "tailscaled.service"
+      "network-online.target"
+    ];
     wants = [ "network-online.target" ];
     requires = [ "tailscaled.service" ];
     wantedBy = [ "multi-user.target" ];

@@ -436,7 +436,8 @@ in
     # still-running receiver. tmpfiles keeps it stable across both lifecycles.
     systemd.tmpfiles.rules = [
       "d /run/gp-gateway 0700 root root -"
-    ] ++ lib.optional cfg.dns.enable "d ${dnsServersDir} 0755 root root -";
+    ]
+    ++ lib.optional cfg.dns.enable "d ${dnsServersDir} 0755 root root -";
 
     systemd.services.gp-tunnel = {
       description = "GlobalProtect tunnel (openconnect)";

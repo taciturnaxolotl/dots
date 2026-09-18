@@ -59,10 +59,12 @@ let
         (nopasswd "${journalctl} -u ${u}")
         (nopasswd "${journalctl} -u ${u} *")
       ])
-      (lib.unique [
-        unit
-        (lib.removeSuffix ".service" unit)
-      ]);
+      (
+        lib.unique [
+          unit
+          (lib.removeSuffix ".service" unit)
+        ]
+      );
 
   rulesFor =
     user: admin:

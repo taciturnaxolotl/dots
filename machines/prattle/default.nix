@@ -619,8 +619,7 @@
     # The widget needs the public name; siteverify does not, and cap runs here
     # too, so this is loopback. botme calls it once per solve: measured 2.3ms
     # here against 51ms when cap was a tailnet hop away and 1-6s through caddy.
-    environment.CAP_VERIFY_ENDPOINT =
-      "http://127.0.0.1:${toString config.atelier.services.cap.port}/cbe403f57a";
+    environment.CAP_VERIFY_ENDPOINT = "http://127.0.0.1:${toString config.atelier.services.cap.port}/cbe403f57a";
   };
 
   # cap follows botme: they talk once per solve, so they belong on one box.
