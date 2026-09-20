@@ -22,6 +22,19 @@
     tailscaleHost = "beef";
   };
 
+  # macOS updates may download, but beef must not install one and reboot on its
+  # own: it runs long jobs unattended, and a restart part way through loses
+  # hours of work with no indication of why beyond a gap in a log.
+  system.defaults.SoftwareUpdate.AutomaticallyInstallMacOSUpdates = false;
+
+  # Sustained compute on an M3 Max: high power mode keeps the performance cores
+  # from being wound down under long load. nix-darwin has no option for it, and
+  # the setting is per-power-source, so it is applied directly.
+  system.activationScripts.postActivation.text = ''
+    echo "beef: high power mode on AC" >&2
+    /usr/bin/pmset -c powermode 2 || true
+  '';
+
   # beef is headless and expected to be reachable at all times, so it should
   # never sleep and should bring itself back without a keyboard. These were set
   # by hand on the machine and so would drift on any restore or major update;
