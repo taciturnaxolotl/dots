@@ -18,8 +18,22 @@
 
   atelier.machine = {
     enable = true;
-    type = "client";
+    type = "server";
     tailscaleHost = "beef";
+  };
+
+  # beef is headless and expected to be reachable at all times, so it should
+  # never sleep and should bring itself back without a keyboard. These were set
+  # by hand on the machine and so would drift on any restore or major update;
+  # declaring them keeps them.
+  power = {
+    restartAfterPowerFailure = true;
+    restartAfterFreeze = true;
+    sleep = {
+      computer = "never";
+      display = "never";
+      harddisk = "never";
+    };
   };
 
   environment.systemPackages = [
