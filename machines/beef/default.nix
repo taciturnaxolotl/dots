@@ -22,9 +22,6 @@
     tailscaleHost = "beef";
   };
 
-  # macOS updates may download, but beef must not install one and reboot on its
-  # own: it runs long jobs unattended, and a restart part way through loses
-  # hours of work with no indication of why beyond a gap in a log.
   system.defaults.SoftwareUpdate.AutomaticallyInstallMacOSUpdates = false;
 
   # Sustained compute on an M3 Max: high power mode keeps the performance cores
@@ -35,12 +32,7 @@
     /usr/bin/pmset -c powermode 2 || true
   '';
 
-  # The lid is shut, and closing it sleeps the machine no matter what the sleep
-  # timers say: the log records "Entering Sleep state due to 'Clamshell Sleep'"
-  # while every timer above reads never. Those timers govern *idle* sleep and
-  # say nothing about the lid. The documented way to override it is an
-  # assertion that the system must stay awake, which caffeinate holds for as
-  # long as it runs, and which is honoured on AC power.
+  # caffeinate so the lid can be shut
   launchd.daemons.stay-awake = {
     serviceConfig = {
       Label = "org.nixos.stay-awake";
@@ -53,12 +45,7 @@
     };
   };
 
-  # beef is headless and expected to be reachable at all times, so it should
-  # never sleep and should bring itself back without a keyboard. These were set
-  # by hand on the machine and so would drift on any restore or major update;
-  # declaring them keeps them.
   power = {
-    restartAfterPowerFailure = true;
     restartAfterFreeze = true;
     sleep = {
       computer = "never";
