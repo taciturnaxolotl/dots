@@ -35,6 +35,24 @@
     /usr/bin/pmset -c powermode 2 || true
   '';
 
+  # The lid is shut, and closing it sleeps the machine no matter what the sleep
+  # timers say: the log records "Entering Sleep state due to 'Clamshell Sleep'"
+  # while every timer above reads never. Those timers govern *idle* sleep and
+  # say nothing about the lid. The documented way to override it is an
+  # assertion that the system must stay awake, which caffeinate holds for as
+  # long as it runs, and which is honoured on AC power.
+  launchd.daemons.stay-awake = {
+    serviceConfig = {
+      Label = "org.nixos.stay-awake";
+      ProgramArguments = [
+        "/usr/bin/caffeinate"
+        "-s"
+      ];
+      RunAtLoad = true;
+      KeepAlive = true;
+    };
+  };
+
   # beef is headless and expected to be reachable at all times, so it should
   # never sleep and should bring itself back without a keyboard. These were set
   # by hand on the machine and so would drift on any restore or major update;
