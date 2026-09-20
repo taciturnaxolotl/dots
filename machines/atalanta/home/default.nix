@@ -138,6 +138,7 @@ in
         hosts = [
           "t.*"
           "p.*"
+          "b.*"
           "e.*"
         ];
       };
@@ -150,6 +151,10 @@ in
 
         "p.*" = {
           hostname = "100.105.247.54"; # prattle
+        };
+
+        "b.*" = {
+          hostname = "100.64.146.69"; # beef
         };
 
         # Regular hosts
@@ -174,6 +179,11 @@ in
 
         prattle = {
           hostname = "100.105.247.54";
+          zmx = true;
+        };
+
+        beef = {
+          hostname = "100.64.146.69";
           zmx = true;
         };
 
