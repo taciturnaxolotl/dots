@@ -192,6 +192,21 @@ in
         default = true;
       };
 
+      upstream = lib.mkOption {
+        type = lib.types.str;
+        default = "localhost:${toString cfg.port}";
+        defaultText = lib.literalExpression ''"localhost:''${toString cfg.port}"'';
+        description = ''
+          Address Caddy proxies to. Override when the proxy and the service live
+          on different machines, so the vhost still comes from here rather than
+          being hand-written next to whichever caddy fronts it.
+        '';
+      };
+
+      hsts = lib.mkEnableOption "Strict-Transport-Security header" // {
+        default = true;
+      };
+
       extraConfig = lib.mkOption {
         type = lib.types.lines;
         default = "";
@@ -373,29 +388,37 @@ in
           };
         };
 
-        # Caddy reverse proxy
-        services.caddy.virtualHosts.${cfg.domain} = lib.mkIf cfg.caddy.enable {
-          extraConfig = ''
-            tls {
-              dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-            }
-
-            ${lib.optionalString cfg.caddy.rateLimit.enable ''
-              rate_limit {
-                zone ${name}_limit {
-                  key {http.request.remote_ip}
-                  events ${toString cfg.caddy.rateLimit.events}
-                  window ${cfg.caddy.rateLimit.window}
-                }
-              }
-            ''}
-
-            ${cfg.caddy.extraConfig}
-
-            reverse_proxy localhost:${toString cfg.port}
-          '';
-        };
       }
+
+      # Guarding the whole block rather than the attribute value keeps
+      # cfg.domain unevaluated when there is no vhost to name.
+      (lib.mkIf (cfg.enable && cfg.caddy.enable) {
+        services.caddy.virtualHosts.${cfg.domain}.extraConfig = ''
+          tls {
+            dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+          }
+
+          ${lib.optionalString cfg.caddy.hsts ''
+            header {
+              Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+            }
+          ''}
+
+          ${lib.optionalString cfg.caddy.rateLimit.enable ''
+            rate_limit {
+              zone ${name}_limit {
+                key {http.request.remote_ip}
+                events ${toString cfg.caddy.rateLimit.events}
+                window ${cfg.caddy.rateLimit.window}
+              }
+            }
+          ''}
+
+          ${cfg.caddy.extraConfig}
+
+          reverse_proxy ${cfg.caddy.upstream}
+        '';
+      })
 
       # Extra config from the service module
       (extraConfig cfg)
