@@ -24,9 +24,7 @@ let
   '';
 in
 {
-  options.atelier.shell.git.enable = lib.mkEnableOption {
-    description = "Enable global Git configuration";
-  };
+  options.atelier.shell.git.enable = lib.mkEnableOption "global Git configuration";
   config = lib.mkIf config.atelier.shell.git.enable {
     programs.git = {
       enable = true;

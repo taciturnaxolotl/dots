@@ -5,9 +5,7 @@
   ...
 }:
 {
-  options.atelier.shell.jj.enable = lib.mkEnableOption {
-    description = "Enable jujutsu (jj) configuration";
-  };
+  options.atelier.shell.jj.enable = lib.mkEnableOption "jujutsu (jj) configuration";
 
   config = lib.mkIf config.atelier.shell.jj.enable {
     home.packages = [ pkgs.lazyjj ];
