@@ -58,11 +58,12 @@ let
         sqlite = "${cfg.dataDir}/data/cedarlogic.db";
       };
 
-      # Caddy needs to read static files from the dist directory
-      users.users.caddy.extraGroups = [
-        "cedarlogic"
-        "services"
-      ];
+      # Caddy serves dist/ from here, so keep these dirs in cedarlogic's own
+      # group. In the shared `services` group the public proxy would also get
+      # read on every other service's database.
+      atelier.services.cedarlogic.dataDirGroup = "cedarlogic";
+
+      users.users.caddy.extraGroups = [ "cedarlogic" ];
 
       # Longer timeout for Vite build
       systemd.services.cedarlogic.serviceConfig = {

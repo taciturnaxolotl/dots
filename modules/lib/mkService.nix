@@ -78,9 +78,20 @@ in
     };
 
     dataDir = lib.mkOption {
-      type = lib.types.path;
+      type = lib.types.str;
       default = "/var/lib/${name}";
       description = "Directory to store ${name} data";
+    };
+
+    dataDirGroup = lib.mkOption {
+      type = lib.types.str;
+      default = "services";
+      description = ''
+        Group owning the data directories. The shared `services` group lets
+        every service user (and caddy, if it joins) read every other service's
+        data, so set this to the service's own group when something outside the
+        service needs access to its files.
+      '';
     };
 
     secretsFile = lib.mkOption {
@@ -261,11 +272,12 @@ in
 
         users.groups.${name} = { };
 
-        # Ensure data directories exist with correct permissions on every activation
+        # 0770 to match the g+rwX the unit's ExecStartPre applies, so the mode
+        # doesn't flip between activation and service start.
         systemd.tmpfiles.rules = [
-          "d ${cfg.dataDir} 0755 ${name} services -"
-          "d ${cfg.dataDir}/app 0750 ${name} services -"
-          "d ${cfg.dataDir}/data 0750 ${name} services -"
+          "d ${cfg.dataDir} 0755 ${name} ${cfg.dataDirGroup} -"
+          "d ${cfg.dataDir}/app 0770 ${name} ${cfg.dataDirGroup} -"
+          "d ${cfg.dataDir}/data 0770 ${name} ${cfg.dataDirGroup} -"
         ];
 
         # Allow service user to manage their own service (for CI/CD deploys)
@@ -347,13 +359,13 @@ in
             ProtectHome = true;
             PrivateTmp = true;
 
-            # ExecStartPre with ! runs as root before namespace setup,
-            # guaranteeing dirs exist before WorkingDirectory is checked
+            # `!` only lifts User=/Group=; the ReadWritePaths sandbox still
+            # applies, and this works because tmpfiles made dataDir first.
             ExecStartPre = [
               "!${pkgs.writeShellScript "${name}-setup" ''
                 mkdir -p ${cfg.dataDir}/app ${cfg.dataDir}/data
-                chown ${name}:services ${cfg.dataDir}
-                chown ${name}:services ${cfg.dataDir}/app ${cfg.dataDir}/data
+                chown ${name}:${cfg.dataDirGroup} ${cfg.dataDir}
+                chown ${name}:${cfg.dataDirGroup} ${cfg.dataDir}/app ${cfg.dataDir}/data
                 chmod 0755 ${cfg.dataDir}
                 chmod g+rwX ${cfg.dataDir}/app ${cfg.dataDir}/data
               ''}"
