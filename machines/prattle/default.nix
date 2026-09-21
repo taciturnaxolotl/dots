@@ -583,16 +583,12 @@
     };
   };
 
-  # spindle's HTTP port, reachable only over Tailscale (terebithia fronts the
-  # public spindle.dunkirk.sh and reverse-proxies here). Not in the global
-  # allowedTCPPorts, so the default-deny firewall blocks it on the LAN.
-  networking.firewall.interfaces.tailscale0.allowedTCPPorts = [
-    6555
-    8091 # atticd (Nix binary cache), tailnet-only
-    3012 # botme, fronted by terebithia's caddy
-    3013 # cap, likewise
-    2222 # sshd for accounts without a tailnet identity (see services.openssh)
-  ];
+  # No per-interface allowlist for tailscale0: tailscaled inserts `-A INPUT -j
+  # ts-input` ahead of nixos-fw, and ts-input ends in `-i tailscale0 -j ACCEPT`,
+  # so every port is already reachable from the tailnet whatever this says. The
+  # list that used to live here named 6555, 8091, 3012, 3013 and 2222 and
+  # enforced none of them. Tailnet access is governed by Tailscale ACLs; the
+  # global allowedTCPPorts above is what actually gates the LAN.
 
   # Moved here from terebithia, which is 2 cores at load 14 while this box is 8
   # at under 1. botme is CPU-bound on a single uvicorn worker, so the cores are
