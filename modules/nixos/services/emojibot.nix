@@ -118,26 +118,19 @@ in
           set -e
           export GIT_TERMINAL_PROMPT=0
 
-          # Clone repository if not present
+          # Scaffolding only, matching mkService: a start must not depend on
+          # reaching GitHub, and `systemctl restart` must not deploy whatever
+          # happens to be on main. Deploys come from the repo's own workflow.
           if [ ! -d /var/lib/emojibot-${name}/app/.git ]; then
-            echo "Cloning ${instanceCfg.repository}..."
-            ${pkgs.git}/bin/git clone -b main ${instanceCfg.repository} /var/lib/emojibot-${name}/app || {
-              echo "Failed to clone repository. If this is a private repo, ensure SSH keys are configured."
-              echo "For public repos, check network connectivity."
-              exit 1
-            }
+            echo "First start: cloning ${instanceCfg.repository}..."
+            ${pkgs.git}/bin/git clone -b main ${instanceCfg.repository} /var/lib/emojibot-${name}/app
           fi
 
-          cd /var/lib/emojibot-${name}/app
-          ${pkgs.git}/bin/git fetch origin
-          ${pkgs.git}/bin/git reset --hard origin/main
-
-          if [ -f package.json ]; then
-            echo "Installing dependencies..."
-            ${pkgs.unstable.bun}/bin/bun install || {
-              echo "Failed to install dependencies, trying again..."
-              ${pkgs.unstable.bun}/bin/bun install
-            }
+          if [ -f /var/lib/emojibot-${name}/app/package.json ] \
+            && [ ! -d /var/lib/emojibot-${name}/app/node_modules ]; then
+            cd /var/lib/emojibot-${name}/app
+            echo "First start: installing dependencies..."
+            ${pkgs.unstable.bun}/bin/bun install
           fi
         '';
 
