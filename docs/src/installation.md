@@ -18,25 +18,6 @@ cd dots
 darwin-rebuild switch --flake .#atalanta
 ```
 
-## Home Manager
-
-Install Nix, copy SSH keys, then:
-
-```bash
-curl -fsSL https://install.determinate.systems/nix | sh -s -- install --determinate
-git clone git@github.com:taciturnaxolotl/dots.git
-cd dots
-nix-shell -p home-manager
-home-manager switch --flake .#nest
-```
-
-Set up [atuin](https://atuin.sh/) for shell history sync:
-
-```bash
-atuin login
-atuin import
-```
-
 ## NixOS
 
 ### Using nixos-anywhere (recommended for remote)

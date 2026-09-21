@@ -267,24 +267,6 @@
         };
       };
 
-      # Standalone home-manager configurations
-      # Available through 'home-manager --flake .#hostname'
-      homeConfigurations = {
-        "nest" = home-manager.lib.homeManagerConfiguration {
-          pkgs = nixpkgs.legacyPackages.x86_64-linux;
-          extraSpecialArgs = {
-            inherit inputs outputs;
-            nixpkgs-unstable = nixpkgs-unstable;
-            system = "x86_64-linux";
-          };
-          modules = [
-            ./machines/nest
-            unstable-overlays
-          ];
-        };
-
-      };
-
       # Darwin configurations
       # Available through 'darwin-rebuild switch --flake .#hostname'
       darwinConfigurations = {
@@ -314,7 +296,6 @@
         configSets = [
           self.nixosConfigurations
           self.darwinConfigurations
-          self.homeConfigurations
         ];
         extraMachines = {
           everseen = {

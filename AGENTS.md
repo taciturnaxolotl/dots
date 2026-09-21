@@ -9,21 +9,19 @@ Kieran's NixOS/nix-darwin/home-manager dotfiles and homelab infrastructure.
 | `atalanta` | nix-darwin | aarch64-darwin | Primary macOS workstation (Apple Silicon) |
 | `terebithia` | NixOS | aarch64-linux | Main homelab server (ARM VPS, runs most services) |
 | `prattle` | NixOS | x86_64-linux | Media + CI server (nixarr, garage, tangled spindle; root on bcachefs SSD) |
-| `nest` | home-manager only | x86_64-linux | Standalone HM config |
+| `beef` | nix-darwin | aarch64-darwin | Build/compute server (M3 Max, Determinate Nix) |
 | `iso-*` | NixOS ISO | x86_64 + aarch64 | Bootable install media |
 
 ## Apply Commands
 
 ```bash
-# Darwin (atalanta — run locally on that machine)
+# Darwin (atalanta, beef — run locally on that machine)
 darwin-rebuild switch --flake .#atalanta
+darwin-rebuild switch --flake .#beef
 
 # NixOS (run locally on target or via deploy-rs)
 nixos-rebuild switch --flake .#terebithia
 nixos-rebuild switch --flake .#prattle
-
-# Standalone home-manager (run locally)
-home-manager switch --flake .#nest
 
 # Remote deploy via deploy-rs (from dev shell, uses Tailscale)
 nix develop                                   # enters shell with deploy-rs
