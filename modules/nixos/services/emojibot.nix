@@ -72,6 +72,14 @@ in
       default = { };
       description = "Emojibot instances to run";
     };
+
+    # Not a mkService module, so it has no `port` of its own; publish the
+    # instance ports under the same name the conflict check reads.
+    _ports = mkOption {
+      type = types.listOf types.port;
+      default = mapAttrsToList (_: i: i.port) enabledInstances;
+      internal = true;
+    };
   };
 
   config.users.users = mapInstances (

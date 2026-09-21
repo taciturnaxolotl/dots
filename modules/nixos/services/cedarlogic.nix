@@ -43,6 +43,13 @@ let
     };
 
     extraConfig = cfg: {
+      # Three listeners, not one, so the conflict check can see them all.
+      atelier.services.cedarlogic._ports = [
+        cfg.port
+        cfg.wsPort
+        cfg.cursorPort
+      ];
+
       atelier.services.cedarlogic.environment = {
         WS_PORT = toString cfg.wsPort;
         CURSOR_PORT = toString cfg.cursorPort;
