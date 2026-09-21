@@ -13,6 +13,18 @@ let
 
   # Sampled hard because zap builds every field before this filter deletes it;
   # logging was 48% of caddy's CPU against 10.5% for the proxy itself.
+  # tls + HSTS + one upstream, which is the whole of several vhosts here. Raw
+  # extraConfig stays for any vhost with actual logic in it.
+  proxyTo = upstream: ''
+    tls {
+      dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+    header {
+      Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+    reverse_proxy ${upstream}
+  '';
+
   leanAccessLog = host: ''
     output file /var/log/caddy/access-${host}.log
     sampling {
@@ -875,15 +887,8 @@ in
   };
 
   # DERP rides an HTTP Upgrade on /derp, which reverse_proxy passes through.
-  services.caddy.virtualHosts."derp.dunkirk.sh" = {
-    extraConfig = ''
-      tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-      }
-
-      reverse_proxy localhost:${toString config.services.tailscale.derper.port}
-    '';
-  };
+  services.caddy.virtualHosts."derp.dunkirk.sh".extraConfig =
+    proxyTo "localhost:${toString config.services.tailscale.derper.port}";
 
   services.caddy.virtualHosts."terebithia.dunkirk.sh" = {
     extraConfig = ''
@@ -911,17 +916,7 @@ in
   };
 
   # ── Prattle reverse proxies (over Tailscale) ─────────────────────────
-  services.caddy.virtualHosts."jellyfin.dunkirk.sh" = {
-    extraConfig = ''
-      tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-      }
-      header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-      }
-      reverse_proxy prattle:8096
-    '';
-  };
+  services.caddy.virtualHosts."jellyfin.dunkirk.sh".extraConfig = proxyTo "prattle:8096";
 
   # Spindle (Tangled CI) runs on prattle for KVM microVMs; terebithia is the
   # public front. Proxy over Tailscale to prattle's spindle HTTP port.
@@ -940,17 +935,7 @@ in
     '';
   };
 
-  services.caddy.virtualHosts."s3.dunkirk.sh" = {
-    extraConfig = ''
-      tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-      }
-      header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-      }
-      reverse_proxy prattle:3900
-    '';
-  };
+  services.caddy.virtualHosts."s3.dunkirk.sh".extraConfig = proxyTo "prattle:3900";
 
   # ── Beef reverse proxy (over Tailscale) ──────────────────────────────
   # integrand serves its own landing page, so there is only one thing to proxy.
