@@ -51,7 +51,6 @@
 let
   cfg = config.atelier.services.${name};
 
-  # Generate start command based on runtime
   defaultStartCommand =
     {
       bun = "${pkgs.unstable.bun}/bin/bun run ${entryPoint}";
@@ -249,9 +248,7 @@ in
 
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
-      # Base service configuration
       {
-        # Create user and group
         users.groups.services = { };
 
         users.users.${name} = {
@@ -345,7 +342,6 @@ in
             RestartSec = "10s";
             TimeoutStartSec = "60s";
 
-            # Security hardening
             NoNewPrivileges = true;
             ProtectSystem = "strict";
             ReadWritePaths = [ cfg.dataDir ];

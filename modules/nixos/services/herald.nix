@@ -145,7 +145,6 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    # Create user and group
     users.groups.services = { };
 
     users.users.herald = {
@@ -159,7 +158,6 @@ in
 
     users.groups.herald = { };
 
-    # Systemd service
     systemd.services.herald = {
       description = "Herald RSS-to-Email service";
       wantedBy = [ "multi-user.target" ];
@@ -190,15 +188,12 @@ in
       '';
     };
 
-    # Ensure working directory exists
     systemd.tmpfiles.rules = [
       "d ${cfg.dataDir} 0755 herald services -"
     ];
 
-    # Open firewall ports
     networking.firewall.allowedTCPPorts = [ cfg.sshPort ];
 
-    # Caddy reverse proxy for HTTP interface
     services.caddy.virtualHosts.${cfg.domain} = {
       extraConfig = ''
         tls {
@@ -214,7 +209,6 @@ in
       '';
     };
 
-    # Backup configuration
     atelier.backup.services.herald = {
       paths = [ cfg.dataDir ];
       exclude = [ "*.log" ];

@@ -14,7 +14,6 @@ mkService {
   entryPoint = "src/index.ts";
 
   extraConfig = cfg: {
-    # Add ORIGIN, RP_ID, and DATABASE_URL environment variables
     atelier.services.indiko.environment = {
       ORIGIN = "https://${cfg.domain}";
       RP_ID = cfg.domain;
@@ -27,7 +26,6 @@ mkService {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       }
 
-      # Rate limiting for auth endpoints
       handle /auth/* {
         rate_limit {
           zone auth_limit {
@@ -64,7 +62,6 @@ mkService {
       }
     '';
 
-    # Disable default caddy config since we're overriding it
     atelier.services.indiko.caddy.enable = false;
 
     # Data declarations for automatic backup (SQLite for sessions/tokens)

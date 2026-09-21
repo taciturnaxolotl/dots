@@ -19,13 +19,11 @@ let
     entryPoint = "src/index.ts";
 
     extraConfig = cfg: {
-      # Add PUBLIC_URL and STATS_DB_PATH environment variables
       atelier.services.l4.environment = {
         PUBLIC_URL = "https://${cfg.domain}";
         STATS_DB_PATH = "${cfg.dataDir}/data/stats.db";
       };
 
-      # Data declarations for backup (SQLite stats database)
       atelier.services.l4.data = {
         sqlite = "${cfg.dataDir}/data/stats.db";
       };

@@ -1,9 +1,4 @@
 # Canvas MCP - Model Context Protocol server for Canvas LMS
-#
-# Uses the mkService base to provide standardized:
-# - Systemd service with git deployment
-# - Caddy reverse proxy
-# - Automatic SQLite backup with WAL checkpoint
 
 let
   mkService = import ../../lib/mkService.nix;

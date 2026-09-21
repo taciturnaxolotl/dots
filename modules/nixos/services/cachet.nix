@@ -1,9 +1,4 @@
 # Cachet - Slack emoji/profile cache service
-#
-# Uses the mkService base to provide standardized:
-# - Systemd service with git deployment
-# - Caddy reverse proxy
-# - Automatic SQLite backup with WAL checkpoint
 
 let
   mkService = import ../../lib/mkService.nix;
