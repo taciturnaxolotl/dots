@@ -89,6 +89,11 @@ in
         "app=\"^Finder$\" subrole=\"AXDialog\" manage=off"
         "app=\"^Finder$\" title=\"^Copy$\" manage=off"
         "app=\"^Finder$\" title=\"^Trash$\" manage=off"
+        # Mounting a DMG or a drive pops open a Finder window that is transient
+        # by nature; tiling it shoves the real layout around. Matches on the
+        # posix path, which Finder puts in the title bar thanks to
+        # _FXShowPosixPathInTitle in atalanta's system config.
+        "app=\"^Finder$\" title=\"^/Volumes/\" manage=off"
       ];
     };
     skhdConfig = builtins.readFile ../../../dots/skhdrc;

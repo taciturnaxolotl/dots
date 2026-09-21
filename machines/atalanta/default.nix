@@ -95,6 +95,11 @@
     chmod 440 /private/etc/sudoers.d/yabai
   '';
 
+  # Finder window titles carry the full posix path. The yabai rule that keeps
+  # mounted volumes (DMGs, USB drives) out of the tiling tree matches on
+  # "^/Volumes/", so this has to stay on for that rule to fire.
+  system.defaults.finder._FXShowPosixPathInTitle = true;
+
   power.sleep = {
     computer = 1;
     display = 1;
