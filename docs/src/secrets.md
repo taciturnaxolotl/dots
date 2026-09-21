@@ -29,7 +29,7 @@ SECRET_TOKEN=yyyyy
 2. Create and encrypt the secret:
 
 ```bash
-agenix -e secrets/service-name.age
+cd secrets && agenix -e service-name.age
 ```
 
 3. Declare in machine config:

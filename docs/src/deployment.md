@@ -13,16 +13,16 @@ deploy .#terebithia
 deploy .#prattle
 
 # Manual one-off
-nix run 'github:serokell/deploy-rs' -- --remote-build --ssh-user kierank .#terebithia
+nix develop .#default --command deploy --ssh-user kierank .#terebithia
 ```
 
-Builds happen on the target machine (`--remote-build`), so CI only needs Nix and network access.
+Builds happen on an arch-matched CI runner; only the closure diff is copied to the target.
 
 ## Application Code
 
 Each service repo has a minimal workflow calling the reusable `.github/workflows/deploy-service.yml`. On push to `main`:
 
-1. Connects to Tailscale (`tag:deploy`)
+1. Connects to Tailscale (`tag:ci`)
 2. SSHes as the **service user** (e.g., `cachet@terebithia`) via Tailscale SSH
 3. Snapshots the SQLite DB (if `db_path` is provided)
 4. `git pull` + install (`bun install --frozen-lockfile`, or whatever `install_command` says) + `sudo systemctl restart`

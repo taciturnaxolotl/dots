@@ -57,8 +57,11 @@ modules/
     system/            — NixOS system modules (authentication, machine, wifi)
     services/          — service modules, mostly using mkService factory
     apps/              — NixOS-level app configs (tuigreet)
+  darwin/
+    defaults.nix       — macOS defaults, the Lix pin, Darwin-only overlays
+    nix-cache.nix      — prattle attic substituter (server Macs only)
   home/
-    system/            — home-manager system (shell, nixpkgs)
+    system/            — home-manager system (shell)
     aesthetics/        — theming (Catppuccin), wallpapers
     apps/              — home-manager app configs (helix, git, ghostty, etc.)
     wm/                — window manager configs (yabai/skhd, hyprland)
@@ -117,7 +120,7 @@ Services that don't fit the factory pattern (herald, bore/frps, tangled knot/spi
 
 1. Create `modules/nixos/services/<name>.nix` — either use `mkService` or write a custom module.
 2. Register the secret in `secrets/secrets.nix` (add the `.age` entry with `kierank` pubkey).
-3. Create the encrypted secret: `agenix -e secrets/<name>.age` (must be run from `secrets/`).
+3. Create the encrypted secret: `cd secrets && agenix -e <name>.age` (agenix resolves `secrets.nix` from the working directory).
 4. In the target machine's `default.nix`, add:
    - `age.secrets.<name> = { file = ../../secrets/<name>.age; owner = "<name>"; };`
    - `atelier.services.<name>.enable = true;` and remaining options
@@ -126,7 +129,7 @@ Services that don't fit the factory pattern (herald, bore/frps, tangled knot/spi
 
 ## Secrets Management
 
-- **Tool**: agenix (`agenix -e secrets/<name>.age`)
+- **Tool**: agenix, run from inside `secrets/`: `cd secrets && agenix -e <name>.age`
 - **Identity**: `/Users/kierank/.ssh/id_rsa` (Darwin) or `/home/kierank/.ssh/id_rsa` + `/etc/ssh/id_rsa` (NixOS)
 - **All secrets** encrypted to the single `kierank` RSA key in `secrets/secrets.nix`
 - Secret files are referenced as `config.age.secrets.<name>.path` — this is a runtime path, not a store path; only available after activation
@@ -146,7 +149,6 @@ The home config for atalanta (`machines/atalanta/home/default.nix`) uses `import
 A single `unstable-overlays` attrset is defined at the top of `flake.nix` and threaded into every configuration. It:
 - Adds `pkgs.unstable` (nixpkgs-unstable) — access unstable packages via `pkgs.unstable.<name>`
 - Adds `pkgs.zmx-binary`, `pkgs.bore-auth`, `pkgs.pear`, `pkgs.herald`, `pkgs.tangle-of-trust`
-- Overrides `bambu-studio` to a pinned version
 - Darwin-only: disables `direnv` test suite (sandbox SIGKILL issue on macOS with libarchive >= 3.8.5)
 
 The Darwin machine (`atalanta`) also defines its overlays inline in `default.nix` rather than relying solely on the flake-level ones, because nix-darwin handles `nixpkgs.overlays` differently.
@@ -161,13 +163,13 @@ formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
 
 ## CI/CD
 
-**Servers (terebithia, prattle)**: `.github/workflows/deploy.yaml` — triggers on push to `main`. Uses deploy-rs with `--remote-build` over Tailscale. Captures pre-deploy generations, deploys in parallel matrix, auto-rolls back on failure. Docs build/publish follows a successful deploy.
+**Servers (terebithia, prattle)**: `.github/workflows/deploy.yaml` — triggers on push to `main`, gated on which paths changed. Builds on an arch-matched GitHub runner (`ubuntu-24.04-arm` for terebithia), substituting our own packages from prattle's attic cache, then deploy-rs copies only the closure diff over Tailscale. Captures pre-deploy generations and rolls back the failing node in its own matrix leg. Docs build/publish follows a successful deploy.
 
 **Application services**: `.github/workflows/deploy-service.yml` — SSH over Tailscale to service user, git pull, `bun install`, `sudo systemctl restart <name>`. Service users can restart their own service (sudoers rule from mkService).
 
 **ISOs**: `.github/workflows/build-iso.yml`.
 
-The deploy workflow uses `tag:deploy` Tailscale tags. CI needs `TS_OAUTH_CLIENT_ID` and `TS_OAUTH_SECRET` repo secrets.
+`deploy.yaml` uses the `tag:deploy` Tailscale tag; the reusable service workflow uses `tag:ci`. CI needs `TS_OAUTH_CLIENT_ID`, `TS_OAUTH_SECRET`, `ATTIC_TOKEN`, `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` as repo secrets.
 
 ## Theming
 
@@ -175,16 +177,16 @@ Global theme is **Catppuccin Macchiato** with green accent. The `atelier.theming
 
 ## Nix Version Note
 
-Both servers use **Lix** (`nix.package = pkgs.lixPackageSets.stable.lix`). Atalanta also uses Lix. This is a Nix fork; behavior is largely identical but error messages and some internals differ.
+The Darwin machines run **Lix** (`nix.package = pkgs.lixPackageSets.latest.lix`, set in `modules/darwin/defaults.nix`) — except beef, which sets `nix.enable = false` and runs Determinate Nix. The NixOS servers run upstream CppNix, patched for NixOS/nix#12871 by the overlay in `flake.nix`.
 
 ## Gotchas
 
 - **`import-tree` is greedy**: every `.nix` file in `modules/nixos/` or `modules/home/` is evaluated on machines that use it. A syntax error anywhere in those trees breaks the whole configuration for those machines.
 - **Port conflicts are asserted**: `mkService` checks for port collisions across all enabled services and will fail `nixos-rebuild` with a clear message. Check existing ports before picking a new one.
-- **`ExecStartPre` with `!` prefix**: runs as root before namespace setup — intentional, to guarantee dirs exist before `WorkingDirectory` is validated by systemd. Don't remove the `!`.
+- **`ExecStartPre` with `!` prefix**: `!` only lifts `User=`/`Group=`/`SupplementaryGroups=`; the mount-namespace sandbox (`ProtectSystem`, `ReadWritePaths`) still applies. `+` is the prefix that bypasses namespacing — don't reach for it. The script works because `ReadWritePaths` covers `dataDir` and tmpfiles created it at activation.
 - **agenix secrets are runtime paths**: `config.age.secrets.<name>.path` resolves to something like `/run/agenix/<name>`. It's not a store path. Don't try to use it at build time.
 - **Caddy TLS**: all virtualHosts use Cloudflare DNS challenge (`dns cloudflare {env.CLOUDFLARE_API_TOKEN}`). The token comes from `age.secrets.cloudflare`, loaded via `systemd.services.caddy.serviceConfig.EnvironmentFile`. This is already wired in terebithia — new services just need their virtualHost configured.
-- **deploy-rs `--remote-build`**: the build happens on the target machine, not in CI. This means CI just needs Nix + network, not build capacity. The dev shell (via `nix develop`) provides `deploy-rs`.
+- **CI builds, the target does not**: `--remote-build` was dropped once runners were arch-matched, so the runner needs real build capacity. The dev shell (via `nix develop`) provides `deploy-rs`.
 - **Darwin overlays duplication**: `atalanta/default.nix` re-declares `nixpkgs.overlays` inline instead of consuming `unstable-overlays`. This is because nix-darwin's `nixpkgs.overlays` option is separate from the module system's overlay injection. If you add a new overlay to `unstable-overlays` in `flake.nix`, also add it to `atalanta/default.nix` if atalanta needs it.
 - **`services.nix` nixdoc format**: functions in `lib/services.nix` use nixdoc-compatible `/**` docstring syntax. Keep that format when adding functions there — it feeds the auto-generated docs.
 - **zmx hosts and one-shot SSH**: hosts with `atelier.ssh.hosts.<n>.zmx = true` (and the `t.*`/`p.*`/`e.*` patterns) carry a `RemoteCommand` that auto-attaches a zmx session, so `ssh <host> <cmd>`, `scp` and `rsync` would normally fail with `Cannot execute command-line and remote command`. A `Match` block cancels it whenever `ZMX_OFF`, `AI_AGENT`, `CLAUDECODE` or `CRUSH` is set, so agent shells already get plain SSH. Prefix with `ZMX_OFF=1` if you ever see that error. For long remote work use `ssh <host> zmx run <session> <cmd>` and read it back with `ssh <host> zmx history <session>`.
