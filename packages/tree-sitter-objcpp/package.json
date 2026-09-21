@@ -1,0 +1,25 @@
+{
+  "name": "tree-sitter-objcpp",
+  "version": "0.1.0",
+  "description": "Objective-C++ grammar for tree-sitter, extending tree-sitter-cpp",
+  "keywords": ["tree-sitter", "objective-c", "objective-c++", "objcpp"],
+  "license": "MIT",
+  "type": "commonjs",
+  "files": [
+    "grammar.js",
+    "queries/**",
+    "src/**"
+  ],
+  "dependencies": {
+    "tree-sitter-c": "^0.23.5",
+    "tree-sitter-cpp": "^0.23.4"
+  },
+  "devDependencies": {
+    "tree-sitter-cli": "^0.25.10"
+  },
+  "scripts": {
+    "generate": "tree-sitter generate",
+    "test": "tree-sitter test",
+    "parse": "tree-sitter parse"
+  }
+}

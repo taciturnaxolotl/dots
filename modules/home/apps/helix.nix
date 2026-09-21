@@ -12,8 +12,8 @@
   };
 
   config = lib.mkIf config.atelier.apps.helix.enable {
-    # Build tree-sitter-cdl grammar as a nix derivation so helix doesn't need
-    # `hx --grammar build` after every rebuild.
+    # Build the local tree-sitter grammars as nix derivations so helix doesn't
+    # need `hx --grammar build` after every rebuild.
     xdg.configFile =
       let
         tree-sitter-cdl-grammar = pkgs.stdenv.mkDerivation {
@@ -27,11 +27,37 @@
             cp cdl.so $out/
           '';
         };
+
+        # Objective-C++. Unlike cdl this one ships an external scanner, which
+        # the inherited C++ grammar needs for raw string literals.
+        tree-sitter-objcpp-grammar = pkgs.stdenv.mkDerivation {
+          name = "tree-sitter-objcpp";
+          src = ../../../packages/tree-sitter-objcpp;
+          buildPhase = ''
+            $CC -shared -fPIC -O2 -o objcpp.so src/parser.c src/scanner.c -I src
+          '';
+          installPhase = ''
+            mkdir -p $out
+            cp objcpp.so $out/
+          '';
+        };
       in
       {
         "helix/runtime/grammars/cdl.so".source = "${tree-sitter-cdl-grammar}/cdl.so";
         "helix/runtime/queries/cdl/highlights.scm".source =
           ../../../packages/tree-sitter-cdl/queries/highlights.scm;
+
+        "helix/runtime/grammars/objcpp.so".source = "${tree-sitter-objcpp-grammar}/objcpp.so";
+        "helix/runtime/queries/objcpp/highlights.scm".source =
+          ../../../packages/tree-sitter-objcpp/queries/highlights.scm;
+        "helix/runtime/queries/objcpp/indents.scm".source =
+          ../../../packages/tree-sitter-objcpp/queries/indents.scm;
+        "helix/runtime/queries/objcpp/injections.scm".source =
+          ../../../packages/tree-sitter-objcpp/queries/injections.scm;
+        "helix/runtime/queries/objcpp/locals.scm".source =
+          ../../../packages/tree-sitter-objcpp/queries/locals.scm;
+        "helix/runtime/queries/objcpp/textobjects.scm".source =
+          ../../../packages/tree-sitter-objcpp/queries/textobjects.scm;
       };
 
     programs.helix = {
@@ -339,6 +365,50 @@
             scope = "source.cdl";
             file-types = [ "cdl" ];
             grammar = "cdl";
+          }
+          {
+            # Helix resolves a file extension through a hash map keyed on the
+            # extension, so the last language to claim one wins. Upstream gives
+            # `.m` to matlab and `.mm` to metamath, which would otherwise race
+            # objcpp for both depending on merge order. Dropping their claims
+            # settles it. Both languages remain available through
+            # `:set-language`; only auto-detection changes.
+            # `scope` is mandatory on every entry, including an override, or
+            # helix rejects the whole user language config.
+            name = "matlab";
+            scope = "source.m";
+            file-types = [ ];
+          }
+          {
+            name = "metamath";
+            scope = "source.mm";
+            file-types = [ ];
+          }
+          {
+            # Objective-C++. `.h` is deliberately left to c/cpp: an Objective-C
+            # project's headers end in .h, but so does every C project's, and
+            # claiming it here would mis-highlight far more files than it fixed.
+            name = "objcpp";
+            scope = "source.objcpp";
+            file-types = [
+              "mm"
+              "m"
+            ];
+            grammar = "objcpp";
+            comment-token = "//";
+            block-comment-tokens = {
+              start = "/*";
+              end = "*/";
+            };
+            indent = {
+              tab-width = 4;
+              unit = "    ";
+            };
+            language-servers = [
+              "clangd"
+              "harper-ls"
+              "wakatime"
+            ];
           }
         ]
         ++ lib.optionals config.atelier.apps.helix.swift [

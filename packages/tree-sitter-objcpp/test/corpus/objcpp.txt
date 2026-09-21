@@ -1,0 +1,1483 @@
+================================================================================
+Class interface with superclass, protocols and ivars
+================================================================================
+
+@interface Shape : NSObject <Drawable, NSCopying> {
+    NSInteger _sides;
+@private
+    void *_opaque;
+}
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    superclass: (type_identifier)
+    protocols: (objc_protocol_reference_list
+      protocol: (type_identifier)
+      protocol: (type_identifier))
+    ivars: (objc_instance_variables
+      (field_declaration
+        type: (type_identifier)
+        declarator: (field_identifier))
+      (objc_visibility_specifier)
+      (field_declaration
+        type: (primitive_type)
+        declarator: (pointer_declarator
+          declarator: (field_identifier))))))
+
+================================================================================
+Category and class extension
+================================================================================
+
+@interface Shape (Debug)
+@end
+
+@interface Shape ()
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    category: (objc_category
+      name: (identifier)))
+  (objc_class_interface
+    name: (type_identifier)
+    category: (objc_category)))
+
+================================================================================
+Lightweight generics on a class declaration
+================================================================================
+
+@interface Box<__covariant T> : NSObject
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    type_parameters: (objc_type_parameter_list
+      parameter: (objc_type_parameter
+        name: (type_identifier)))
+    superclass: (type_identifier)))
+
+================================================================================
+Protocol declaration with required and optional sections
+================================================================================
+
+@protocol Drawable <NSObject>
+@required
+- (void)draw;
+@optional
+- (BOOL)wantsRedraw;
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_protocol_declaration
+    name: (type_identifier)
+    protocols: (objc_protocol_reference_list
+      protocol: (type_identifier))
+    body: (objc_availability_specifier)
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (primitive_type)))
+      selector: (objc_method_selector
+        name: (identifier)))
+    body: (objc_availability_specifier)
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (type_identifier)))
+      selector: (objc_method_selector
+        name: (identifier)))))
+
+================================================================================
+Forward declarations, alias and module import
+================================================================================
+
+@class Renderer, Shape;
+@protocol Drawable;
+@compatibility_alias NewName OldName;
+@import Foundation.NSString;
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_forward_declaration
+    name: (type_identifier)
+    name: (type_identifier))
+  (objc_protocol_forward_declaration
+    name: (type_identifier))
+  (objc_compatibility_alias
+    alias: (type_identifier)
+    name: (type_identifier))
+  (objc_module_import
+    module: (identifier)
+    module: (identifier)))
+
+================================================================================
+Method declarations with keyword parameters and a variadic tail
+================================================================================
+
+@interface A
++ (instancetype)shapeWithSides:(NSInteger)sides;
+- (void)moveTo:(CGPoint)point animated:(BOOL)animated;
+- (void)log:(NSString *)fmt, ...;
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (objc_builtin_type)))
+      selector: (objc_method_selector
+        parameter: (objc_method_parameter
+          keyword: (identifier)
+          type: (objc_method_type
+            (type_descriptor
+              type: (type_identifier)))
+          name: (identifier))))
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (primitive_type)))
+      selector: (objc_method_selector
+        parameter: (objc_method_parameter
+          keyword: (identifier)
+          type: (objc_method_type
+            (type_descriptor
+              type: (type_identifier)))
+          name: (identifier))
+        parameter: (objc_method_parameter
+          keyword: (identifier)
+          type: (objc_method_type
+            (type_descriptor
+              type: (type_identifier)))
+          name: (identifier))))
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (primitive_type)))
+      selector: (objc_method_selector
+        parameter: (objc_method_parameter
+          keyword: (identifier)
+          type: (objc_method_type
+            (type_descriptor
+              type: (type_identifier)
+              declarator: (abstract_pointer_declarator)))
+          name: (identifier))))))
+
+================================================================================
+Nullability and direction qualifiers on a method type
+================================================================================
+
+@interface A
+- (nullable id<NSCopying>)copyWithZone:(nullable NSZone *)zone;
+- (void)send:(in NSString *)text;
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (objc_method_type_qualifier)
+        (type_descriptor
+          type: (template_type
+            name: (type_identifier)
+            arguments: (template_argument_list
+              (type_descriptor
+                type: (type_identifier))))))
+      selector: (objc_method_selector
+        parameter: (objc_method_parameter
+          keyword: (identifier)
+          type: (objc_method_type
+            (objc_method_type_qualifier)
+            (type_descriptor
+              type: (type_identifier)
+              declarator: (abstract_pointer_declarator)))
+          name: (identifier))))
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (primitive_type)))
+      selector: (objc_method_selector
+        parameter: (objc_method_parameter
+          keyword: (identifier)
+          type: (objc_method_type
+            (objc_method_type_qualifier)
+            (type_descriptor
+              type: (type_identifier)
+              declarator: (abstract_pointer_declarator)))
+          name: (identifier))))))
+
+================================================================================
+Properties with attributes, accessors, synthesize and dynamic
+================================================================================
+
+@interface A
+@property (nonatomic, copy, nullable) NSString *name;
+@property (nonatomic, assign, getter=isFilled, setter=setFilled:) BOOL filled;
+@end
+
+@implementation A
+@synthesize name = _name, other;
+@dynamic filled;
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (objc_property_declaration
+      attributes: (objc_property_attribute_list
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute))
+      type: (type_identifier)
+      declarator: (pointer_declarator
+        declarator: (identifier)))
+    body: (objc_property_declaration
+      attributes: (objc_property_attribute_list
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute
+          value: (identifier))
+        attribute: (objc_property_attribute
+          value: (identifier)))
+      type: (type_identifier)
+      declarator: (identifier)))
+  (objc_class_implementation
+    name: (type_identifier)
+    body: (objc_property_synthesize
+      property: (identifier)
+      ivar: (identifier)
+      property: (identifier))
+    body: (objc_property_dynamic
+      property: (identifier))))
+
+================================================================================
+Message expressions: nesting, super, class receiver and variadic arguments
+================================================================================
+
+@implementation A
+- (void)f {
+    id x = [[self alloc] init];
+    [super viewDidLoad];
+    [NSString stringWithFormat:@"%@ %@", a, b];
+    [dict setObject:v forKey:@"k"];
+}
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_implementation
+    name: (type_identifier)
+    body: (objc_method_definition
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (primitive_type)))
+      selector: (objc_method_selector
+        name: (identifier))
+      body: (compound_statement
+        (declaration
+          type: (type_identifier)
+          declarator: (init_declarator
+            declarator: (identifier)
+            value: (message_expression
+              receiver: (message_expression
+                receiver: (identifier)
+                selector: (objc_message_selector
+                  name: (identifier)))
+              selector: (objc_message_selector
+                name: (identifier)))))
+        (expression_statement
+          (message_expression
+            receiver: (objc_super)
+            selector: (objc_message_selector
+              name: (identifier))))
+        (expression_statement
+          (message_expression
+            receiver: (identifier)
+            selector: (objc_message_selector
+              argument: (objc_message_argument
+                keyword: (identifier)
+                value: (objc_string_literal
+                  value: (string_literal
+                    (string_content))))
+              variadic_argument: (identifier)
+              variadic_argument: (identifier))))
+        (expression_statement
+          (message_expression
+            receiver: (identifier)
+            selector: (objc_message_selector
+              argument: (objc_message_argument
+                keyword: (identifier)
+                value: (identifier))
+              argument: (objc_message_argument
+                keyword: (identifier)
+                value: (objc_string_literal
+                  value: (string_literal
+                    (string_content)))))))))))
+
+================================================================================
+A message send is not a subscript and not a lambda capture
+================================================================================
+
+void f() {
+    a = obj[0];
+    b = [obj length];
+    c = [x](int n) { return n; };
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (subscript_expression
+            argument: (identifier)
+            indices: (subscript_argument_list
+              (number_literal)))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (message_expression
+            receiver: (identifier)
+            selector: (objc_message_selector
+              name: (identifier)))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (lambda_expression
+            captures: (lambda_capture_specifier
+              (identifier))
+            declarator: (abstract_function_declarator
+              parameters: (parameter_list
+                (parameter_declaration
+                  type: (primitive_type)
+                  declarator: (identifier))))
+            body: (compound_statement
+              (return_statement
+                (identifier)))))))))
+
+================================================================================
+Block literals and block pointer declarators
+================================================================================
+
+void f() {
+    void (^completion)(NSError *error) = ^(NSError *e) { g(e); };
+    run(^{ h(); });
+    q(^BOOL(id a) { return YES; });
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (declaration
+        type: (primitive_type)
+        declarator: (init_declarator
+          declarator: (function_declarator
+            declarator: (parenthesized_declarator
+              (block_pointer_declarator
+                declarator: (identifier)))
+            parameters: (parameter_list
+              (parameter_declaration
+                type: (type_identifier)
+                declarator: (pointer_declarator
+                  declarator: (identifier)))))
+          value: (block_expression
+            parameters: (parameter_list
+              (parameter_declaration
+                type: (type_identifier)
+                declarator: (pointer_declarator
+                  declarator: (identifier))))
+            body: (compound_statement
+              (expression_statement
+                (call_expression
+                  function: (identifier)
+                  arguments: (argument_list
+                    (identifier))))))))
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (block_expression
+              body: (compound_statement
+                (expression_statement
+                  (call_expression
+                    function: (identifier)
+                    arguments: (argument_list))))))))
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (block_expression
+              return_type: (objc_block_return_type
+                type: (type_identifier))
+              parameters: (parameter_list
+                (parameter_declaration
+                  type: (type_identifier)
+                  declarator: (identifier)))
+              body: (compound_statement
+                (return_statement
+                  (identifier))))))))))
+
+================================================================================
+Boxed literals
+================================================================================
+
+void f() {
+    a = @"text";
+    b = @42;
+    c = @YES;
+    d = @(x + 1);
+    e = @[one, two];
+    g = @{@"k": @1, key: value};
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_string_literal
+            value: (string_literal
+              (string_content)))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_boxed_expression
+            value: (number_literal))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_boxed_expression
+            value: (identifier))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_boxed_expression
+            value: (binary_expression
+              left: (identifier)
+              right: (number_literal)))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_array_literal
+            element: (identifier)
+            element: (identifier))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_dictionary_literal
+            entry: (objc_dictionary_entry
+              key: (objc_string_literal
+                value: (string_literal
+                  (string_content)))
+              value: (objc_boxed_expression
+                value: (number_literal)))
+            entry: (objc_dictionary_entry
+              key: (identifier)
+              value: (identifier))))))))
+
+================================================================================
+Reflection expressions
+================================================================================
+
+void f() {
+    a = @selector(tableView:didSelectRowAtIndexPath:);
+    b = @selector(reload);
+    c = @protocol(Drawable);
+    d = @encode(int);
+    if (@available(iOS 13.0, *)) { g(); }
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_selector_expression
+            selector: (objc_selector_name
+              (identifier)
+              (identifier)))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_selector_expression
+            selector: (objc_selector_name
+              (identifier)))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_protocol_expression
+            name: (type_identifier))))
+      (expression_statement
+        (assignment_expression
+          left: (identifier)
+          right: (objc_encode_expression
+            type: (type_descriptor
+              type: (primitive_type)))))
+      (if_statement
+        condition: (condition_clause
+          value: (objc_available_expression
+            platform: (objc_platform_version
+              platform: (identifier)
+              version: (number_literal))))
+        consequence: (compound_statement
+          (expression_statement
+            (call_expression
+              function: (identifier)
+              arguments: (argument_list))))))))
+
+================================================================================
+Exception handling, synchronization and autorelease pools
+================================================================================
+
+void f() {
+    @autoreleasepool {
+        @try {
+            g();
+        } @catch (NSException *e) {
+            h(e);
+        } @finally {
+            cleanup();
+        }
+    }
+    @synchronized (self) { i(); }
+    @throw ex;
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (objc_autoreleasepool_statement
+        body: (compound_statement
+          (objc_try_statement
+            body: (compound_statement
+              (expression_statement
+                (call_expression
+                  function: (identifier)
+                  arguments: (argument_list))))
+            handler: (objc_catch_clause
+              parameter: (parameter_declaration
+                type: (type_identifier)
+                declarator: (pointer_declarator
+                  declarator: (identifier)))
+              body: (compound_statement
+                (expression_statement
+                  (call_expression
+                    function: (identifier)
+                    arguments: (argument_list
+                      (identifier))))))
+            finalizer: (objc_finally_clause
+              body: (compound_statement
+                (expression_statement
+                  (call_expression
+                    function: (identifier)
+                    arguments: (argument_list))))))))
+      (objc_synchronized_statement
+        object: (identifier)
+        body: (compound_statement
+          (expression_statement
+            (call_expression
+              function: (identifier)
+              arguments: (argument_list)))))
+      (objc_throw_statement
+        value: (identifier)))))
+
+================================================================================
+Fast enumeration
+================================================================================
+
+void f() {
+    for (NSString *tag in tags) { g(tag); }
+    for (id x in xs) { h(x); }
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (objc_for_in_statement
+        type: (type_identifier)
+        declarator: (pointer_declarator
+          declarator: (identifier))
+        collection: (identifier)
+        body: (compound_statement
+          (expression_statement
+            (call_expression
+              function: (identifier)
+              arguments: (argument_list
+                (identifier))))))
+      (objc_for_in_statement
+        type: (type_identifier)
+        declarator: (identifier)
+        collection: (identifier)
+        body: (compound_statement
+          (expression_statement
+            (call_expression
+              function: (identifier)
+              arguments: (argument_list
+                (identifier)))))))))
+
+================================================================================
+Protocol qualifiers read as lightweight generics
+================================================================================
+
+@interface A
+@property (nonatomic, strong) NSArray<NSString *> *tags;
+@property (nonatomic, weak) id<Drawable> delegate;
+@property (nonatomic, strong) NSObject<NSCopying> *thing;
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (objc_property_declaration
+      attributes: (objc_property_attribute_list
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute))
+      type: (template_type
+        name: (type_identifier)
+        arguments: (template_argument_list
+          (type_descriptor
+            type: (type_identifier)
+            declarator: (abstract_pointer_declarator))))
+      declarator: (pointer_declarator
+        declarator: (identifier)))
+    body: (objc_property_declaration
+      attributes: (objc_property_attribute_list
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute))
+      type: (template_type
+        name: (type_identifier)
+        arguments: (template_argument_list
+          (type_descriptor
+            type: (type_identifier))))
+      declarator: (identifier))
+    body: (objc_property_declaration
+      attributes: (objc_property_attribute_list
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute))
+      type: (template_type
+        name: (type_identifier)
+        arguments: (template_argument_list
+          (type_descriptor
+            type: (type_identifier))))
+      declarator: (pointer_declarator
+        declarator: (identifier)))))
+
+================================================================================
+The weak/strong dance needs typeof in a type position
+================================================================================
+
+void f() {
+    __weak typeof(self) weakSelf = self;
+    __strong __typeof__(weakSelf) strongSelf = weakSelf;
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (declaration
+        (type_qualifier)
+        type: (objc_typeof_specifier
+          value: (identifier))
+        declarator: (init_declarator
+          declarator: (identifier)
+          value: (identifier)))
+      (declaration
+        (type_qualifier)
+        type: (objc_typeof_specifier
+          value: (identifier))
+        declarator: (init_declarator
+          declarator: (identifier)
+          value: (identifier))))))
+
+================================================================================
+C++ constructs still parse in the same file
+================================================================================
+
+#include <vector>
+
+void f() {
+    std::vector<int> v{1, 2, 3};
+    auto twice = [&v](int x) { return x * 2; };
+    for (auto &i : v) { i = twice(i); }
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (preproc_include
+    path: (system_lib_string))
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (declaration
+        type: (qualified_identifier
+          scope: (namespace_identifier)
+          name: (template_type
+            name: (type_identifier)
+            arguments: (template_argument_list
+              (type_descriptor
+                type: (primitive_type)))))
+        declarator: (init_declarator
+          declarator: (identifier)
+          value: (initializer_list
+            (number_literal)
+            (number_literal)
+            (number_literal))))
+      (declaration
+        type: (placeholder_type_specifier
+          (auto))
+        declarator: (init_declarator
+          declarator: (identifier)
+          value: (lambda_expression
+            captures: (lambda_capture_specifier
+              (identifier))
+            declarator: (abstract_function_declarator
+              parameters: (parameter_list
+                (parameter_declaration
+                  type: (primitive_type)
+                  declarator: (identifier))))
+            body: (compound_statement
+              (return_statement
+                (binary_expression
+                  left: (identifier)
+                  right: (number_literal)))))))
+      (for_range_loop
+        type: (placeholder_type_specifier
+          (auto))
+        declarator: (reference_declarator
+          (identifier))
+        right: (identifier)
+        body: (compound_statement
+          (expression_statement
+            (assignment_expression
+              left: (identifier)
+              right: (call_expression
+                function: (identifier)
+                arguments: (argument_list
+                  (identifier))))))))))
+
+================================================================================
+Unexpanded macros stand in for declarations
+================================================================================
+
+NS_ASSUME_NONNULL_BEGIN
+
+@class GKPlayer;
+
+NS_ASSUME_NONNULL_END
+
+CG_EXTERN void CGDraw(void);
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_macro_invocation
+    name: (objc_macro_name))
+  (objc_class_forward_declaration
+    name: (type_identifier))
+  (objc_macro_invocation
+    name: (objc_macro_name))
+  (objc_macro_invocation
+    name: (objc_macro_name))
+  (declaration
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list
+        (parameter_declaration
+          type: (primitive_type))))))
+
+================================================================================
+Macro with arguments after a method declaration
+================================================================================
+
+@interface A
+- (void)f API_AVAILABLE(macos(10.9));
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (primitive_type)))
+      selector: (objc_method_selector
+        name: (identifier))
+      (objc_macro_invocation
+        name: (objc_macro_name)
+        arguments: (objc_macro_arguments
+          (objc_macro_argument_text))))))
+
+================================================================================
+Apple enum macros
+================================================================================
+
+typedef NS_ENUM(NSInteger, Unit) {
+    UnitDay = 0,
+    UnitWeek,
+};
+
+typedef NS_OPTIONS(NSUInteger, Usage) {
+    UsageRead = 1 << 0,
+};
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_enum_definition
+    type: (objc_enum_specifier
+      macro: (objc_enum_macro_name)
+      backing_type: (type_descriptor
+        type: (type_identifier))
+      name: (type_identifier)
+      body: (enumerator_list
+        (enumerator
+          name: (identifier)
+          value: (number_literal))
+        (enumerator
+          name: (identifier)))))
+  (objc_enum_definition
+    type: (objc_enum_specifier
+      macro: (objc_enum_macro_name)
+      backing_type: (type_descriptor
+        type: (type_identifier))
+      name: (type_identifier)
+      body: (enumerator_list
+        (enumerator
+          name: (identifier)
+          value: (binary_expression
+            left: (number_literal)
+            right: (number_literal)))))))
+
+================================================================================
+A doubled bracket opens a nested message, not a C++ attribute
+================================================================================
+
+void f() {
+    [[NSRunLoop mainRunLoop] runMode:mode beforeDate:date];
+}
+
+[[deprecated]] void g(void);
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (expression_statement
+        (message_expression
+          receiver: (message_expression
+            receiver: (identifier)
+            selector: (objc_message_selector
+              name: (identifier)))
+          selector: (objc_message_selector
+            argument: (objc_message_argument
+              keyword: (identifier)
+              value: (identifier))
+            argument: (objc_message_argument
+              keyword: (identifier)
+              value: (identifier)))))))
+  (declaration
+    (attribute_declaration
+      (attribute
+        name: (identifier)))
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list
+        (parameter_declaration
+          type: (primitive_type))))))
+
+================================================================================
+Class declarations survive a preprocessor guard
+================================================================================
+
+#if TARGET_OS_MAC
+@implementation Wrapper
+@end
+#endif
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (preproc_if
+    condition: (identifier)
+    (objc_class_implementation
+      name: (type_identifier))))
+
+================================================================================
+Preprocessor guards inside a class body
+================================================================================
+
+@interface A
+#if TARGET_OS_IPHONE
+@property (nonatomic) NSInteger count;
+#else
+- (void)desktopOnly;
+#endif
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (preproc_if
+      condition: (identifier)
+      (objc_property_declaration
+        attributes: (objc_property_attribute_list
+          attribute: (objc_property_attribute))
+        type: (type_identifier)
+        declarator: (identifier))
+      alternative: (preproc_else
+        (objc_method_declaration
+          scope: (objc_method_scope)
+          return_type: (objc_method_type
+            (type_descriptor
+              type: (primitive_type)))
+          selector: (objc_method_selector
+            name: (identifier)))))))
+
+================================================================================
+A macro may stand in for override, and may carry a vendor prefix
+================================================================================
+
+class Impl : public Base
+{
+    virtual void SetLabel(const wxString& title) wxOVERRIDE;
+    ~Impl() wxOVERRIDE;
+};
+
+wxBEGIN_EVENT_TABLE(wxWebViewWebKit, wxControl)
+wxEND_EVENT_TABLE()
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (class_specifier
+    name: (type_identifier)
+    (base_class_clause
+      (access_specifier)
+      (type_identifier))
+    body: (field_declaration_list
+      (field_declaration
+        type: (primitive_type)
+        declarator: (function_declarator
+          declarator: (field_identifier)
+          parameters: (parameter_list
+            (parameter_declaration
+              (type_qualifier)
+              type: (type_identifier)
+              declarator: (reference_declarator
+                (identifier))))
+          (objc_macro_name)))
+      (declaration
+        declarator: (function_declarator
+          declarator: (destructor_name
+            (identifier))
+          parameters: (parameter_list)
+          (objc_macro_name)))))
+  (objc_macro_invocation
+    name: (objc_macro_name)
+    arguments: (objc_macro_arguments
+      (objc_macro_argument_text)))
+  (objc_macro_invocation
+    name: (objc_macro_name)
+    arguments: (objc_macro_arguments)))
+
+================================================================================
+Macro arguments that are not C expressions
+================================================================================
+
+@interface A
++ (instancetype)activeWithStatus:(NSError *)e NS_SWIFT_NAME(active(status:));
+RCT_NOT_IMPLEMENTED(-(instancetype)initWithCoder:(NSCoder *)aDecoder)
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (objc_builtin_type)))
+      selector: (objc_method_selector
+        parameter: (objc_method_parameter
+          keyword: (identifier)
+          type: (objc_method_type
+            (type_descriptor
+              type: (type_identifier)
+              declarator: (abstract_pointer_declarator)))
+          name: (identifier)))
+      (objc_macro_invocation
+        name: (objc_macro_name)
+        arguments: (objc_macro_arguments
+          (objc_macro_argument_text))))
+    body: (objc_macro_invocation
+      name: (objc_macro_name)
+      arguments: (objc_macro_arguments
+        (objc_macro_argument_text)))))
+
+================================================================================
+A macro may appear among property attributes
+================================================================================
+
+@interface A
+@property(readonly, nullable, retain, NS_NONATOMIC_IOSONLY) NSString *playerID;
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (objc_property_declaration
+      attributes: (objc_property_attribute_list
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute
+          (objc_macro_invocation
+            name: (objc_macro_name))))
+      type: (type_identifier)
+      declarator: (pointer_declarator
+        declarator: (identifier)))))
+
+================================================================================
+__has_include takes a header path, and a class may carry __exported
+================================================================================
+
+#if __has_include(<OpenGL/OpenGL.h>)
+class __exported IOFoo : public IOBar
+{
+};
+#endif
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (preproc_if
+    condition: (call_expression
+      function: (identifier)
+      arguments: (argument_list
+        (system_lib_string)))
+    (class_specifier
+      name: (type_identifier)
+      (base_class_clause
+        (access_specifier)
+        (type_identifier))
+      body: (field_declaration_list))))
+
+================================================================================
+Macros work inside an include guard
+================================================================================
+
+#ifndef FOO_H
+NS_ASSUME_NONNULL_BEGIN
+MT_EXPORT CFTypeID MTGetTypeID(void) API_AVAILABLE(macos(10.9));
+@interface A
+@end
+NS_ASSUME_NONNULL_END
+#endif
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (preproc_ifdef
+    name: (identifier)
+    (objc_macro_invocation
+      name: (objc_macro_name))
+    (objc_macro_invocation
+      name: (objc_macro_name))
+    (declaration
+      type: (type_identifier)
+      declarator: (function_declarator
+        declarator: (identifier)
+        parameters: (parameter_list
+          (parameter_declaration
+            type: (primitive_type))))
+      (objc_macro_invocation
+        name: (objc_macro_name)
+        arguments: (objc_macro_arguments
+          (objc_macro_argument_text))))
+    (objc_class_interface
+      name: (type_identifier))
+    (objc_macro_invocation
+      name: (objc_macro_name))))
+
+================================================================================
+A macro may annotate a block pointer typedef
+================================================================================
+
+typedef void (^ NS_SWIFT_SENDABLE MTLDrawableHandler)(id<MTLDrawable>);
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (type_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (parenthesized_declarator
+        (block_pointer_declarator
+          (objc_macro_invocation
+            name: (objc_macro_name))
+          declarator: (type_identifier)))
+      parameters: (parameter_list
+        (parameter_declaration
+          type: (template_type
+            name: (type_identifier)
+            arguments: (template_argument_list
+              (type_descriptor
+                type: (type_identifier)))))))))
+
+================================================================================
+A macro that supplies its own semicolon leaves a stray one behind
+================================================================================
+
+@implementation A
+RCT_EXPORT_MODULE();
+- (void)f {}
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_implementation
+    name: (type_identifier)
+    body: (objc_macro_invocation
+      name: (objc_macro_name)
+      arguments: (objc_macro_arguments))
+    body: (objc_method_definition
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (primitive_type)))
+      selector: (objc_method_selector
+        name: (identifier))
+      body: (compound_statement))))
+
+================================================================================
+Only the first piece of a concatenated string needs its sigil
+================================================================================
+
+void f() {
+    log(@"the first part"
+         " and the rest"
+        @" and a sigil again");
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (objc_string_literal
+              value: (string_literal
+                (string_content))
+              value: (string_literal
+                (string_content))
+              value: (string_literal
+                (string_content)))))))))
+
+================================================================================
+An else may be split from its branch by a preprocessor boundary
+================================================================================
+
+void f() {
+#if defined(__MAC_10_13)
+    if (available) { modern(); }
+    else
+#endif
+    { legacy(); }
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (preproc_if
+        condition: (preproc_defined
+          (identifier))
+        (if_statement
+          condition: (condition_clause
+            value: (identifier))
+          consequence: (compound_statement
+            (expression_statement
+              (call_expression
+                function: (identifier)
+                arguments: (argument_list))))
+          alternative: (else_clause)))
+      (compound_statement
+        (expression_statement
+          (call_expression
+            function: (identifier)
+            arguments: (argument_list)))))))
+
+================================================================================
+A macro call in statement position is a call, not a macro invocation
+================================================================================
+
+void f() {
+  RCT_ASSERT(x);
+  EXPECT_TRUE(y) << "message";
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (expression_statement
+        (call_expression
+          function: (identifier)
+          arguments: (argument_list
+            (identifier))))
+      (expression_statement
+        (binary_expression
+          left: (call_expression
+            function: (identifier)
+            arguments: (argument_list
+              (identifier)))
+          right: (string_literal
+            (string_content)))))))
+
+================================================================================
+A macro may sit between a method selector and its body
+================================================================================
+
+@implementation A
+- (void)webView:(WKWebView *)w WX_API_AVAILABLE_MACOS(10, 13)
+{
+}
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_implementation
+    name: (type_identifier)
+    body: (objc_method_definition
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (primitive_type)))
+      selector: (objc_method_selector
+        parameter: (objc_method_parameter
+          keyword: (identifier)
+          type: (objc_method_type
+            (type_descriptor
+              type: (type_identifier)
+              declarator: (abstract_pointer_declarator)))
+          name: (identifier)))
+      (objc_macro_invocation
+        name: (objc_macro_name)
+        arguments: (objc_macro_arguments
+          (objc_macro_argument_text)))
+      body: (compound_statement))))
+
+================================================================================
+id and Class are ordinary names, not keywords
+================================================================================
+
+void f() {
+  int id = 3;
+  if (id == wxID_HELP) { g(); }
+}
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (function_definition
+    type: (primitive_type)
+    declarator: (function_declarator
+      declarator: (identifier)
+      parameters: (parameter_list))
+    body: (compound_statement
+      (declaration
+        type: (primitive_type)
+        declarator: (init_declarator
+          declarator: (identifier)
+          value: (number_literal)))
+      (if_statement
+        condition: (condition_clause
+          value: (binary_expression
+            left: (identifier)
+            right: (identifier)))
+        consequence: (compound_statement
+          (expression_statement
+            (call_expression
+              function: (identifier)
+              arguments: (argument_list))))))))
+
+================================================================================
+Interface Builder markers sit where a qualifier would
+================================================================================
+
+@interface A
+@property (strong, nonatomic) IBOutlet UILabel *titleLabel;
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (objc_property_declaration
+      attributes: (objc_property_attribute_list
+        attribute: (objc_property_attribute)
+        attribute: (objc_property_attribute))
+      (type_qualifier)
+      type: (type_identifier)
+      declarator: (pointer_declarator
+        declarator: (identifier)))))
+
+================================================================================
+A lowercase annotation macro may trail a method declaration
+================================================================================
+
+@interface A
+- (void)requestReload __deprecated_msg("Use RCTReloadCommand instead");
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    name: (type_identifier)
+    body: (objc_method_declaration
+      scope: (objc_method_scope)
+      return_type: (objc_method_type
+        (type_descriptor
+          type: (primitive_type)))
+      selector: (objc_method_selector
+        name: (identifier))
+      (objc_lowercase_macro
+        name: (objc_macro_name)
+        arguments: (objc_macro_arguments
+          (objc_macro_argument_text))))))
+
+================================================================================
+An attribute may precede a class interface
+================================================================================
+
+__attribute__((objc_subclassing_restricted))
+@interface A : NSObject
+@end
+
+--------------------------------------------------------------------------------
+
+(translation_unit
+  (objc_class_interface
+    (attribute_specifier
+      (argument_list
+        (identifier)))
+    name: (type_identifier)
+    superclass: (type_identifier)))

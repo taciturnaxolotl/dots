@@ -1,0 +1,39 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/config.schema.json",
+  "grammars": [
+    {
+      "name": "objcpp",
+      "camelcase": "ObjCpp",
+      "scope": "source.objcpp",
+      "path": ".",
+      "file-types": [
+        "mm",
+        "m"
+      ],
+      "highlights": "queries/highlights.scm",
+      "indents": "queries/indents.scm",
+      "injections": "queries/injections.scm",
+      "locals": "queries/locals.scm",
+      "textobjects": "queries/textobjects.scm",
+      "injection-regex": "^(objcpp|objc\\+\\+|objective-?c(\\+\\+)?)$"
+    }
+  ],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Objective-C++ grammar for tree-sitter, extending tree-sitter-cpp",
+    "authors": [
+      {
+        "name": "Kieran Klukas"
+      }
+    ]
+  },
+  "bindings": {
+    "c": true,
+    "go": false,
+    "node": false,
+    "python": false,
+    "rust": false,
+    "swift": false
+  }
+}
