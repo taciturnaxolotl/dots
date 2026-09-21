@@ -171,47 +171,17 @@
         "aarch64-darwin"
       ];
 
+      # One overlay for every platform, so a package added here cannot silently
+      # be missing on the Macs. Platform-specific entries are guarded inside it.
+      atelierOverlay = import ./overlays { inherit inputs lib; };
+
       unstable-overlays = {
         nixpkgs.overlays = [
           nur.overlays.default
-          (final: prev: {
-            unstable = import nixpkgs-unstable {
-              system = final.stdenv.hostPlatform.system;
-              config.allowUnfree = true;
-            };
-
-            # nix 2.34 aborts the daemon whenever a substituter is unreachable.
-            # A failing narinfo worker sets the thread pool's quit flag, the
-            # next worker logs its own error through TunnelLogger, and that
-            # write throws Interrupted from inside a catch block, unwinding out
-            # of the worker thread. The client just sees "Nix daemon
-            # disconnected unexpectedly". NixOS/nix#3768 (open since 2020) and
-            # NixOS/nix#12871. Drop this once upstream lands a fix.
-            nixVersions = prev.nixVersions.extend (
-              _finalNix: prevNix: {
-                nixComponents_2_34 = prevNix.nixComponents_2_34.appendPatches [
-                  ./patches/nix-2.34-daemon-no-interrupt-on-client-write.patch
-                ];
-              }
-            );
-
-            zmx-binary = prev.callPackage ./packages/zmx.nix { };
-            bore-auth = prev.callPackage ./packages/bore-auth.nix { };
-            pear = inputs.pear.packages.${prev.stdenv.hostPlatform.system}.default;
-            herald = inputs.herald.packages.${prev.stdenv.hostPlatform.system}.default;
-            potluck = inputs.potluck.packages.${prev.stdenv.hostPlatform.system}.default;
-            lard = inputs.lard.packages.${prev.stdenv.hostPlatform.system}.default;
-            tangle-of-trust = inputs.tangle-of-trust.packages.${prev.stdenv.hostPlatform.system}.default;
-          })
+          atelierOverlay
         ];
       };
 
-      # deploy-rs.lib.activate embeds the deploy-rs binary in each node's
-      # activation closure. Taken straight from the flake input (whose nixpkgs
-      # follows ours) that binary is in no cache and compiles from source — fine
-      # under --remote-build (built once on the target), but a per-run source
-      # build on the CI runner now that we build there. Swap in nixpkgs' cached
-      # binary via deploy-rs's documented overlay, keeping its lib functions.
       deployRsLib =
         system:
         (import nixpkgs-unstable {
