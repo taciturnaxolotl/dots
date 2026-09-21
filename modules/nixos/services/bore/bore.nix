@@ -55,16 +55,14 @@ in
       description = "UDP port range to allow for UDP tunnels (default: 20000-20099)";
     };
 
-    authToken = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-      description = "Authentication token for clients (deprecated: use authTokenFile)";
-    };
-
     authTokenFile = lib.mkOption {
       type = lib.types.nullOr lib.types.path;
       default = null;
-      description = "Path to file containing authentication token";
+      description = ''
+        File holding the token clients authenticate with. Passed to the unit as
+        a systemd credential, so frps never needs read access to the secret
+        itself.
+      '';
     };
 
     domain = lib.mkOption {
@@ -115,8 +113,8 @@ in
   config = lib.mkIf cfg.enable {
     assertions = [
       {
-        assertion = cfg.authToken != null || cfg.authTokenFile != null;
-        message = "Either authToken or authTokenFile must be set for frps";
+        assertion = cfg.authTokenFile != null;
+        message = "atelier.services.frps.authTokenFile must be set";
       }
     ];
 
@@ -127,14 +125,10 @@ in
     # frp server service
     systemd.services.frps =
       let
-        tokenConfig =
-          if cfg.authTokenFile != null then
-            ''
-              auth.tokenSource.type = "file"
-              auth.tokenSource.file.path = "${cfg.authTokenFile}"
-            ''
-          else
-            ''auth.token = "${cfg.authToken}"'';
+        # systemd stages the secret here as root and exposes it to the
+        # sandbox, so the unit can run unprivileged without read access to
+        # /run/agenix. The path is the documented location of %d.
+        credentialToken = "/run/credentials/frps.service/auth-token";
 
         configFile = pkgs.writeText "frps.toml" ''
           bindAddr = "${cfg.bindAddr}"
@@ -148,7 +142,8 @@ in
 
           # Authentication token - clients need this to connect
           auth.method = "token"
-          ${tokenConfig}
+          auth.tokenSource.type = "file"
+          auth.tokenSource.file.path = "${credentialToken}"
 
           # Subdomain support for *.${cfg.domain}
           subDomainHost = "${cfg.domain}"
@@ -188,6 +183,44 @@ in
           Restart = "on-failure";
           RestartSec = "5s";
           ExecStart = "${pkgs.frp}/bin/frps -c ${configFile}";
+
+          LoadCredential = [ "auth-token:${cfg.authTokenFile}" ];
+
+          # This is the most exposed process on the box: it terminates arbitrary
+          # tunnels from the internet. It holds no state and every port it binds
+          # is above 1024, so it needs neither a stable uid nor any capability.
+          DynamicUser = true;
+          CapabilityBoundingSet = [ "" ];
+          AmbientCapabilities = [ "" ];
+          NoNewPrivileges = true;
+          ProtectSystem = "strict";
+          ProtectHome = true;
+          ProtectProc = "invisible";
+          ProtectClock = true;
+          ProtectHostname = true;
+          ProtectKernelLogs = true;
+          ProtectKernelModules = true;
+          ProtectKernelTunables = true;
+          ProtectControlGroups = true;
+          PrivateTmp = true;
+          PrivateDevices = true;
+          # AF_NETLINK is included because Go reaches for it when enumerating
+          # interfaces; dropping it is the usual way a hardened Go daemon dies.
+          RestrictAddressFamilies = [
+            "AF_INET"
+            "AF_INET6"
+            "AF_UNIX"
+            "AF_NETLINK"
+          ];
+          RestrictNamespaces = true;
+          RestrictRealtime = true;
+          RestrictSUIDSGID = true;
+          LockPersonality = true;
+          SystemCallArchitectures = "native";
+          SystemCallFilter = [
+            "@system-service"
+            "~@privileged"
+          ];
         };
       };
 
