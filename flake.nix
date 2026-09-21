@@ -161,7 +161,15 @@
       ...
     }@inputs:
     let
-      outputs = inputs.self.outputs;
+      lib = nixpkgs.lib;
+
+      # Per-system outputs only. nixosConfigurations, darwinConfigurations and
+      # overlays are system-independent and must not be wrapped in this.
+      forSystems = lib.genAttrs [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
 
       unstable-overlays = {
         nixpkgs.overlays = [
@@ -224,7 +232,7 @@
       # Available through 'nixos-rebuild --flake .#hostname'
       nixosConfigurations = {
         prattle = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit inputs; };
           modules = [
             inputs.disko.nixosModules.disko
             agenix.nixosModules.default
@@ -237,7 +245,7 @@
         };
 
         terebithia = nixpkgs.lib.nixosSystem {
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit inputs; };
           modules = [
             inputs.disko.nixosModules.disko
             agenix.nixosModules.default
@@ -250,7 +258,7 @@
 
         iso-x86_64 = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit inputs; };
           modules = [
             unstable-overlays
             ./machines/iso
@@ -259,7 +267,7 @@
 
         iso-aarch64 = nixpkgs.lib.nixosSystem {
           system = "aarch64-linux";
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit inputs; };
           modules = [
             unstable-overlays
             ./machines/iso
@@ -272,7 +280,7 @@
       darwinConfigurations = {
         atalanta = nix-darwin.lib.darwinSystem {
           system = "aarch64-darwin";
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit inputs; };
           modules = [
             home-manager.darwinModules.home-manager
             agenix.darwinModules.default
@@ -281,7 +289,7 @@
         };
         beef = nix-darwin.lib.darwinSystem {
           system = "aarch64-darwin";
-          specialArgs = { inherit inputs outputs; };
+          specialArgs = { inherit inputs; };
           modules = [
             home-manager.darwinModules.home-manager
             agenix.darwinModules.default
@@ -309,47 +317,37 @@
       # Documentation site (mdBook + nixdoc + atelier options)
       # Build with: nix build .#docs
       # Serve with: nix run .#docs.serve
-      packages =
+      packages = forSystems (
+        system:
         let
-          mkDocs =
-            system:
-            let
-              pkgs = nixpkgs.legacyPackages.${system};
-            in
-            pkgs.callPackage ./packages/docs.nix {
-              servicesManifest = self.services-manifest;
-              inherit self;
-            };
+          pkgs = nixpkgs.legacyPackages.${system};
         in
         {
-          x86_64-linux.docs = mkDocs "x86_64-linux";
-          aarch64-linux.docs = mkDocs "aarch64-linux";
-          aarch64-darwin.docs = mkDocs "aarch64-darwin";
-          aarch64-darwin.gp-menubar =
-            nixpkgs.legacyPackages.aarch64-darwin.callPackage ./packages/gp-menubar.nix
-              { };
+          docs = pkgs.callPackage ./packages/docs.nix {
+            servicesManifest = self.services-manifest;
+            inherit self;
+          };
+        }
+        // lib.optionalAttrs (system == "aarch64-darwin") {
+          gp-menubar = pkgs.callPackage ./packages/gp-menubar.nix { };
+        }
+        // lib.optionalAttrs (system == "x86_64-linux") {
+          iso = self.nixosConfigurations.iso-x86_64.config.system.build.isoImage;
+        }
+        // lib.optionalAttrs (system == "aarch64-linux") {
+          iso = self.nixosConfigurations.iso-aarch64.config.system.build.isoImage;
+        }
+      );
 
-          x86_64-linux.iso = self.nixosConfigurations.iso-x86_64.config.system.build.isoImage;
-          aarch64-linux.iso = self.nixosConfigurations.iso-aarch64.config.system.build.isoImage;
+      formatter = forSystems (system: nixpkgs.legacyPackages.${system}.nixfmt-tree);
+
+      # nixpkgs' deploy-rs is Hydra-built; deploy-rs.packages.* follows our
+      # nixpkgs, so it matches no cache and rebuilds (~14 min) every cold CI run.
+      devShells = forSystems (system: {
+        default = nixpkgs-unstable.legacyPackages.${system}.mkShell {
+          packages = [ nixpkgs-unstable.legacyPackages.${system}.deploy-rs ];
         };
-
-      formatter.x86_64-linux = nixpkgs.legacyPackages.x86_64-linux.nixfmt-tree;
-      formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
-
-      # Use nixpkgs' own deploy-rs (Hydra-built, on cache.nixos.org) rather than
-      # deploy-rs.packages.*, which — because the input's nixpkgs follows ours —
-      # matches no binary cache and compiles from source (~14 min) every cold CI
-      # run. The activate wrapper in deploy.nodes still uses the flake's lib, but
-      # that binary builds once and persists in each target's store.
-      devShells.aarch64-darwin.default = nixpkgs-unstable.legacyPackages.aarch64-darwin.mkShell {
-        packages = [ nixpkgs-unstable.legacyPackages.aarch64-darwin.deploy-rs ];
-      };
-      devShells.x86_64-linux.default = nixpkgs-unstable.legacyPackages.x86_64-linux.mkShell {
-        packages = [ nixpkgs-unstable.legacyPackages.x86_64-linux.deploy-rs ];
-      };
-      devShells.aarch64-linux.default = nixpkgs-unstable.legacyPackages.aarch64-linux.mkShell {
-        packages = [ nixpkgs-unstable.legacyPackages.aarch64-linux.deploy-rs ];
-      };
+      });
 
       # Deploy-rs configurations
       deploy.nodes = {
