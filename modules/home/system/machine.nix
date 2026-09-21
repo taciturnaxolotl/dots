@@ -1,5 +1,0 @@
-{ ... }:
-
-{
-  imports = [ ../../shared/machine.nix ];
-}

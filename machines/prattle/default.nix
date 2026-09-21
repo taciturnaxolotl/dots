@@ -272,8 +272,6 @@
       80 # Media dashboard
       445 # Samba
       8096 # Jellyfin
-      9000 # MinIO API
-      9001 # MinIO Console
     ];
     allowedUDPPorts = [
       137

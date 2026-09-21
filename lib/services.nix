@@ -8,65 +8,6 @@
 
 {
   /**
-    Check whether an atelier service config value has the standard
-    mkService shape (has `enable`, `domain`, `port`, `_description`).
-
-    # Arguments
-
-    - `cfg` — an attribute set from `config.atelier.services.<name>`
-
-    # Type
-
-    ```
-    AttrSet -> Bool
-    ```
-
-    # Example
-
-    ```nix
-    isMkService config.atelier.services.cachet
-    => true
-    ```
-  */
-  isMkService = cfg: (cfg.enable or false) && (cfg ? domain) && (cfg ? port) && (cfg ? _description);
-
-  /**
-    Convert a single mkService config into a manifest entry.
-
-    # Arguments
-
-    - `name` — the service name (attribute key)
-    - `cfg` — the service config attrset
-
-    # Type
-
-    ```
-    String -> AttrSet -> AttrSet
-    ```
-
-    # Example
-
-    ```nix
-    mkServiceEntry "cachet" config.atelier.services.cachet
-    => { name = "cachet"; domain = "cachet.dunkirk.sh"; ... }
-    ```
-  */
-  mkServiceEntry = name: cfg: {
-    inherit name;
-    description = cfg._description or "${name} service";
-    domain = cfg.domain;
-    port = cfg.port;
-    runtime = cfg._runtime or "unknown";
-    repository = cfg.repository or null;
-    health_url = cfg.healthUrl or null;
-    data = {
-      sqlite = cfg.data.sqlite or null;
-      postgres = cfg.data.postgres or null;
-      files = cfg.data.files or [ ];
-    };
-  };
-
-  /**
     Build a services manifest from an evaluated NixOS config.
 
     Discovers all enabled mkService-based services plus emojibot

@@ -35,9 +35,6 @@ in
     ./home-manager.nix
 
     (inputs.import-tree ../../modules/nixos)
-    ../../modules/nixos/services/herald.nix
-    ../../modules/nixos/services/paperless.nix
-    ../../modules/nixos/services/potluck.nix
   ];
 
   nixpkgs = {
