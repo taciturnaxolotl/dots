@@ -5,10 +5,10 @@
     # Nixpkgs
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
-    nixpkgs-unstable-small.url = "github:nixos/nixpkgs/nixos-unstable-small";
 
     # NixOS hardware configuration
     hardware.url = "github:NixOS/nixos-hardware/master";
+    hardware.inputs.nixpkgs.follows = "nixpkgs";
 
     # Home manager
     home-manager.url = "github:nix-community/home-manager/release-26.05";
@@ -25,6 +25,7 @@
 
     # agenix
     agenix.url = "github:ryantm/agenix";
+    agenix.inputs.nixpkgs.follows = "nixpkgs";
 
     spicetify-nix = {
       url = "github:Gerg-L/spicetify-nix";
@@ -38,9 +39,13 @@
 
     catppuccin-vsc = {
       url = "github:catppuccin/vscode";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nix-vscode-extensions.url = "github:nix-community/nix-vscode-extensions";
+    nix-vscode-extensions = {
+      url = "github:nix-community/nix-vscode-extensions";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
 
     frc-nix = {
       url = "github:frc4451/frc-nix";
@@ -56,8 +61,6 @@
       url = "github:hyprwm/contrib";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-
-    nixvim.url = "github:taciturnaxolotl/nixvim";
 
     terminal-wakatime = {
       url = "github:hackclub/terminal-wakatime";
@@ -116,18 +119,16 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    # Stable is too old for deploy-rs, and unstable-small only ever duplicated
+    # unstable: same tree, same resulting store path.
     deploy-rs = {
       url = "github:serokell/deploy-rs";
-      inputs.nixpkgs.follows = "nixpkgs-unstable-small";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
 
     tangled = {
       url = "git+https://tangled.org/tangled.org/core?rev=1d379a324497da39a27e49453c72615607a9b199";
       inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    zmx = {
-      url = "github:neurosnap/zmx";
     };
 
     impure = {
@@ -151,7 +152,6 @@
       self,
       nixpkgs,
       nixpkgs-unstable,
-      nixpkgs-unstable-small,
       agenix,
       home-manager,
       nur,
@@ -206,13 +206,13 @@
       # binary via deploy-rs's documented overlay, keeping its lib functions.
       deployRsLib =
         system:
-        (import nixpkgs-unstable-small {
+        (import nixpkgs-unstable {
           inherit system;
           overlays = [
             deploy-rs.overlays.default
             (_final: prev: {
               deploy-rs = {
-                inherit (nixpkgs-unstable-small.legacyPackages.${system}) deploy-rs;
+                inherit (nixpkgs-unstable.legacyPackages.${system}) deploy-rs;
                 lib = prev.deploy-rs.lib;
               };
             })
@@ -360,14 +360,14 @@
       # matches no binary cache and compiles from source (~14 min) every cold CI
       # run. The activate wrapper in deploy.nodes still uses the flake's lib, but
       # that binary builds once and persists in each target's store.
-      devShells.aarch64-darwin.default = nixpkgs-unstable-small.legacyPackages.aarch64-darwin.mkShell {
-        packages = [ nixpkgs-unstable-small.legacyPackages.aarch64-darwin.deploy-rs ];
+      devShells.aarch64-darwin.default = nixpkgs-unstable.legacyPackages.aarch64-darwin.mkShell {
+        packages = [ nixpkgs-unstable.legacyPackages.aarch64-darwin.deploy-rs ];
       };
-      devShells.x86_64-linux.default = nixpkgs-unstable-small.legacyPackages.x86_64-linux.mkShell {
-        packages = [ nixpkgs-unstable-small.legacyPackages.x86_64-linux.deploy-rs ];
+      devShells.x86_64-linux.default = nixpkgs-unstable.legacyPackages.x86_64-linux.mkShell {
+        packages = [ nixpkgs-unstable.legacyPackages.x86_64-linux.deploy-rs ];
       };
-      devShells.aarch64-linux.default = nixpkgs-unstable-small.legacyPackages.aarch64-linux.mkShell {
-        packages = [ nixpkgs-unstable-small.legacyPackages.aarch64-linux.deploy-rs ];
+      devShells.aarch64-linux.default = nixpkgs-unstable.legacyPackages.aarch64-linux.mkShell {
+        packages = [ nixpkgs-unstable.legacyPackages.aarch64-linux.deploy-rs ];
       };
 
       # Deploy-rs configurations

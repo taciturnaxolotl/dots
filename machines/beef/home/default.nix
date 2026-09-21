@@ -13,7 +13,6 @@
     username = "kierank";
     homeDirectory = "/Users/kierank";
     packages = [
-      inputs.nixvim.packages.${pkgs.stdenv.hostPlatform.system}.default
       pkgs.libiconv
     ];
     sessionVariables = {

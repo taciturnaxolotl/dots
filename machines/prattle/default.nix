@@ -70,7 +70,6 @@
     ethtool
     mosh
     # nix_tools
-    inputs.nixvim.packages.x86_64-linux.default
     nixd
     nil
     nixfmt

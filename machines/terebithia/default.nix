@@ -11,31 +11,8 @@ let
   # copy in docker: same work, off the two cores that also serve every vhost.
   flaresolverr = "http://prattle:8191";
 
-  # Same fields caddy logs by default, minus the two header maps, and sampled.
-  #
-  # A 30s CPU profile with the upstream dialling fixed put the logging path at
-  # ~16% of caddy: logRequest 16.3%, and under it zap's Check -> lazyWithCore
-  # initOnce -> Field.AddTo materialising every field before the filter above
-  # gets to delete most of them. That is the same 27-29% the earlier profile
-  # found, and the filter cannot avoid it because the fields are built first.
-  #
-  # Sampling is the only thing that skips the work rather than undoing it, and
-  # 100/10 was not nearly hard enough. A later 30s profile, taken while the
-  # solvers were running and every other vhost was timing out behind them, put
-  # the logging path at 48% of caddy against 10.5% for the reverse proxy it
-  # exists to describe: initOnce alone was 40.8%, and marshalling the header
-  # maps the filter then deletes was 24.4%. 100/10 still let ~63 lines a second
-  # through, each paying that in full.
-  #
-  # 5/100 is ~10 lines a second at the 550 req/s peak instead of ~145. It stays
-  # readable for what the log is actually for: the flood arrives from about
-  # fifteen addresses, so a sample that thin still names every one of them
-  # within a few seconds. What it costs is per-request completeness, which
-  # nobody was reading.
-  #
-  # Rate limiting the solvers was the other option and it is the wrong one
-  # twice over. botme exists to be hammered by solvers, and a 429 gets logged
-  # like anything else, so it would have bought the 10.5% and left the 48%.
+  # Sampled hard because zap builds every field before this filter deletes it;
+  # logging was 48% of caddy's CPU against 10.5% for the proxy itself.
   leanAccessLog = host: ''
     output file /var/log/caddy/access-${host}.log
     sampling {
@@ -113,7 +90,6 @@ in
     mosh
     ethtool
     # nix_tools
-    inputs.nixvim.packages.aarch64-linux.default
     nixd
     nil
     nixfmt

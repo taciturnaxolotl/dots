@@ -20,6 +20,7 @@ jobs:
     outputs:
       nodes: ${{ steps.set.outputs.nodes }}
       docs: ${{ steps.set.outputs.docs }}
+      inputs: ${{ steps.set.outputs.inputs }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -67,6 +68,49 @@ jobs:
           docs=false
           if [ "$shared" = "1" ] || match '^(docs/|packages/docs\.nix$)'; then docs=true; fi
           echo "docs=$docs" >> "$GITHUB_OUTPUT"
+
+          # Input trees only move when the lock does.
+          inputs=false
+          if [ "$EVENT" = "workflow_dispatch" ] || match '^flake\.lock$'; then inputs=true; fi
+          echo "inputs=$inputs" >> "$GITHUB_OUTPUT"
+
+  # Mirror flake input trees onto the tailnet. Their nars are the
+  # rarely-requested corner of cache.nixos.org: 300-420 KB/s cold, 26-52 MB/s warm.
+  cache-inputs:
+    needs: changes
+    if: needs.changes.outputs.inputs == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Nix
+        uses: DeterminateSystems/determinate-nix-action@v3
+
+      - name: Setup Tailscale
+        uses: tailscale/github-action@v4
+        with:
+          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
+          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
+          tags: tag:deploy
+          use-cache: "true"
+
+      - name: Mirror flake inputs into attic
+        env:
+          ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
+        run: |
+          # Recursive descent picks up transitive inputs too.
+          nix flake archive --json \
+            | jq -r '[.path] + [.. | objects | .path? // empty] | unique | .[]' \
+            > /tmp/input-paths.txt
+          echo "mirroring $(wc -l < /tmp/input-paths.txt) input paths"
+
+          nix run nixpkgs#attic-client -- login prattle http://prattle:8091 "$ATTIC_TOKEN"
+          # attic skips anything upstream has by default, which is exactly these.
+          nix run nixpkgs#attic-client -- push \
+            --ignore-upstream-cache-filter \
+            --stdin dots < /tmp/input-paths.txt
 
   pre-deploy:
     needs: changes

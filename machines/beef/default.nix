@@ -9,6 +9,7 @@
     ./home-manager.nix
     ../../modules/shared/machine.nix
     ../../modules/darwin/defaults.nix
+    ../../modules/darwin/nix-cache.nix
   ];
 
   networking.hostName = "beef";

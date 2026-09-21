@@ -1,7 +1,6 @@
 {
   pkgs,
   inputs,
-  system,
   ...
 }:
 {
@@ -18,7 +17,6 @@
 
     packages = with pkgs; [
       fastfetch
-      inputs.nixvim.packages.${system}.default
     ];
   };
 

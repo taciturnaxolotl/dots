@@ -16,6 +16,8 @@
   #
   # The overlay in flake.nix patches that crash out, which is what makes this line
   # safe to keep. Removing one without the other brings the outage back.
+  #
+  # Darwin half: modules/darwin/nix-cache.nix.
   nix.settings = {
     extra-substituters = [ "http://prattle:8091/dots" ];
     extra-trusted-public-keys = [ "dots:Mgol9jjaoUcN6pfgLetO3fe/JAm/fVpKXYBZaQ1MhFM=" ];
