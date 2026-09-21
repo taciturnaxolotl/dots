@@ -10,6 +10,10 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
+# Nothing here writes to the repo.
+permissions:
+  contents: read
+
 jobs:
   # Decide which nodes actually need deploying from the diff. A change under
   # machines/<node> deploys only that node; anything shared (flake, modules,
@@ -17,6 +21,7 @@ jobs:
   # always deploys everything.
   changes:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       nodes: ${{ steps.set.outputs.nodes }}
       docs: ${{ steps.set.outputs.docs }}
@@ -101,9 +106,13 @@ jobs:
           ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
         run: |
           # Recursive descent picks up transitive inputs too.
+          # Without pipefail a failing `nix flake archive` leaves jq reading
+          # empty stdin, exiting 0, and the job mirrors nothing but goes green.
+          set -euo pipefail
           nix flake archive --json \
             | jq -r '[.path] + [.. | objects | .path? // empty] | unique | .[]' \
             > /tmp/input-paths.txt
+          [ -s /tmp/input-paths.txt ] || { echo "no input paths resolved"; exit 1; }
           echo "mirroring $(wc -l < /tmp/input-paths.txt) input paths"
 
           nix run nixpkgs#attic-client -- login prattle http://prattle:8091 "$ATTIC_TOKEN"
@@ -116,6 +125,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.nodes != '[]'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     outputs:
       generations: ${{ steps.capture.outputs.generations }}
 
@@ -216,52 +226,44 @@ jobs:
             --ssh-opts="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
             .#${{ matrix.node }}
 
-      # Push what we just built so the servers substitute it. attic skips
-      # anything already on cache.nixos.org, so this uploads only our own paths.
+      # Best-effort: a cache upload failing says nothing about whether the
+      # system activated, so it must not be able to trigger the rollback below.
       - name: Cache build in attic
+        continue-on-error: true
         env:
           ATTIC_TOKEN: ${{ secrets.ATTIC_TOKEN }}
         run: |
+          set -euo pipefail
           nix run nixpkgs#attic-client -- login prattle http://prattle:8091 "$ATTIC_TOKEN"
           nix run nixpkgs#attic-client -- push dots "$TOPLEVEL"
 
-  rollback:
-    needs: [pre-deploy, deploy]
-    if: failure()
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Setup Tailscale
-        uses: tailscale/github-action@v4
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:deploy
-          use-cache: "true"
-
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
-
-      - name: Rollback deployed nodes
+      # Scoped to this leg. A fleet-wide rollback job would revert the node that
+      # deployed cleanly just because its sibling failed.
+      - name: Roll back ${{ matrix.node }}
+        if: failure()
         env:
           GENERATIONS: ${{ needs.pre-deploy.outputs.generations }}
+          NODE: ${{ matrix.node }}
         run: |
-          echo "$GENERATIONS" | jq -r 'to_entries[] | "\(.key) \(.value)"' | \
-          while read -r NODE GEN; do
-            echo "::group::rollback $NODE → generation $GEN"
-            ssh -n "kierank@${NODE}" "
+          set -euo pipefail
+          GEN=$(echo "$GENERATIONS" | jq -r --arg n "$NODE" '.[$n] // empty')
+          if [ -z "$GEN" ]; then
+            echo "no pre-deploy generation recorded for $NODE; nothing to roll back"
+            exit 0
+          fi
+          echo "::group::rollback $NODE → generation $GEN"
+          ssh -n -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
+            "kierank@${NODE}" "
               sudo nix-env -p /nix/var/nix/profiles/system --switch-generation ${GEN}
               sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
             "
-            echo "::endgroup::"
-          done
+          echo "::endgroup::"
 
   docs:
     needs: [changes, deploy]
     if: always() && needs.deploy.result != 'failure' && (needs.changes.outputs.docs == 'true' || needs.deploy.result == 'success')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - uses: actions/checkout@v6

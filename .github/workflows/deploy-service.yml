@@ -44,6 +44,9 @@ on:
       TS_OAUTH_SECRET:
         required: true
 
+permissions:
+  contents: read
+
 jobs:
   deploy:
     name: ${{ inputs.service }} → ${{ inputs.host }}
@@ -77,7 +80,7 @@ jobs:
           echo "start=$(date +%s)" >> "$GITHUB_OUTPUT"
 
           RESULT=$(ssh ${{ inputs.service }}@${{ inputs.host }} << 'DEPLOY'
-            set -e
+            set -euo pipefail
             cd ~/app
 
             git fetch --all --quiet
@@ -126,7 +129,7 @@ jobs:
 
           echo "::group::install & restart"
           ssh ${{ inputs.service }}@${{ inputs.host }} << INSTALL
-            set -e
+            set -euo pipefail
             cd ~/app/${{ inputs.work_dir }}
             ${{ inputs.install_command }}
             ${{ inputs.build_command }}
@@ -225,7 +228,7 @@ jobs:
           echo "::warning::Deploy failed — rolling back ${{ inputs.service }}"
 
           ssh ${{ inputs.service }}@${{ inputs.host }} << 'ROLLBACK'
-            set -e
+            set -euo pipefail
             RED="\033[31m" Y="\033[33m" G="\033[32m" D="\033[2m" R="\033[0m"
             cd ~/app
 

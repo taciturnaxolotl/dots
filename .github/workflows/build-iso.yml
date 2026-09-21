@@ -3,6 +3,9 @@ name: Build ISO
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     strategy:
@@ -14,6 +17,7 @@ jobs:
 
     name: ${{ matrix.arch }}
     runs-on: ubuntu-latest
+    timeout-minutes: 180
 
     steps:
       - uses: actions/checkout@v6
