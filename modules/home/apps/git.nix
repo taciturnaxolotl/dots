@@ -60,6 +60,7 @@ in
       git-prunes
       pkgs.drift-diff
     ];
+    xdg.configFile."drift/config.toml".source = ../../../dots/drift.toml;
     programs.lazygit = {
       enable = true;
       settings = {

@@ -1,0 +1,37 @@
+# drift, themed to match the rest of the system: Catppuccin Macchiato, green
+# accent. Palette values are Macchiato's, from catppuccin/catppuccin.
+#
+# theme must name a builtin drift palette, because the syntax highlighting is
+# derived from that name and the `ansi` fallback turns highlighting off
+# entirely. Macchiato is not a builtin, so this rides on Mocha, its nearest
+# sibling, and repaints every chrome color below. Only the syntax tokens stay
+# Mocha, and the two flavors share hues, so the difference is a shade of
+# lightness.
+
+theme = "catppuccin-mocha"
+syntax = true
+intraline = true
+line-numbers = true
+tab-width = 4
+
+[colors]
+add         = "#a6da95"  # green
+remove      = "#ed8796"  # red
+context     = "#cad3f5"  # text
+header      = "#8aadf4"  # blue
+line-number = "#6e738d"  # overlay0
+primary     = "#a6da95"  # green, the system accent
+secondary   = "#8aadf4"  # blue
+foreground  = "#cad3f5"  # text
+background  = "#24273a"  # base
+muted       = "#6e738d"  # overlay0
+surface     = "#363a4f"  # surface0
+cursor      = "#494d64"  # surface1
+
+# Washes over the base, at the same opacities Mocha blends its own: 0.16 for a
+# whole line, 0.34 for an emphasized word, 0.12 for the hunk header band.
+add-line    = "#394449"
+remove-line = "#443649"
+header-line = "#303750"
+add-emph    = "#506459"
+remove-emph = "#684859"
