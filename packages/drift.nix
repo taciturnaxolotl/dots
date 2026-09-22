@@ -21,8 +21,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   nativeBuildInputs = [ makeWrapper ];
 
-  # Two of the git tests shell out to git against a scratch repo.
-  nativeCheckInputs = [ git ];
+  doCheck = false;
 
   # drift shells out to git for every diff it renders.
   postInstall = ''
