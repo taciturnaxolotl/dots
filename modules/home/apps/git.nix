@@ -65,7 +65,10 @@ in
       enable = true;
       extensions = [ pkgs.gh-stack ];
     };
-    home.packages = [ git-prunes ];
+    home.packages = [
+      git-prunes
+      pkgs.drift-diff
+    ];
     programs.lazygit = {
       enable = true;
       settings = {

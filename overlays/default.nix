@@ -11,6 +11,9 @@ in
   };
 
   zmx-binary = prev.callPackage ../packages/zmx.nix { };
+
+  # Not `drift`: nixpkgs already has an unrelated package by that name.
+  drift-diff = prev.callPackage ../packages/drift.nix { };
 }
 // lib.optionalAttrs prev.stdenv.hostPlatform.isLinux {
   bore-auth = prev.callPackage ../packages/bore-auth.nix { };
