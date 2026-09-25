@@ -198,6 +198,10 @@ in
       file = ../../secrets/cedarlogic.age;
       owner = "cedarlogic";
     };
+    cedarengine = {
+      file = ../../secrets/cedarengine.age;
+      owner = "cedarengine";
+    };
     overpass = {
       file = ../../secrets/overpass.age;
       owner = "overpass";
@@ -684,6 +688,17 @@ in
     secretsFile = config.age.secrets.cedarlogic.path;
     healthUrl = "https://cedarlogic.dunkirk.sh/health";
   };
+
+  # Tailnet-only, with no public name at all. See the module for why a hostname
+  # pointing at a tailscale address turned out not to be private enough.
+  atelier.services.cedarengine = {
+    enable = true;
+    domain = "terebithia:3007";
+    repository = "https://github.com/taciturnaxolotl/cedarengine";
+    secretsFile = config.age.secrets.cedarengine.path;
+    healthUrl = "http://terebithia:3007/health";
+  };
+
   atelier.services.overpass = {
     enable = true;
     domain = "overpass.dunkirk.sh";

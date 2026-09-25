@@ -93,6 +93,9 @@ in
   "cedarlogic.age".publicKeys = [
     kierank
   ];
+  "cedarengine.age".publicKeys = [
+    kierank
+  ];
   "overpass.age".publicKeys = [
     kierank
   ];
