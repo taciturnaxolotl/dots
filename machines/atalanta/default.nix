@@ -87,12 +87,13 @@
     };
   };
 
-  # Regenerate sudoers entry with correct hash after every rebuild
-  system.activationScripts.yabai-sudoers.text = ''
-    YABAI="${pkgs.yabai}/bin/yabai"
-    HASH=$(shasum -a 256 "$YABAI" | cut -d ' ' -f 1)
-    echo "kierank ALL=(root) NOPASSWD: sha256:$HASH $YABAI --load-sa" > /private/etc/sudoers.d/yabai
-    chmod 440 /private/etc/sudoers.d/yabai
+  # yabai needs root to inject its scripting addition on every Dock restart.
+  # Without this rule that injection waits for a password nobody is there to
+  # type, and every command that touches spaces quietly stops working. The old
+  # activation script never ran: nix-darwin only executes the activation steps
+  # it knows by name.
+  security.sudo.extraConfig = ''
+    kierank ALL=(root) NOPASSWD: ${pkgs.yabai}/bin/yabai --load-sa
   '';
 
   # Finder window titles carry the full posix path. The yabai rule that keeps

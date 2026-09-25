@@ -44,4 +44,11 @@ in
   direnv = prev.direnv.overrideAttrs (_: {
     doCheck = false;
   });
+
+  # Upstream yabai has no macOS 27 support, so space switching silently does
+  # nothing there. Built on unstable's yabai, which compiles from source and so
+  # can take a different revision. See packages/yabai.nix.
+  yabai = prev.callPackage ../packages/yabai.nix {
+    inherit (final.unstable) yabai;
+  };
 }
