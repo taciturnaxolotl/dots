@@ -19,18 +19,20 @@ let
     extraConfig = cfg: {
       atelier.services.cedarengine.environment = {
         DATABASE_PATH = "${cfg.dataDir}/data/cedarengine.db";
-        HOST = "0.0.0.0";
+        HOST = "127.0.0.1";
       };
 
-      networking.firewall.interfaces.tailscale0.allowedTCPPorts = [ cfg.port ];
+      atelier.services.cedarengine.caddy.rateLimit = {
+        enable = true;
+        events = 600;
+        window = "1m";
+      };
 
       # WAL lets restic hot copy
       atelier.services.cedarengine.data = {
         sqlite = "${cfg.dataDir}/data/cedarengine.db";
         stopForBackup = false;
       };
-
-      atelier.services.cedarengine.caddy.enable = false;
     };
   };
 in
@@ -38,7 +40,6 @@ in
   imports = [ baseModule ];
 
   config = lib.mkIf cfg.enable {
-    systemd.services.cedarengine.after = [ "tailscaled.service" ];
     systemd.services.cedarengine.path = lib.mkAfter [ pkgs.sqlite ];
   };
 }

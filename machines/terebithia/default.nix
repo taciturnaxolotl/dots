@@ -689,14 +689,12 @@ in
     healthUrl = "https://cedarlogic.dunkirk.sh/health";
   };
 
-  # Tailnet-only, with no public name at all. See the module for why a hostname
-  # pointing at a tailscale address turned out not to be private enough.
   atelier.services.cedarengine = {
     enable = true;
-    domain = "terebithia:3007";
+    domain = "cedarengine.dunkirk.sh";
     repository = "https://github.com/taciturnaxolotl/cedarengine";
     secretsFile = config.age.secrets.cedarengine.path;
-    healthUrl = "http://terebithia:3007/health";
+    healthUrl = "https://cedarengine.dunkirk.sh/health";
   };
 
   atelier.services.overpass = {
