@@ -126,7 +126,7 @@ in
             type = lib.types.attrsOf lib.types.path;
             default = { };
             example = {
-              botme-access = "/var/log/caddy/access-botme.idk.dunkirk.sh.log";
+              botme-access = "/var/log/caddy/access-botme.dunkirk.sh.log";
             };
             description = ''
               Log files this user may read, as name -> path. Each entry becomes

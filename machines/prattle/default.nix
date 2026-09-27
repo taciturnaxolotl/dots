@@ -595,11 +595,11 @@
   # the whole point. terebithia keeps the public name and the certificate.
   atelier.services.botme = {
     enable = true;
-    domain = "botme.idk.dunkirk.sh";
+    domain = "botme.dunkirk.sh";
     repository = "git@github.com:opticaldrive/BotThisSite.git";
     deployKeyFile = config.age.secrets.botme-deploy-key.path;
     secretsFile = config.age.secrets.botme.path;
-    healthUrl = "https://botme.idk.dunkirk.sh/health";
+    healthUrl = "https://botme.dunkirk.sh/health";
     # No vhost here: this box has no cloudflare token and is behind campus NAT,
     # so it could not answer a DNS challenge or take inbound traffic anyway.
     caddy.enable = false;

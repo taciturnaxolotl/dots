@@ -4,6 +4,7 @@
 
 let
   mkService = import ../../lib/mkService.nix;
+  mkRateLimit = import ../../lib/mkRateLimit.nix;
 in
 
 mkService {
@@ -20,44 +21,33 @@ mkService {
       DATABASE_URL = "${cfg.dataDir}/data/indiko.db";
     };
 
-    # Custom Caddy config with rate limiting on auth endpoints
+    # Auth is the endpoint worth metering; the API and the rest get looser caps.
     services.caddy.virtualHosts.${cfg.domain}.extraConfig = ''
       tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       }
 
       handle /auth/* {
-        rate_limit {
-          zone auth_limit {
-            key {http.request.remote_ip}
-            events 10
-            window 1m
-          }
-        }
+        ${mkRateLimit {
+          zone = "auth_limit";
+          events = 10;
+        }}
         reverse_proxy localhost:${toString cfg.port}
       }
 
-      # Rate limiting for API endpoints
       handle /api/* {
-        rate_limit {
-          zone api_limit {
-            key {http.request.remote_ip}
-            events 30
-            window 1m
-          }
-        }
+        ${mkRateLimit {
+          zone = "api_limit";
+          events = 30;
+        }}
         reverse_proxy localhost:${toString cfg.port}
       }
 
-      # General rate limiting for all other routes
       handle {
-        rate_limit {
-          zone general_limit {
-            key {http.request.remote_ip}
-            events 60
-            window 1m
-          }
-        }
+        ${mkRateLimit {
+          zone = "general_limit";
+          events = 60;
+        }}
         reverse_proxy localhost:${toString cfg.port}
       }
     '';

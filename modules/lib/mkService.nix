@@ -49,6 +49,8 @@
 }:
 
 let
+  mkRateLimit = import ./mkRateLimit.nix;
+
   cfg = config.atelier.services.${name};
 
   defaultStartCommand =
@@ -378,15 +380,10 @@ in
             }
           ''}
 
-          ${lib.optionalString cfg.caddy.rateLimit.enable ''
-            rate_limit {
-              zone ${name}_limit {
-                key {http.request.remote_ip}
-                events ${toString cfg.caddy.rateLimit.events}
-                window ${cfg.caddy.rateLimit.window}
-              }
-            }
-          ''}
+          ${lib.optionalString cfg.caddy.rateLimit.enable (mkRateLimit {
+            zone = "${name}_limit";
+            inherit (cfg.caddy.rateLimit) events window;
+          })}
 
           ${cfg.caddy.extraConfig}
 

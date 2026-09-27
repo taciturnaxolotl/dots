@@ -6,6 +6,18 @@
   ...
 }:
 let
+  mkRateLimit = import ../../modules/lib/mkRateLimit.nix;
+
+  # A single solver pool owns 26 addresses in one /24 and sends 194 req/min
+  # between them, against 0.9 for the median address. Per address it stays under
+  # any limit a real visitor would notice, so the bts zones count the /24.
+  clientPrefix = ''
+    map {client_ip} {client_prefix} {
+      ~^([0-9]+\.[0-9]+\.[0-9]+)\. "''${1}.0/24"
+      default {client_ip}
+    }
+  '';
+
   # prattle already runs flaresolverr as a native service, and reaches this box
   # over the tailnet. Everything here points at that one instead of a second
   # copy in docker: same work, off the two cores that also serve every vhost.
@@ -304,7 +316,7 @@ in
     # box is still the public face, and the account itself, which is the way in:
     # idk has no tailnet identity, so they jump from here to prattle's sshd on
     # 2222 (Tailscale SSH owns 22 and would want an identity they do not have).
-    logFiles.botme-access = "/var/log/caddy/access-botme.idk.dunkirk.sh.log";
+    logFiles.botme-access = "/var/log/caddy/access-botme.dunkirk.sh.log";
   };
 
   services.openssh = {
@@ -338,6 +350,10 @@ in
   # from ~380 distinct hosts). Key-only auth already makes those unwinnable;
   # this just stops them burning CPU and filling the journal.
   atelier.security.fail2ban.enable = true;
+
+  # Every vhost here except integrand is proxied, so the socket's address is a
+  # Cloudflare machine and {client_ip} needs the headers to mean the visitor.
+  atelier.caddy.trustCloudflare = true;
 
   services.tailscale = {
     enable = true;
@@ -466,14 +482,14 @@ in
   # dashboard's numbers come from stats.db, not from here. Dropping it is the
   # only thing that actually removes the work. Set it back to
   # `leanAccessLog "cap.dunkirk.sh"` if that history is ever wanted.
-  services.caddy.virtualHosts."botme.idk.dunkirk.sh".logFormat = leanAccessLog "botme.idk.dunkirk.sh";
+  services.caddy.virtualHosts."botme.dunkirk.sh".logFormat = leanAccessLog "botme.dunkirk.sh";
   services.caddy.virtualHosts."cap.dunkirk.sh".logFormat = lib.mkForce null;
   # bore's wildcard is the worst of both: a dev server behind it turns one page
   # load into fifty module requests, and each one writes a json line into a log
   # nobody reads. Same call as cap's, ten times the volume.
   services.caddy.virtualHosts."*.bore.dunkirk.sh".logFormat = lib.mkForce null;
 
-  services.caddy.virtualHosts."botme.idk.dunkirk.sh" = {
+  services.caddy.virtualHosts."botme.dunkirk.sh" = {
     extraConfig = ''
       tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
@@ -481,6 +497,19 @@ in
       header {
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
       }
+
+      # 97.7% of requests here are the verify POST, so the limit covers that and
+      # leaves /health and the leaderboard API alone: a 429 on /health would put
+      # cachet's monitor into a false alarm.
+      ${clientPrefix}
+      @verify path /captchas/verify/*
+      ${mkRateLimit {
+        zone = "botme_verify";
+        events = 60;
+        window = "1m";
+        matcher = "@verify";
+        key = "{client_prefix}";
+      }}
 
       reverse_proxy prattle:3012 {
         # With one upstream and no health checking, caddy dials every request
@@ -526,17 +555,24 @@ in
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       }
 
+      # Double botme's: a solve costs cap a challenge and a redeem against one
+      # verify, and abandoned challenges only ever reach this side. Rejecting
+      # here also spares the tailnet hop to prattle.
+      ${clientPrefix}
+      ${mkRateLimit {
+        zone = "cap_solve";
+        events = 120;
+        window = "1m";
+        key = "{client_prefix}";
+      }}
+
       reverse_proxy prattle:3013 {
         # Same breaker as botme's vhost, same reason.
         fail_duration 10s
         max_fails 3
 
-        # cap keys its rate limit and blocklist on the *leftmost*
-        # X-Forwarded-For value, which is whatever the client sent. Replacing
-        # the header instead of appending to it leaves cap one value it can
-        # trust: the peer caddy actually talked to. {client_ip} is the right
-        # source for it because dunkirk.sh is DNS-only, so caddy's peer is
-        # the visitor rather than a CDN edge.
+        # cap trusts the leftmost X-Forwarded-For value, so replace the header
+        # rather than appending to it and leave cap one address it can believe.
         header_up X-Forwarded-For {client_ip}
 
         # Same pool as botme's, for the same reason: cap is the widget half of
@@ -963,13 +999,11 @@ in
       # /v1/snip runs a model on beef's CPU for whoever asks, so meter the API
       # and leave the page alone.
       @api path /v1/*
-      rate_limit @api {
-        zone integrand_api {
-          key {http.request.remote_ip}
-          events 20
-          window 1m
-        }
-      }
+      ${mkRateLimit {
+        zone = "integrand_api";
+        events = 20;
+        matcher = "@api";
+      }}
 
       request_body {
         max_size 2MB
