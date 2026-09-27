@@ -62,7 +62,8 @@ let
     ${cfg.extraConfig}
   '';
 
-  skhdrcContent = cfg.skhdConfig + "\n" + cfg.extraSkhdConfig;
+  skhdrc = pkgs.writeText "skhdrc" (cfg.skhdConfig + "\n" + cfg.extraSkhdConfig);
+  skhdLogDir = "${config.home.homeDirectory}/Library/Logs/skhd";
 in
 {
   options.atelier.wm.yabai = {
@@ -220,7 +221,10 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    home.packages = [ cfg.package ];
+    home.packages = [
+      cfg.package
+      cfg.skhdPackage
+    ];
 
     home.file.".yabairc" = {
       executable = true;
@@ -244,11 +248,29 @@ in
       };
     };
 
-    services.skhd = {
+    xdg.configFile."skhd/skhdrc".source = skhdrc;
+
+    # Passing -c puts the config's store path in the plist, so the plist changes
+    # whenever skhdrc does and launchd restarts skhd on switch. home-manager's
+    # services.skhd omits it, leaving an unchanging plist and a stale daemon.
+    launchd.agents.skhd = {
       enable = true;
-      package = cfg.skhdPackage;
-      config = skhdrcContent;
+      config = {
+        ProgramArguments = [
+          (lib.getExe cfg.skhdPackage)
+          "-c"
+          "${skhdrc}"
+        ];
+        ProcessType = "Interactive";
+        KeepAlive = true;
+        RunAtLoad = true;
+        StandardErrorPath = "${skhdLogDir}/skhd.err.log";
+        StandardOutPath = "${skhdLogDir}/skhd.out.log";
+      };
     };
+
+    # launchd drops output silently when the log directory is missing.
+    home.file."Library/Logs/skhd/.keep".text = "";
 
     services.jankyborders = {
       enable = true;
