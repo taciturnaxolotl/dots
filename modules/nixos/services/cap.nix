@@ -66,9 +66,9 @@ in
 
     healthUrl = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
-      default = "https://${cfg.domain}";
-      defaultText = lib.literalExpression ''"https://\${cfg.domain}"'';
-      description = "Health check URL for monitoring. Cap serves its admin UI at the root and has no dedicated health route.";
+      default = "https://${cfg.domain}/health";
+      defaultText = lib.literalExpression ''"https://\${cfg.domain}/health"'';
+      description = "Health check URL for monitoring. /health fails when valkey is unreachable; the admin UI at the root does not.";
     };
 
     adminKeyFile = lib.mkOption {
@@ -148,7 +148,7 @@ in
         # already have locally, so a floating tag silently freezes at whatever
         # was first pulled — this box sat on 3.1.10 for a week thinking it was
         # current. A version here means the bump is a reviewable diff.
-        image = "tiago2/cap:3.1.11";
+        image = "tiago2/cap:3.1.14";
         ports = map (a: "${a}:${toString cfg.port}:3000") cfg.listenAddresses;
         environment.REDIS_URL = "redis://cap-valkey:6379";
         environmentFiles = [ cfg.adminKeyFile ];
