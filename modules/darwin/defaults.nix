@@ -70,12 +70,6 @@ in
     "/Users/kierank/.ssh/id_rsa"
   ];
 
-  environment.variables = {
-    EDITOR = "nvim";
-    SYSTEMD_EDITOR = "nvim";
-    VISUAL = "nvim";
-  };
-
   # Allow using Apple Watch or Touch ID for sudo
   security.pam.services.sudo_local.touchIdAuth = true;
   security.pam.services.sudo_local.watchIdAuth = true;

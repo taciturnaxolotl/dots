@@ -58,6 +58,7 @@ in
     ./disk-config.nix
     ./home-manager.nix
 
+    (inputs.import-tree ../../modules/shared)
     (inputs.import-tree ../../modules/nixos)
   ];
 
@@ -249,9 +250,6 @@ in
     XDG_CONFIG_HOME = "$HOME/.config";
     XDG_DATA_HOME = "$HOME/.local/share";
     XDG_STATE_HOME = "$HOME/.local/state";
-    EDITOR = "nvim";
-    SYSTEMD_EDITOR = "nvim";
-    VISUAL = "nvim";
   };
 
   atelier = {

@@ -6,7 +6,7 @@
 {
   imports = [
     ./home-manager.nix
-    ../../modules/shared/machine.nix
+    (inputs.import-tree ../../modules/shared)
     ../../modules/darwin/defaults.nix
     ../../modules/darwin/nix-cache.nix
   ];
