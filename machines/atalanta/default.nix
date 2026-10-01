@@ -60,6 +60,9 @@
     pkgs.ninja
     # security
     pkgs.unstable.metasploit
+    pkgs.feroxbuster
+    pkgs.seclists
+    pkgs.sqlmap
     # tools
     pkgs.calc
     pkgs.nh
