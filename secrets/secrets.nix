@@ -123,4 +123,7 @@ in
   "atticd-env.age".publicKeys = [
     kierank
   ];
+  "smb-kierank.age".publicKeys = [
+    kierank
+  ];
 }

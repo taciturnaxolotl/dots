@@ -124,6 +124,9 @@
     "restic/env".file = ../../secrets/restic/env.age;
     "restic/repo".file = ../../secrets/restic/repo.age;
     "restic/password".file = ../../secrets/restic/password.age;
+    smb-kierank = {
+      file = ../../secrets/smb-kierank.age;
+    };
     botme = {
       file = ../../secrets/botme.age;
       owner = "botme";
@@ -970,22 +973,27 @@
         "guest ok" = "yes";
         "force group" = "media";
       };
-      kierank = {
-        path = "/storage/kierank";
-        browseable = "yes";
-        "read only" = "no";
-        "guest ok" = "no";
-        "valid users" = "kierank";
-        "create mask" = "0664";
-        "directory mask" = "2775";
-        "force group" = "media";
-      };
     };
   };
 
   services.samba-wsdd = {
     enable = true;
     openFirewall = true;
+  };
+
+  # Set kierank's Samba password from the agenix secret on every rebuild.
+  systemd.services.samba-kierank-passwd = {
+    wantedBy = [ "multi-user.target" ];
+    after = [ "samba-smbd.service" ];
+    serviceConfig = {
+      Type = "oneshot";
+      RemainAfterExit = true;
+    };
+    script = ''
+      set -eu
+      pw=$(cat ${config.age.secrets.smb-kierank.path})
+      printf '%s\n%s\n' "$pw" "$pw" | ${pkgs.samba}/bin/smbpasswd -a -s kierank
+    '';
   };
 
   # ── Garage (S3-compatible object store) ─────────────────────────────

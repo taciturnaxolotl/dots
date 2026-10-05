@@ -1,6 +1,7 @@
 {
   inputs,
   pkgs,
+  config,
   ...
 }:
 {
@@ -88,6 +89,10 @@
       file = ../../secrets/pbnj.age;
       owner = "kierank";
     };
+    smb-kierank = {
+      file = ../../secrets/smb-kierank.age;
+      owner = "kierank";
+    };
   };
 
   # yabai needs root to inject its scripting addition on every Dock restart.
@@ -128,6 +133,24 @@
       RunAtLoad = true;
       KeepAlive = true;
       ProcessType = "Interactive";
+    };
+  };
+
+  # Upsert the prattle NAS password into the login keychain at login (user
+  # session, so the keychain is unlocked) for prompt-free Finder connects.
+  launchd.user.agents.smb-keychain = {
+    serviceConfig = {
+      Label = "sh.dunkirk.smb-keychain";
+      ProgramArguments = [
+        "${pkgs.writeShellScript "smb-keychain" ''
+          pw=$(cat ${config.age.secrets.smb-kierank.path}) || exit 0
+          /usr/bin/security add-internet-password \
+            -U -a kierank -s prattle -r "smb " -D "network password" \
+            -l "prattle" -w "$pw" \
+            "$HOME/Library/Keychains/login.keychain-db"
+        ''}"
+      ];
+      RunAtLoad = true;
     };
   };
 
