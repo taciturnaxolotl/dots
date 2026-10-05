@@ -787,6 +787,7 @@
     # gone; this is only the root they live under.
     "d /storage/kloe 0755 root root -"
     "d /storage/kloe/workspaces 0711 root root -"
+    "d /storage/kierank 2770 kierank media -"
   ];
 
   # ── Recyclarr (TRaSH Guides sync) ─────────────────────────────────────
@@ -967,6 +968,16 @@
         browseable = "yes";
         "read only" = "yes";
         "guest ok" = "yes";
+        "force group" = "media";
+      };
+      kierank = {
+        path = "/storage/kierank";
+        browseable = "yes";
+        "read only" = "no";
+        "guest ok" = "no";
+        "valid users" = "kierank";
+        "create mask" = "0664";
+        "directory mask" = "2775";
         "force group" = "media";
       };
     };
