@@ -110,7 +110,12 @@ let
                 refs/tags/*) ref="tag ''${ref#refs/tags/}" ;;
                 refs/heads/*) ref=''${ref#refs/heads/} ;;
             esac
-            printf '  %s%s%s %s%s%s\n' "$green" "$ref" "$reset" \
+            # '-' flags a deleted ref; paint those red, the rest green.
+            case "$flag" in
+                -) refcolor=$red ;;
+                *) refcolor=$green ;;
+            esac
+            printf '  %s%s%s %s%s%s\n' "$refcolor" "$ref" "$reset" \
                 "$dim" "''${summary%% (*}" "$reset"
         done < "$out"
 
