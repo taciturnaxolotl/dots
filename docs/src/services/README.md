@@ -13,6 +13,7 @@ These services have detailed option references and architecture notes:
 
 - [bore](./bore.md) — HTTP/TCP/UDP tunnel proxy with optional OAuth
 - [cedarlogic](./cedarlogic.md) — circuit simulator with WebSocket collaboration
+- [cedarplan](./cedarplan.md) — course planner over a student-filled section catalog
 - [control](./control.md) — admin dashboard for Caddy feature toggles
 - [emojibot](./emojibot.md) — multi-instance Slack emoji management
 - [herald](./herald.md) — git SSH hosting with email via SMTP/DKIM

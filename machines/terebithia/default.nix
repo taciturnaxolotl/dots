@@ -731,6 +731,16 @@ in
     healthUrl = "https://cedarengine.dunkirk.sh/health";
   };
 
+  # No secretsFile, because the planner has no credentials of its own: it
+  # holds the public course catalog, and every student's session stays in
+  # their own browser.
+  atelier.services.cedarplan = {
+    enable = true;
+    domain = "cedarplan.dunkirk.sh";
+    repository = "https://github.com/taciturnaxolotl/the-cedarville-app";
+    healthUrl = "https://cedarplan.dunkirk.sh/health";
+  };
+
   atelier.services.overpass = {
     enable = true;
     domain = "overpass.dunkirk.sh";

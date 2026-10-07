@@ -7,6 +7,7 @@
 - [Services](./services/README.md)
   - [bore](./services/bore.md)
   - [cedarlogic](./services/cedarlogic.md)
+  - [cedarplan](./services/cedarplan.md)
   - [control](./services/control.md)
   - [emojibot](./services/emojibot.md)
   - [herald](./services/herald.md)
