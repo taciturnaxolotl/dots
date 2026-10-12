@@ -142,16 +142,25 @@ Two patterns in use — know which machine uses which:
 
 **Explicit imports** (prattle): Individual `imports = [ ... ]` lists. Adding a module requires editing the machine's `default.nix`.
 
-The home config for atalanta (`machines/atalanta/home/default.nix`) uses `import-tree` for `modules/home`, meaning all home modules are always available — they just won't activate without `atelier.<module>.enable = true`.
+Home modules are not imported per machine. `homeManagerModule` in `flake.nix` puts `import-tree ./modules/home` (plus the catppuccin and spicetify home modules) into `home-manager.sharedModules`, so every user on every host has all of them available. They just won't activate without `atelier.<module>.enable = true`. A machine's `home/*.nix` only sets user details and enables features.
+
+### Modules under `modules/` never take `inputs`
+
+Shared modules only see `pkgs`, `lib`, `config` and options, so they stay portable (see ysun's "`specialArgs` considered harmful"). Anything that needs a flake input is wired in `flake.nix` instead:
+
+- **A package from an input**: add it to `overlays/default.nix` and use `pkgs.<name>`.
+- **An upstream module** (catppuccin, spicetify, tangled knot/spindle): import it in `flake.nix` (`homeManagerModule`'s `sharedModules`, or the host's `modules` list).
+- **Flake plumbing** (registry, `nixPath`): `registryModule` in `flake.nix`.
+
+`specialArgs.inputs` is still passed to the four real hosts, but only machine entry files (`machines/<name>/default.nix`) should use it. The ISOs no longer get it at all.
 
 ## Overlays and Custom Packages
 
-A single `unstable-overlays` attrset is defined at the top of `flake.nix` and threaded into every configuration. It:
+`overlays/default.nix` is the one overlay for every platform. `overlaysModule` in `flake.nix` applies it (with NUR) to every configuration, Darwin included. It:
 - Adds `pkgs.unstable` (nixpkgs-unstable) — access unstable packages via `pkgs.unstable.<name>`
-- Adds `pkgs.zmx-binary`, `pkgs.bore-auth`, `pkgs.pear`, `pkgs.herald`, `pkgs.tangle-of-trust`
-- Darwin-only: disables `direnv` test suite (sandbox SIGKILL issue on macOS with libarchive >= 3.8.5)
-
-The Darwin machine (`atalanta`) also defines its overlays inline in `default.nix` rather than relying solely on the flake-level ones, because nix-darwin handles `nixpkgs.overlays` differently.
+- Adds `pkgs.zmx-binary`, `pkgs.drift-diff`, `pkgs.terminal-wakatime`, `pkgs.wakatime-ls`, `pkgs.spicePkgs`, `pkgs.impure` everywhere
+- Linux-only: `pkgs.bore-auth`, `pkgs.pear`, `pkgs.herald`, `pkgs.potluck`, `pkgs.lard`, `pkgs.tangle-of-trust`, and the patched nix
+- Darwin-only: disables the `direnv` test suite and swaps in the patched `yabai`
 
 ## Formatting
 
@@ -187,6 +196,5 @@ The Darwin machines run **Lix** (`nix.package = pkgs.lixPackageSets.latest.lix`,
 - **agenix secrets are runtime paths**: `config.age.secrets.<name>.path` resolves to something like `/run/agenix/<name>`. It's not a store path. Don't try to use it at build time.
 - **Caddy TLS**: all virtualHosts use Cloudflare DNS challenge (`dns cloudflare {env.CLOUDFLARE_API_TOKEN}`). The token comes from `age.secrets.cloudflare`, loaded via `systemd.services.caddy.serviceConfig.EnvironmentFile`. This is already wired in terebithia — new services just need their virtualHost configured.
 - **CI builds, the target does not**: `--remote-build` was dropped once runners were arch-matched, so the runner needs real build capacity. The dev shell (via `nix develop`) provides `deploy-rs`.
-- **Darwin overlays duplication**: `atalanta/default.nix` re-declares `nixpkgs.overlays` inline instead of consuming `unstable-overlays`. This is because nix-darwin's `nixpkgs.overlays` option is separate from the module system's overlay injection. If you add a new overlay to `unstable-overlays` in `flake.nix`, also add it to `atalanta/default.nix` if atalanta needs it.
 - **`services.nix` nixdoc format**: functions in `lib/services.nix` use nixdoc-compatible `/**` docstring syntax. Keep that format when adding functions there — it feeds the auto-generated docs.
 - **zmx hosts and one-shot SSH**: hosts with `atelier.ssh.hosts.<n>.zmx = true` (and the `t.*`/`p.*`/`e.*` patterns) carry a `RemoteCommand` that auto-attaches a zmx session, so `ssh <host> <cmd>`, `scp` and `rsync` would normally fail with `Cannot execute command-line and remote command`. A `Match` block cancels it whenever `ZMX_OFF`, `AI_AGENT`, `CLAUDECODE` or `CRUSH` is set, so agent shells already get plain SSH. Prefix with `ZMX_OFF=1` if you ever see that error. For long remote work use `ssh <host> zmx run <session> <cmd>` and read it back with `ssh <host> zmx history <session>`.

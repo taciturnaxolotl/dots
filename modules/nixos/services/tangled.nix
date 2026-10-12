@@ -1,7 +1,6 @@
 {
   lib,
   config,
-  inputs,
   ...
 }:
 let
@@ -92,11 +91,6 @@ in
       };
     };
   };
-
-  imports = [
-    inputs.tangled.nixosModules.knot
-    inputs.tangled.nixosModules.spindle
-  ];
 
   # knot and spindle are gated independently so a machine can run just one
   # (e.g. spindle on a KVM host, knot elsewhere).

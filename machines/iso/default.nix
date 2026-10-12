@@ -1,14 +1,12 @@
 {
   pkgs,
   lib,
-  inputs,
   modulesPath,
   ...
 }:
 {
   imports = [
     "${modulesPath}/installer/cd-dvd/installation-cd-minimal.nix"
-    inputs.home-manager.nixosModules.home-manager
   ];
 
   networking.hostName = "iso";
@@ -73,11 +71,7 @@
   };
 
   home-manager = {
-    useGlobalPkgs = true;
-    extraSpecialArgs = { inherit inputs; };
     users.root = {
-      imports = [ (inputs.import-tree ../../modules/home) ];
-
       home = {
         username = "root";
         homeDirectory = "/root";

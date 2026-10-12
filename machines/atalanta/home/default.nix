@@ -1,5 +1,4 @@
 {
-  inputs,
   pkgs,
   osConfig,
   ...
@@ -21,10 +20,6 @@ let
   '';
 in
 {
-  imports = [
-    (inputs.import-tree ../../../modules/home)
-  ];
-
   home = {
     username = "kierank";
     homeDirectory = "/Users/kierank";

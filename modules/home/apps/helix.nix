@@ -2,7 +2,6 @@
   lib,
   config,
   pkgs,
-  inputs,
   ...
 }:
 {
@@ -83,7 +82,7 @@
         vscode-langservers-extracted
         kotlin-language-server
         harper
-        inputs.wakatime-ls.packages.${pkgs.stdenv.hostPlatform.system}.default
+        wakatime-ls
       ];
       settings = {
         theme = "catppuccin_macchiato";

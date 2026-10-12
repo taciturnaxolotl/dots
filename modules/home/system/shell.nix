@@ -2,7 +2,6 @@
   lib,
   pkgs,
   config,
-  inputs,
   ...
 }:
 let
@@ -477,12 +476,7 @@ let
     "${ghrpc}/share/ghrpc/init.zsh"
   ];
 
-  # Pre-compiled instant prompt (zsh auto-uses .zwc next to .zsh).
-  instant-prompt = pkgs.runCommand "instant-prompt" { } ''
-    mkdir -p $out
-    cp ${inputs.impure}/instant-prompt.zsh $out/instant-prompt.zsh
-    ${pkgs.zsh}/bin/zsh -c 'zcompile "$1"' _ $out/instant-prompt.zsh
-  '';
+  impure = "${pkgs.impure}/share/zsh/plugins/impure";
 
 in
 {
@@ -580,12 +574,12 @@ in
         bindkey -e
 
         # Instant prompt: print minimal prompt before heavy init (pre-compiled)
-        source ${instant-prompt}/instant-prompt.zsh
+        source ${impure}/instant-prompt.zsh
 
         # Impure prompt
-        source ${inputs.impure}/async.zsh
+        source ${impure}/async.zsh
         IMPURE_CMD_MAX_EXEC_TIME=3
-        source ${inputs.impure}/impure.zsh
+        source ${impure}/impure.zsh
 
         zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
         zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
@@ -844,7 +838,7 @@ in
       now
       ghostty-setup
       pkgs.unstable.wakatime-cli
-      inputs.terminal-wakatime.packages.${pkgs.stdenv.hostPlatform.system}.default
+      pkgs.terminal-wakatime
       pkgs.unstable.zsh-patina
       pkgs.gitstatus
       unzip

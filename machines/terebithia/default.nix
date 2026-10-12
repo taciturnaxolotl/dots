@@ -69,24 +69,16 @@ in
     };
   };
 
-  nix =
-    let
-      flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-    in
-    {
-      settings = {
-        experimental-features = "nix-command flakes";
-        flake-registry = "";
-        nix-path = config.nix.nixPath;
-        trusted-users = [
-          "kierank"
-        ];
-      };
-      channel.enable = false;
-      optimise.automatic = true;
-      registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-      nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+  nix = {
+    settings = {
+      experimental-features = "nix-command flakes";
+      trusted-users = [
+        "kierank"
+      ];
     };
+    channel.enable = false;
+    optimise.automatic = true;
+  };
 
   time.timeZone = "America/New_York";
 

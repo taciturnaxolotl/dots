@@ -1,14 +1,9 @@
 {
   lib,
-  inputs,
   config,
   ...
 }:
 {
-  imports = [
-    inputs.catppuccin.homeModules.catppuccin
-  ];
-
   options.atelier.theming.enable = lib.mkEnableOption "Enable Catppuccin and GTK/QT themeing";
   config = lib.mkIf config.atelier.theming.enable {
     catppuccin = {

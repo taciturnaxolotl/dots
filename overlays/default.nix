@@ -14,6 +14,14 @@ in
 
   # Not `drift`: nixpkgs already has an unrelated package by that name.
   drift-diff = prev.callPackage ../packages/drift.nix { };
+
+  terminal-wakatime = fromInput "terminal-wakatime";
+  wakatime-ls = fromInput "wakatime-ls";
+
+  # spicetify-nix's extension and theme sets, for programs.spicetify.
+  spicePkgs = inputs.spicetify-nix.legacyPackages.${prev.stdenv.hostPlatform.system};
+
+  impure = prev.callPackage ../packages/impure.nix { src = inputs.impure; };
 }
 // lib.optionalAttrs prev.stdenv.hostPlatform.isLinux {
   bore-auth = prev.callPackage ../packages/bore-auth.nix { };

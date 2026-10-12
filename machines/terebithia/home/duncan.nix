@@ -1,9 +1,5 @@
-{ inputs, ... }:
+{ ... }:
 {
-  imports = [
-    (inputs.import-tree ../../../modules/home)
-  ];
-
   home = {
     username = "duncan";
     homeDirectory = "/home/duncan";

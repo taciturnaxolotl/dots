@@ -175,12 +175,46 @@
       # be missing on the Macs. Platform-specific entries are guarded inside it.
       atelierOverlay = import ./overlays { inherit inputs lib; };
 
-      unstable-overlays = {
+      # Everything that needs flake inputs is wired here, so the modules under
+      # modules/ only ever see pkgs, lib and options and stay portable.
+      overlaysModule = {
         nixpkgs.overlays = [
           nur.overlays.default
           atelierOverlay
         ];
       };
+
+      # Pin `nix run nixpkgs#...` and <nixpkgs> to this flake's inputs.
+      registryModule =
+        { config, ... }:
+        let
+          flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
+        in
+        {
+          nix.registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
+          nix.nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
+          nix.settings.flake-registry = "";
+          nix.settings.nix-path = config.nix.nixPath;
+        };
+
+      # Upstream home modules and our own are shared by every user, so a
+      # machine's home config only has to say which features it enables.
+      homeManagerModule = platformModule: {
+        imports = [ platformModule ];
+        home-manager = {
+          useGlobalPkgs = true;
+          sharedModules = [
+            inputs.catppuccin.homeModules.catppuccin
+            inputs.spicetify-nix.homeManagerModules.default
+            (inputs.import-tree ./modules/home)
+          ];
+        };
+      };
+
+      tangledModules = [
+        tangled.nixosModules.knot
+        tangled.nixosModules.spindle
+      ];
 
       deployRsLib =
         system:
@@ -203,43 +237,47 @@
       nixosConfigurations = {
         prattle = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
-          modules = [
+          modules = tangledModules ++ [
             inputs.disko.nixosModules.disko
             agenix.nixosModules.default
             inputs.nixos-facter-modules.nixosModules.facter
             inputs.nixarr.nixosModules.default
             { config.facter.reportPath = ./machines/prattle/facter.json; }
-            unstable-overlays
+            overlaysModule
+            registryModule
+            (homeManagerModule home-manager.nixosModules.home-manager)
             ./machines/prattle
           ];
         };
 
         terebithia = nixpkgs.lib.nixosSystem {
           specialArgs = { inherit inputs; };
-          modules = [
+          modules = tangledModules ++ [
             inputs.disko.nixosModules.disko
             agenix.nixosModules.default
             inputs.nixos-facter-modules.nixosModules.facter
             { config.facter.reportPath = ./machines/terebithia/facter.json; }
-            unstable-overlays
+            overlaysModule
+            registryModule
+            (homeManagerModule home-manager.nixosModules.home-manager)
             ./machines/terebithia
           ];
         };
 
         iso-x86_64 = nixpkgs.lib.nixosSystem {
           system = "x86_64-linux";
-          specialArgs = { inherit inputs; };
           modules = [
-            unstable-overlays
+            overlaysModule
+            (homeManagerModule home-manager.nixosModules.home-manager)
             ./machines/iso
           ];
         };
 
         iso-aarch64 = nixpkgs.lib.nixosSystem {
           system = "aarch64-linux";
-          specialArgs = { inherit inputs; };
           modules = [
-            unstable-overlays
+            overlaysModule
+            (homeManagerModule home-manager.nixosModules.home-manager)
             ./machines/iso
           ];
         };
@@ -252,8 +290,10 @@
           system = "aarch64-darwin";
           specialArgs = { inherit inputs; };
           modules = [
-            home-manager.darwinModules.home-manager
+            (homeManagerModule home-manager.darwinModules.home-manager)
             agenix.darwinModules.default
+            overlaysModule
+            registryModule
             ./machines/atalanta
           ];
         };
@@ -261,8 +301,10 @@
           system = "aarch64-darwin";
           specialArgs = { inherit inputs; };
           modules = [
-            home-manager.darwinModules.home-manager
+            (homeManagerModule home-manager.darwinModules.home-manager)
             agenix.darwinModules.default
+            overlaysModule
+            registryModule
             ./machines/beef
           ];
         };

@@ -1,27 +1,15 @@
 {
-  inputs,
   pkgs,
   lib,
   config,
   ...
 }:
-let
-  flakeInputs = lib.filterAttrs (_: lib.isType "flake") inputs;
-in
 {
   # Common nix-darwin settings for all macOS machines
 
   nixpkgs = {
     hostPlatform = "aarch64-darwin";
     config.allowUnfree = true;
-    overlays = [
-      inputs.nur.overlays.default
-      # Same overlay the NixOS hosts get; see overlays/default.nix.
-      (import ../../overlays {
-        inherit inputs;
-        inherit (inputs.nixpkgs) lib;
-      })
-    ];
   };
 
   nix.settings.experimental-features = [
@@ -30,11 +18,7 @@ in
   ];
 
   # disable channels if we arent using them
-  nix.registry = lib.mapAttrs (_: flake: { inherit flake; }) flakeInputs;
-  nix.nixPath = lib.mapAttrsToList (n: _: "${n}=flake:${n}") flakeInputs;
   nix.channel.enable = lib.mkIf config.nix.enable false;
-  nix.settings.flake-registry = "";
-  nix.settings.nix-path = config.nix.nixPath;
 
   # Nix installation management (only when nix-darwin manages nix)
   # Machines using Determinate Nix should set nix.enable = false
