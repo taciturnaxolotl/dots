@@ -12,6 +12,7 @@
   ];
 
   networking.hostName = "atalanta";
+  networking.localHostName = "atalanta";
 
   atelier.machine = {
     enable = true;
