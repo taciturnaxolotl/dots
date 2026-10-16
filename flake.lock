@@ -268,11 +268,11 @@
     "flake-compat_2": {
       "flake": false,
       "locked": {
-        "lastModified": 1751685974,
-        "narHash": "sha256-NKw96t+BgHIYzHUjkTK95FqYRVKB8DHpVhefWSz/kTw=",
-        "rev": "549f2762aebeff29a2e5ece7a7dc0f955281a1d1",
+        "lastModified": 1777699697,
+        "narHash": "sha256-Eg9b/rq/ECYwNwEXs5i9wHyhxNI0JrYx2srdI2uZMaQ=",
+        "rev": "382052b74656a369c5408822af3f2501e9b1af81",
         "type": "tarball",
-        "url": "https://git.lix.systems/api/v1/repos/lix-project/flake-compat/archive/549f2762aebeff29a2e5ece7a7dc0f955281a1d1.tar.gz?rev=549f2762aebeff29a2e5ece7a7dc0f955281a1d1"
+        "url": "https://git.lix.systems/api/v1/repos/lix-project/flake-compat/archive/382052b74656a369c5408822af3f2501e9b1af81.tar.gz"
       },
       "original": {
         "type": "tarball",
@@ -486,11 +486,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1787080404,
-        "narHash": "sha256-lPdQE4fiemmd3cuMHX0IgtEdRh3XOfmgQtHti8Lk2Ms=",
+        "lastModified": 1792203803,
+        "narHash": "sha256-snc84OJmQCe9pJcADiwpMAZ0YuGryVhl9hXzJWvsx5s=",
         "owner": "taciturnaxolotl",
         "repo": "herald",
-        "rev": "956a2a322982810014c2f2d037a8ea69db7a05d4",
+        "rev": "91de1a88a001689212b2b8be467a919353bdd548",
         "type": "github"
       },
       "original": {
