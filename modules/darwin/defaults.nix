@@ -22,7 +22,9 @@
 
   # Nix installation management (only when nix-darwin manages nix)
   # Machines using Determinate Nix should set nix.enable = false
-  nix.package = lib.mkIf config.nix.enable pkgs.lixPackageSets.latest.lix;
+  # 2.96 only exists on unstable; it is the first release past the October 2026
+  # Lix advisory line. Go back to the stable `latest` once 26.05 carries it.
+  nix.package = lib.mkIf config.nix.enable pkgs.unstable.lixPackageSets.lix_2_96.lix;
 
   nix.gc = lib.mkIf config.nix.enable {
     automatic = true;
