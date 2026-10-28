@@ -19,9 +19,16 @@ mkService {
       ORIGIN = "https://${cfg.domain}";
       RP_ID = cfg.domain;
       DATABASE_URL = "${cfg.dataDir}/data/indiko.db";
+      # Caddy passes Cloudflare's headers through, so indiko's own per-endpoint
+      # limiters (token, passkey, LDAP) can key on the real visitor instead of
+      # seeing every request arrive from localhost.
+      TRUSTED_PROXY = "cloudflare";
     };
 
-    # Auth is the endpoint worth metering; the API and the rest get looser caps.
+    # Indiko meters its sensitive endpoints itself; Caddy is only a coarse
+    # backstop. An interactive sign-in is four or five /auth/* requests and a
+    # conformance run (indieauth.rocks) is dozens in a minute, so the old cap
+    # of 10 cut real flows off at the consent step.
     services.caddy.virtualHosts.${cfg.domain}.extraConfig = ''
       tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
@@ -30,7 +37,7 @@ mkService {
       handle /auth/* {
         ${mkRateLimit {
           zone = "auth_limit";
-          events = 10;
+          events = 60;
         }}
         reverse_proxy localhost:${toString cfg.port}
       }
