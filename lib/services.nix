@@ -112,14 +112,16 @@
               health_url = "https://${allServices.frps.domain}";
             }
           ))
-          (lib.optional (config.services.tangled.knot.enable or false) (
+          (lib.optional (config.services.tangled.knot-rs.enable or false) (
             mkCustom "knot" {
-              description = "Tangled git hosting";
-              domain = config.services.tangled.knot.server.hostname or "knot.dunkirk.sh";
+              description = "Tangled git hosting (knot 2)";
+              domain = config.services.tangled.knot-rs.settings.server.hostname or "knot.dunkirk.sh";
               port = 5555;
-              runtime = "go";
+              runtime = "rust";
               repository = null;
-              health_url = "https://${config.services.tangled.knot.server.hostname or "knot.dunkirk.sh"}";
+              health_url = "https://${
+                config.services.tangled.knot-rs.settings.server.hostname or "knot.dunkirk.sh"
+              }/xrpc/_health";
             }
           ))
           (lib.optional (config.services.tangled.spindle.enable or false) (

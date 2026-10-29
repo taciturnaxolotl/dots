@@ -496,25 +496,25 @@
     "htmx-src": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-nm6avZuEBg67SSyyZUhjpXVNstHHgUxrtBHqJgowU08=",
+        "narHash": "sha256-2D8I0L0u6qb57QpeVn88RrT0xatDwQwG/lWOTjuEFPc=",
         "type": "file",
-        "url": "https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"
+        "url": "https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"
       },
       "original": {
         "type": "file",
-        "url": "https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js"
+        "url": "https://cdn.jsdelivr.net/npm/htmx.org@2.0.10/dist/htmx.min.js"
       }
     },
     "htmx-ws-src": {
       "flake": false,
       "locked": {
-        "narHash": "sha256-2fg6KyEJoO24q0fQqbz9RMaYNPQrMwpZh29tkSqdqGY=",
+        "narHash": "sha256-woiluaeAoxH/CyDkpk6LYNWCzxH8PHgwgnrlBFGJxgk=",
         "type": "file",
-        "url": "https://cdn.jsdelivr.net/npm/htmx-ext-ws@2.0.2"
+        "url": "https://cdn.jsdelivr.net/npm/htmx-ext-ws@2.0.4"
       },
       "original": {
         "type": "file",
-        "url": "https://cdn.jsdelivr.net/npm/htmx-ext-ws@2.0.2"
+        "url": "https://cdn.jsdelivr.net/npm/htmx-ext-ws@2.0.4"
       }
     },
     "hyprland-contrib": {
@@ -1115,6 +1115,19 @@
         "type": "github"
       }
     },
+    "tailwindcss-animated-src": {
+      "flake": false,
+      "locked": {
+        "lastModified": 499162500,
+        "narHash": "sha256-l3esIcsAwj0PHOhnHBLWiLzzRiOo1yOk9VYEGpn6fyQ=",
+        "type": "tarball",
+        "url": "https://registry.npmjs.org/tailwindcss-animated/-/tailwindcss-animated-1.1.2.tgz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://registry.npmjs.org/tailwindcss-animated/-/tailwindcss-animated-1.1.2.tgz"
+      }
+    },
     "tangle-of-trust": {
       "inputs": {
         "nixpkgs": [
@@ -1158,18 +1171,20 @@
         "nixpkgs": [
           "nixpkgs"
         ],
-        "sqlite-lib-src": "sqlite-lib-src"
+        "sqlite-lib-src": "sqlite-lib-src",
+        "tailwindcss-animated-src": "tailwindcss-animated-src"
       },
       "locked": {
-        "lastModified": 1784281897,
-        "narHash": "sha256-H1c7viFj0F5pusxPx8hayPyIYHeNesS6C/WFIHUUpZU=",
-        "rev": "1d379a324497da39a27e49453c72615607a9b199",
-        "revCount": 2931,
+        "lastModified": 1792561894,
+        "narHash": "sha256-Pu6e390+jD9olkxZGYDjto6t+juUjfwcxx2zFYyq8f4=",
+        "ref": "refs/heads/master",
+        "rev": "12ebb0c96f615a31991c20a144bf08b146bfcabd",
+        "revCount": 3264,
         "type": "git",
         "url": "https://tangled.org/tangled.org/core"
       },
       "original": {
-        "rev": "1d379a324497da39a27e49453c72615607a9b199",
+        "rev": "12ebb0c96f615a31991c20a144bf08b146bfcabd",
         "type": "git",
         "url": "https://tangled.org/tangled.org/core"
       }

@@ -39,6 +39,9 @@ in
   "github-knot-sync.age".publicKeys = [
     kierank
   ];
+  "knot-master-key.age".publicKeys = [
+    kierank
+  ];
   "emojibot/hackclub.age".publicKeys = [
     kierank
   ];

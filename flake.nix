@@ -127,7 +127,7 @@
     };
 
     tangled = {
-      url = "git+https://tangled.org/tangled.org/core?rev=1d379a324497da39a27e49453c72615607a9b199";
+      url = "git+https://tangled.org/tangled.org/core?rev=12ebb0c96f615a31991c20a144bf08b146bfcabd";
       inputs.nixpkgs.follows = "nixpkgs";
       inputs.flake-compat.follows = "deploy-rs/flake-compat";
     };
@@ -213,7 +213,7 @@
       };
 
       tangledModules = [
-        tangled.nixosModules.knot
+        tangled.nixosModules.knot-rs
         tangled.nixosModules.spindle
       ];
 

@@ -25,17 +25,23 @@ in
       port = lib.mkOption {
         type = lib.types.int;
         default = 5555;
+        description = "Loopback HTTP port the knot listens on, behind caddy";
       };
 
-      internalListenAddr = lib.mkOption {
-        type = lib.types.int;
-        default = 5444;
+      sshPort = lib.mkOption {
+        type = lib.types.port;
+        default = 22;
+        description = ''
+          Port the knot's own SSH server takes on every address. The appview
+          builds clone URLs with no port in them, so anything but 22 means
+          every user has to rewrite theirs. Taking 22 means sshd moves.
+        '';
       };
 
       motd = lib.mkOption {
-        type = lib.types.str;
-        default = "Welcome to the knot!";
-        description = "Welcome message for the knot when doing push or pulling";
+        type = lib.types.listOf lib.types.str;
+        default = [ "Thanks for using {knot}!" ];
+        description = "Lines shown on fetch; {knot} expands to the hostname";
       };
 
       hostname = lib.mkOption {
@@ -43,10 +49,18 @@ in
         default = "";
       };
 
+      masterKeyFile = lib.mkOption {
+        type = lib.types.path;
+        description = ''
+          Environment file setting KNOT_MASTER_KEY, which unseals the knot's
+          per-repository signing keys. Losing it makes them unreadable.
+        '';
+      };
+
       syncSecretsFile = lib.mkOption {
         type = lib.types.nullOr lib.types.path;
         default = null;
-        description = "Path to secrets file containing GITHUB_TOKEN";
+        description = "Environment file containing GITHUB_TOKEN; mirroring to GitHub is off while this is null";
       };
     };
 
@@ -106,14 +120,15 @@ in
             maxJobCount = cfg.spindle.maxJobCount;
           };
 
-          pipelines = {
-            # No S3 log archival: only the bucket name can be set here (creds,
-            # region, endpoint would come from AWS_* env we don't provide), so
-            # uploads just error out. Logs are written to /var/log/spindle and
-            # the UI streams them from there, so an empty bucket disables the
-            # broken S3 path cleanly (NewS3 short-circuits on "").
-            logBucket = "";
+          # No S3 artifact store: only the bucket name and region can be set
+          # here (creds would come from AWS_* env we don't provide), so the
+          # module's default "tangled-logs" bucket would just error out. An
+          # empty bucket skips the S3 store entirely and leaves the disk store
+          # (/var/log/spindle by default) as the only one, which the UI reads.
+          artifactStores.s3.bucket = "";
+          mill.artifactStore = "disk";
 
+          pipelines = {
             # Aggregate ceilings so a workflow requesting a larger-than-default VM
             # (or a burst) can't exceed the job-count budget. Mirror the nixos
             # image spec: 4 GiB / 2 vCPU per microVM.
@@ -146,79 +161,61 @@ in
       })
 
       (lib.mkIf cfg.knot.enable {
-        services.tangled.knot = {
+        # Knot 2: git is the database (no SQLite), it serves SSH in-process
+        # with keys read live from each user's PDS, and it runs as `knot` out
+        # of /var/lib/knot. Migrated from the Go knot with knot-migrate, which
+        # left /home/git and knotserver.db untouched in case we go back.
+        services.tangled.knot-rs = {
           enable = true;
-          server = {
-            owner = cfg.owner;
-            hostname = cfg.knot.hostname;
-            listenAddr = "127.0.0.1:${toString cfg.knot.port}";
-            internalListenAddr = "127.0.0.1:${toString cfg.knot.internalListenAddr}";
+          environmentFile = cfg.knot.masterKeyFile;
+          settings = {
+            server = {
+              hostname = cfg.knot.hostname;
+              admins = [ cfg.owner ];
+              listen_addr = "127.0.0.1:${toString cfg.knot.port}";
+              ssh_listen_addr = "[::]:${toString cfg.knot.sshPort}";
+            };
+            atproto.plc_directory = "https://plc.directory";
+            # Every migrated repo is SHA-1, and a SHA-256 repo can't push to
+            # or fetch from one, so new repos stay SHA-1 too.
+            git.object_format = "sha1";
+            # Caddy is the only thing that reaches the HTTP port, and it
+            # replaces X-Forwarded-For with the real client for direct hits.
+            xrpc = {
+              trusted_proxy_header = "x-forwarded-for";
+              trusted_proxies = [
+                "127.0.0.1"
+                "::1"
+              ];
+              # The appview polls collaborators for every repo in one burst
+              # every few minutes, ~90 authenticated calls at once. The
+              # default burst of 20 rejected ~70 of them each round.
+              preauth_burst = 256;
+            };
+            messages.fetch.motd = cfg.knot.motd;
+            # Caddy terminates TLS (and serves h3), so the knot never has a
+            # certificate to do HTTP/3 with.
+            tls.http3 = false;
           };
-          motd = cfg.knot.motd;
         };
 
-        # Backup configuration for the knot's git repositories
+        # The knot sizes itself to its cgroup, so this is a budget rather than
+        # a leak backstop like the Go knot needed.
+        systemd.services.knot-rs.serviceConfig.MemoryMax = "4G";
+
+        # The whole knot is this directory plus the master key (in agenix):
+        # repos/ holds every repo and the ACL, beside the sealed key store.
+        # Stopped for the snapshot so restic never catches a half-written pack.
         atelier.backup.services.knot = {
-          paths = [ "/home/git" ]; # Git repositories managed by knot
-          exclude = [ "*.log" ];
-          # Uses SQLite, stop before backup
-          preBackup = "systemctl stop knot";
-          postBackup = "systemctl start knot";
+          paths = [ "/var/lib/knot" ];
+          preBackup = "systemctl stop knot-rs";
+          postBackup = "systemctl start knot-rs";
         };
 
-        # Contain knot's memory leak. GOMEMLIMIT gives Go a budget it will
-        # actually collect against; MemoryMax is only the backstop, sized above
-        # it so the kernel steps in solely when Go has already lost.
-        #
-        # There is deliberately no MemoryHigh. MemoryHigh throttles rather than
-        # kills, so a leaking knot gets pinned in reclaim in D state, where it
-        # cannot be signalled at all: no OOM kill, no SIGTERM, no restart, just
-        # a wedged unit and system-wide memory stall until someone lifts the
-        # limit by hand. A hard MemoryMax with Restart=always self-heals in
-        # seconds instead. Swap is left enabled for the same reason, so reclaim
-        # always has somewhere to go.
-        systemd.services.knot = {
-          environment.GOMEMLIMIT = "3GiB";
-          serviceConfig.MemoryMax = "4G";
-        };
-
-        # Proactively restart knot every 4 hours so the leak is usually cleared
-        # on a schedule rather than by hitting MemoryMax mid-request.
-        systemd.timers.knot-restart = {
-          wantedBy = [ "timers.target" ];
-          timerConfig = {
-            OnCalendar = "*-*-* 00/4:00:00";
-            Persistent = true;
-          };
-        };
-        systemd.services.knot-restart = {
-          serviceConfig.Type = "oneshot";
-          script = "${config.systemd.package}/bin/systemctl restart knot";
-        };
-
-        # Fix race condition: chown -R fails if SQLite WAL temp files (-wal, -shm)
-        # vanish during the pre-start script, causing the service to fail to start
-        systemd.services.knot.preStart = lib.mkForce ''
-          mkdir -p "/home/git"
-          chown -R git:git "/home/git" || true
-
-          mkdir -p "/home/git/.config/git"
-          cat > "/home/git/.config/git/config" << EOF
-          [user]
-              name = Tangled
-              email = noreply@tangled.org
-          [receive]
-              advertisePushOptions = true
-          [uploadpack]
-              allowFilter = true
-              allowReachableSHA1InWant = true
-          EOF
-          printf "🧶 welcome to kieran's knot!\n" > /home/git/motd
-          chown -R git:git "/home/git" || true
-        '';
-
-        atelier.services.knot-sync = {
+        atelier.services.knot-sync = lib.mkIf (cfg.knot.syncSecretsFile != null) {
           enable = true;
+          knotUrl = "http://127.0.0.1:${toString cfg.knot.port}";
+          knotHostname = cfg.knot.hostname;
           ownerDid = cfg.owner;
           secretsFile = cfg.knot.syncSecretsFile;
         };
@@ -230,10 +227,7 @@ in
           header {
             Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
           }
-          reverse_proxy localhost:${toString cfg.knot.port} {
-            header_up X-Forwarded-Proto {scheme}
-            header_up X-Forwarded-For {remote}
-          }
+          reverse_proxy localhost:${toString cfg.knot.port}
         '';
       })
     ]

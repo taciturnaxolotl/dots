@@ -145,7 +145,7 @@ in
       hosts = {
         # Dynamic zmx sessions per server
         "t.*" = {
-          hostname = "150.136.15.177"; # terebithia
+          hostname = "100.105.182.50"; # terebithia
         };
 
         "p.*" = {
@@ -168,7 +168,7 @@ in
         };
 
         terebithia = {
-          hostname = "150.136.15.177";
+          hostname = "100.105.182.50";
           zmx = true;
         };
 

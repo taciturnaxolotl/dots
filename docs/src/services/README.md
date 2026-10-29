@@ -17,6 +17,6 @@ These services have detailed option references and architecture notes:
 - [control](./control.md) — admin dashboard for Caddy feature toggles
 - [emojibot](./emojibot.md) — multi-instance Slack emoji management
 - [herald](./herald.md) — git SSH hosting with email via SMTP/DKIM
-- [knot-sync](./knot-sync.md) — mirrors Tangled knot repos to GitHub on cron
+- [knot-sync](./knot-sync.md) — mirrors Tangled knot repos to GitHub from the knot's event stream
 
 For all other services, check the manifest or the module source in `modules/nixos/services/`.

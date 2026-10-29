@@ -52,11 +52,12 @@ in
 
       jails.sshd.settings = {
         enabled = true;
-        # Match sshd's real port. `mode = normal` catches invalid-user and
+        # Match sshd's real port(s), which isn't always 22 (terebithia gives
+        # 22 to the knot). `mode = normal` catches invalid-user and
         # failed-auth lines, which is what scanners generate against a
         # key-only host.
         mode = "normal";
-        port = "ssh";
+        port = lib.concatMapStringsSep "," toString config.services.openssh.ports;
         maxretry = 5;
         findtime = "10m";
       };

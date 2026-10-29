@@ -43,13 +43,13 @@
       };
       hosts = {
         "t.*" = {
-          hostname = "150.136.15.177";
+          hostname = "100.105.182.50";
         };
         "p.*" = {
           hostname = "100.105.247.54";
         };
         terebithia = {
-          hostname = "150.136.15.177";
+          hostname = "100.105.182.50";
           zmx = true;
         };
         terebithia-raw = {

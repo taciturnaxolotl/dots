@@ -165,10 +165,10 @@ in
       file = ../../secrets/cloudflare.age;
       owner = "caddy";
     };
-    github-knot-sync = {
-      file = ../../secrets/github-knot-sync.age;
-      owner = "git";
-    };
+    github-knot-sync.file = ../../secrets/github-knot-sync.age;
+    # Unseals the knot's per-repo signing keys. The encrypted copy here is
+    # the off-server backup; lose both and every sealed key is gone.
+    knot-master-key.file = ../../secrets/knot-master-key.age;
     "bore/auth-token".file = ../../secrets/bore/auth-token.age;
     "bore/cookie-hash-key".file = ../../secrets/bore/cookie-hash-key.age;
     "bore/cookie-block-key".file = ../../secrets/bore/cookie-block-key.age;
@@ -304,14 +304,20 @@ in
     # botme and cap both live on prattle now, and the matching entry is there.
     # What stays here is the access log, which caddy still writes because this
     # box is still the public face, and the account itself, which is the way in:
-    # idk has no tailnet identity, so they jump from here to prattle's sshd on
+    # idk has no tailnet identity, so they come in on this box's sshd (port
+    # 2200, since the knot owns 22) and jump from here to prattle's sshd on
     # 2222 (Tailscale SSH owns 22 and would want an identity they do not have).
     logFiles.botme-access = "/var/log/caddy/access-botme.dunkirk.sh.log";
   };
 
+  # Port 22 belongs to the knot, so the appview's port-less clone URLs keep
+  # working. Admin access goes over the tailnet, where Tailscale SSH claims 22
+  # on the tailnet address before the knot ever sees it; sshd stays on 2200
+  # for accounts with no tailnet identity (idk) and as a fallback.
   services.openssh = {
     enable = true;
     openFirewall = true;
+    ports = [ 2200 ];
     settings = {
       PermitRootLogin = "no";
       PasswordAuthentication = false;
@@ -321,7 +327,7 @@ in
   networking.firewall = {
     enable = true;
     allowedTCPPorts = [
-      22
+      22 # knot SSH
       80
       443
       2223 # Herald SSH
@@ -898,10 +904,9 @@ in
     enable = true;
     owner = "did:plc:krxbvxvis5skq7jj6eot23ul";
     knot = {
-      motd = ''
-        🧶 welcome to kieran's knot!
-      '';
+      motd = [ "🧶 welcome to kieran's knot!" ];
       hostname = "knot.dunkirk.sh";
+      masterKeyFile = config.age.secrets.knot-master-key.path;
       syncSecretsFile = config.age.secrets.github-knot-sync.path;
     };
     spindle = {
