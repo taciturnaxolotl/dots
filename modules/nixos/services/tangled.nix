@@ -5,6 +5,7 @@
 }:
 let
   cfg = config.atelier.services.tangled;
+  knotState = config.services.tangled.knot-rs.stateDir;
 in
 {
   options.atelier.services.tangled = {
@@ -15,6 +16,12 @@ in
       description = "did of owner";
     };
 
+    contactEmail = lib.mkOption {
+      type = lib.types.str;
+      default = "kieran@dunkirk.sh";
+      description = "Operator contact the knot and spindle publish";
+    };
+
     knot = {
       enable = lib.mkOption {
         type = lib.types.bool;
@@ -23,7 +30,7 @@ in
       };
 
       port = lib.mkOption {
-        type = lib.types.int;
+        type = lib.types.port;
         default = 5555;
         description = "Loopback HTTP port the knot listens on, behind caddy";
       };
@@ -31,11 +38,7 @@ in
       sshPort = lib.mkOption {
         type = lib.types.port;
         default = 22;
-        description = ''
-          Port the knot's own SSH server takes on every address. The appview
-          builds clone URLs with no port in them, so anything but 22 means
-          every user has to rewrite theirs. Taking 22 means sshd moves.
-        '';
+        description = "Port for the knot's own SSH server; clone URLs assume 22";
       };
 
       motd = lib.mkOption {
@@ -46,15 +49,12 @@ in
 
       hostname = lib.mkOption {
         type = lib.types.str;
-        default = "";
+        description = "Public hostname, which is also the knot's did:web identity";
       };
 
       masterKeyFile = lib.mkOption {
         type = lib.types.path;
-        description = ''
-          Environment file setting KNOT_MASTER_KEY, which unseals the knot's
-          per-repository signing keys. Losing it makes them unreadable.
-        '';
+        description = "Environment file setting KNOT_MASTER_KEY, which unseals the knot's signing keys";
       };
 
       syncSecretsFile = lib.mkOption {
@@ -72,7 +72,7 @@ in
       };
 
       port = lib.mkOption {
-        type = lib.types.int;
+        type = lib.types.port;
         default = 6555;
       };
 
@@ -89,7 +89,7 @@ in
 
       hostname = lib.mkOption {
         type = lib.types.str;
-        default = "";
+        description = "Public hostname, which is also the spindle's did:web identity";
       };
 
       maxJobCount = lib.mkOption {
@@ -103,6 +103,11 @@ in
           over-allocate.
         '';
       };
+
+      keyFile = lib.mkOption {
+        type = lib.types.path;
+        description = "PEM P-256 key behind the spindle's did:web document";
+      };
     };
   };
 
@@ -113,6 +118,8 @@ in
       (lib.mkIf cfg.spindle.enable {
         services.tangled.spindle = {
           enable = true;
+          keyPath = toString cfg.spindle.keyFile;
+          contact.email = cfg.contactEmail;
           server = {
             owner = cfg.owner;
             hostname = cfg.spindle.hostname;
@@ -120,11 +127,7 @@ in
             maxJobCount = cfg.spindle.maxJobCount;
           };
 
-          # No S3 artifact store: only the bucket name and region can be set
-          # here (creds would come from AWS_* env we don't provide), so the
-          # module's default "tangled-logs" bucket would just error out. An
-          # empty bucket skips the S3 store entirely and leaves the disk store
-          # (/var/log/spindle by default) as the only one, which the UI reads.
+          # We have no S3 credentials, so keep artifacts on the disk store only.
           artifactStores.s3.bucket = "";
           mill.artifactStore = "disk";
 
@@ -161,10 +164,6 @@ in
       })
 
       (lib.mkIf cfg.knot.enable {
-        # Knot 2: git is the database (no SQLite), it serves SSH in-process
-        # with keys read live from each user's PDS, and it runs as `knot` out
-        # of /var/lib/knot. Migrated from the Go knot with knot-migrate, which
-        # left /home/git and knotserver.db untouched in case we go back.
         services.tangled.knot-rs = {
           enable = true;
           environmentFile = cfg.knot.masterKeyFile;
@@ -176,38 +175,32 @@ in
               ssh_listen_addr = "[::]:${toString cfg.knot.sshPort}";
             };
             atproto.plc_directory = "https://plc.directory";
-            # Every migrated repo is SHA-1, and a SHA-256 repo can't push to
-            # or fetch from one, so new repos stay SHA-1 too.
+            # Matches the migrated repos; SHA-256 ones can't exchange objects with them.
             git.object_format = "sha1";
-            # Caddy is the only thing that reaches the HTTP port, and it
-            # replaces X-Forwarded-For with the real client for direct hits.
             xrpc = {
               trusted_proxy_header = "x-forwarded-for";
               trusted_proxies = [
                 "127.0.0.1"
                 "::1"
               ];
-              # The appview polls collaborators for every repo in one burst
-              # every few minutes, ~90 authenticated calls at once. The
-              # default burst of 20 rejected ~70 of them each round.
+              # The appview polls every repo in one burst; the default 20 rejected most of it.
               preauth_burst = 256;
             };
+            contact.email = cfg.contactEmail;
+            # Also holds social-record blobs, which foster handovers need.
+            lfs.store_path = "${knotState}/lfs";
             messages.fetch.motd = cfg.knot.motd;
-            # Caddy terminates TLS (and serves h3), so the knot never has a
-            # certificate to do HTTP/3 with.
+            # Caddy terminates TLS, so the knot has no certificate for h3.
             tls.http3 = false;
           };
         };
 
-        # The knot sizes itself to its cgroup, so this is a budget rather than
-        # a leak backstop like the Go knot needed.
+        # The knot sizes itself to its cgroup.
         systemd.services.knot-rs.serviceConfig.MemoryMax = "4G";
 
-        # The whole knot is this directory plus the master key (in agenix):
-        # repos/ holds every repo and the ACL, beside the sealed key store.
-        # Stopped for the snapshot so restic never catches a half-written pack.
+        # The state dir plus the agenix master key is the whole knot; stopped so no pack is half-written.
         atelier.backup.services.knot = {
-          paths = [ "/var/lib/knot" ];
+          paths = [ knotState ];
           preBackup = "systemctl stop knot-rs";
           postBackup = "systemctl start knot-rs";
         };
@@ -215,7 +208,6 @@ in
         atelier.services.knot-sync = lib.mkIf (cfg.knot.syncSecretsFile != null) {
           enable = true;
           knotUrl = "http://127.0.0.1:${toString cfg.knot.port}";
-          knotHostname = cfg.knot.hostname;
           ownerDid = cfg.owner;
           secretsFile = cfg.knot.syncSecretsFile;
         };

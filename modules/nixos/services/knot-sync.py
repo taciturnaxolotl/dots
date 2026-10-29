@@ -1,279 +1,175 @@
-"""Mirror a knot 2's repositories to GitHub.
+"""Mirror a knot's repos to GitHub, driven by its firehose plus periodic sweeps.
 
-Knot 2 runs no repo hooks, so instead of a post-receive hook this follows
-the knot's own event stream and mirrors a repo whenever a ref moves. A full
-sweep runs at startup and on an interval, so anything missed while the
-stream was down (or a GitHub outage) catches up on its own.
-
-GitHub is not a pure mirror: dependabot opens branches there, release
-workflows cut tags there, and PRs get merged there. So nothing here is
-allowed to clobber GitHub-side work:
-
-- A sweep only fast-forwards. It never deletes and never forces, so a ref
-  that has diverged on GitHub is reported and left alone.
-- A deletion or a force-push only propagates when the knot's event stream
-  says it happened, and only with a lease on the old SHA, so it lands only
-  if GitHub still holds exactly what the knot replaced.
-
-Mirrors live in our own state dir, fetched over the knot's HTTP listener,
-so we never write into the knot's repositories.
+GitHub also gets its own commits (dependabot, release bots, merged PRs), so
+sweeps only fast-forward; deletes and force-pushes only follow a knot push
+event, leased on the SHA that push replaced.
 """
 
 import asyncio
+import io
 import json
 import logging
 import os
 import subprocess
-import time
+import urllib.error
 import urllib.parse
 import urllib.request
 
+import cbor2
 import websockets
 
 KNOT_URL = os.environ["KNOT_URL"].rstrip("/")
-KNOT_HOSTNAME = os.environ["KNOT_HOSTNAME"]
 OWNER_DID = os.environ["OWNER_DID"]
-PLC_URL = os.environ.get("PLC_URL", "https://plc.directory").rstrip("/")
 GITHUB_USERNAME = os.environ["GITHUB_USERNAME"]
-GITHUB_URL = os.environ.get(
-    "GITHUB_URL", "https://github.com/{user}/{name}.git"
-)
-STATE_DIR = os.environ["STATE_DIR"]
-EXCLUDE = {name for name in os.environ.get("EXCLUDE", "").split(",") if name}
+GITHUB_URL = os.environ.get("GITHUB_URL", "https://github.com/{user}/{name}.git")
+STATE_DIRECTORY = os.environ["STATE_DIRECTORY"]
+EXCLUDE = set(filter(None, os.environ.get("EXCLUDE", "").split(",")))
 SWEEP_SECS = int(os.environ.get("SWEEP_SECS", "21600"))
-DEBOUNCE_SECS = 5
-NAME_REFRESH_SECS = 60
-# Both namespaces, since a repo record may sit in either mid-migration.
-REPO_COLLECTIONS = ("org.tangled.repo", "sh.tangled.repo")
+PUSH_EVENT = "org.tangled.git.pushEvent"
 FETCH_REFSPECS = ["+refs/heads/*:refs/heads/*", "+refs/tags/*:refs/tags/*"]
-# No leading `+`: GitHub refuses anything that isn't a fast-forward.
 FF_REFSPECS = ["refs/heads/*:refs/heads/*", "refs/tags/*:refs/tags/*"]
-# Reads GITHUB_TOKEN from the environment so it never lands in argv or a
-# remote URL on disk.
-CREDENTIAL_HELPER = (
-    "!f() { echo username=$GITHUB_USERNAME; echo password=$GITHUB_TOKEN; }; f"
-)
+# Reads the token from the environment so it never lands in argv or on disk.
+CREDENTIAL_HELPER = "!f() { echo username=$GITHUB_USERNAME; echo password=$GITHUB_TOKEN; }; f"
 
 log = logging.getLogger("knot-sync")
 
 
-def get_json(url):
-    request = urllib.request.Request(url, headers={"User-Agent": "knot-sync"})
-    with urllib.request.urlopen(request, timeout=30) as response:
+def knot_xrpc(method, **params):
+    query = urllib.parse.urlencode({k: v for k, v in params.items() if v})
+    with urllib.request.urlopen(f"{KNOT_URL}/xrpc/{method}?{query}", timeout=30) as response:
         return json.load(response)
 
 
-class Names:
-    """repo DID -> repo name, read from the owner's repo records."""
+def hosted_repos():
+    cursor = None
+    while True:
+        page = knot_xrpc("com.atproto.sync.listRepos", limit=500, cursor=cursor)
+        yield from (repo["did"] for repo in page["repos"])
+        cursor = page.get("cursor")
+        if not cursor or not page["repos"]:
+            return
 
-    def __init__(self):
-        self.by_did = {}
-        self.refreshed_at = 0.0
 
-    def refresh(self):
-        doc = get_json(f"{PLC_URL}/{OWNER_DID}")
-        pds = next(
-            service["serviceEndpoint"]
-            for service in doc["service"]
-            if service["id"] == "#atproto_pds"
-        ).rstrip("/")
-        found = {}
-        for collection in REPO_COLLECTIONS:
-            cursor = None
-            while True:
-                params = {
-                    "repo": OWNER_DID,
-                    "collection": collection,
-                    "limit": "100",
-                }
-                if cursor:
-                    params["cursor"] = cursor
-                query = urllib.parse.urlencode(params)
-                page = get_json(
-                    f"{pds}/xrpc/com.atproto.repo.listRecords?{query}"
-                )
-                for record in page.get("records", []):
-                    value = record["value"]
-                    # Newer records drop `name` and let the rkey carry it.
-                    rkey = record["uri"].rsplit("/", 1)[-1]
-                    did, name = value.get("repoDid"), value.get("name") or rkey
-                    if did and value.get("knot") == KNOT_HOSTNAME:
-                        found.setdefault(did, name)
-                cursor = page.get("cursor")
-                if not cursor or not page.get("records"):
-                    break
-        self.by_did = found
-        self.refreshed_at = time.monotonic()
-        log.info("resolved %d repo names", len(found))
-
-    def lookup(self, did):
-        stale = time.monotonic() - self.refreshed_at > NAME_REFRESH_SECS
-        if did not in self.by_did and stale:
-            try:
-                self.refresh()
-            except Exception:
-                log.exception("failed to refresh repo names")
-        return self.by_did.get(did)
+def owned_name(did):
+    """The repo's name if the owner holds it, from its manifest on the knot."""
+    try:
+        record = knot_xrpc(
+            "com.atproto.repo.getRecord",
+            repo=did, collection="org.tangled.repo.manifest", rkey="self",
+        )
+    except urllib.error.HTTPError:
+        return None
+    declaration = record["value"]["declaration"]
+    return declaration["name"] if declaration["owner"] == OWNER_DID else None
 
 
 def git(*args, cwd=None, check=True):
-    result = subprocess.run(
-        ["git", *args], cwd=cwd, capture_output=True, text=True
-    )
+    result = subprocess.run(["git", *args], cwd=cwd, capture_output=True, text=True)
     if check and result.returncode != 0:
-        raise RuntimeError(
-            f"git {args[0]} failed: {result.stderr.strip()[-2000:]}"
-        )
+        raise RuntimeError(f"git {args[0]} failed: {result.stderr.strip()[-2000:]}")
     return result
 
 
 def push(path, name, *refspecs, lease=None):
-    """Push to GitHub, returning git's porcelain lines that aren't up to date."""
-    args = ["-c", f"credential.helper={CREDENTIAL_HELPER}", "push", "--porcelain"]
-    if lease:
-        args.append(f"--force-with-lease={lease}")
-    args += [GITHUB_URL.format(user=GITHUB_USERNAME, name=name), *refspecs]
-    # A rejected ref exits non-zero but still reports per-ref status, which
-    # is what we want; only a push that reports nothing at all is an error.
-    result = git(*args, cwd=path, check=False)
-    lines = [
-        line.split("\t")
-        for line in result.stdout.splitlines()
-        if line.count("\t") >= 2
-    ]
+    lease_args = [f"--force-with-lease={lease}"] if lease else []
+    url = GITHUB_URL.format(user=GITHUB_USERNAME, name=name)
+    result = git(
+        "-c", f"credential.helper={CREDENTIAL_HELPER}", "push", "--porcelain",
+        *lease_args, url, *refspecs, cwd=path, check=False,
+    )
+    # Rejected refs still exit non-zero; only a push reporting no refs failed.
+    lines = [line.split("\t") for line in result.stdout.splitlines() if line.count("\t") >= 2]
     if result.returncode != 0 and not lines:
         raise RuntimeError(f"push failed: {result.stderr.strip()[-2000:]}")
-    return [(flag, refs, summary) for flag, refs, summary in lines if flag != "="]
-
-
-def report(name, results):
-    for flag, refs, summary in results:
+    for flag, refs, summary in lines:
         ref = refs.split(":", 1)[-1]
         if flag == "!":
             log.warning("%s: left %s alone on GitHub (%s)", name, ref, summary)
-        else:
+        elif flag != "=":
             log.info("%s: %s %s", name, ref, summary)
 
 
-def mirror(did, name, updates):
-    path = os.path.join(STATE_DIR, "mirrors", f"{did}.git")
-    if not os.path.isdir(path):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
-        git("clone", "--quiet", "--mirror", f"{KNOT_URL}/{did}", path)
-    else:
+def mirror(did, edits):
+    name = owned_name(did)
+    if name is None or name in EXCLUDE:
+        return
+    path = os.path.join(STATE_DIRECTORY, "mirrors", f"{did}.git")
+    if os.path.isdir(path):
         git("fetch", "--quiet", "--prune", "origin", *FETCH_REFSPECS, cwd=path)
+    else:
+        git("clone", "--quiet", "--mirror", f"{KNOT_URL}/{did}", path)
 
-    # Deletes and force-pushes the knot told us about, each leased on the
-    # SHA the knot replaced. Plain fast-forwards fall through to the sweep
-    # push below, so they don't need a lease.
-    for ref, (old, new) in updates.items():
-        deleted = set(new) == {"0"}
-        created = set(old) == {"0"}
-        if created:
+    for edit in edits:
+        ref, old, new = edit["name"], edit.get("old"), edit.get("new")
+        if old is None:
             continue
-        if not deleted:
-            merge_base = git("merge-base", "--is-ancestor", old, new, cwd=path, check=False)
-            if merge_base.returncode == 0:
-                continue
-        refspec = f":{ref}" if deleted else f"+{ref}:{ref}"
-        report(name, push(path, name, refspec, lease=f"{ref}:{old}"))
+        fast_forward = new is not None and git(
+            "merge-base", "--is-ancestor", old, new, cwd=path, check=False
+        ).returncode == 0
+        if not fast_forward:
+            push(path, name, f"+{ref}:{ref}" if new else f":{ref}", lease=f"{ref}:{old}")
 
-    report(name, push(path, name, *FF_REFSPECS))
+    push(path, name, *FF_REFSPECS)
 
 
-class Syncer:
-    def __init__(self):
-        self.names = Names()
-        # did -> (due time, {ref: (oldest old sha, newest new sha)})
-        self.pending = {}
-        self.wake = asyncio.Event()
+def decode_frame(raw):
+    """A firehose frame is two DAG-CBOR objects back to back: header, body."""
+    decoder = cbor2.CBORDecoder(io.BytesIO(raw))
+    header = decoder.decode()
+    try:
+        return header, decoder.decode()
+    except cbor2.CBORDecodeEOF:
+        return header, {}
 
-    def schedule(self, did, delay=DEBOUNCE_SECS, ref=None, old=None, new=None):
-        due = time.monotonic() + delay
-        at, updates = self.pending.get(did, (due, {}))
-        if ref:
-            first_old = updates[ref][0] if ref in updates else old
-            updates[ref] = (first_old, new)
-        self.pending[did] = (min(at, due), updates)
-        self.wake.set()
 
-    async def sweep(self):
+async def worker(queue):
+    while True:
+        did, edits = await queue.get()
         try:
-            await asyncio.to_thread(self.names.refresh)
-        except Exception:
-            log.exception("sweep: failed to resolve repo names")
-            return
-        for did in self.names.by_did:
-            self.schedule(did, delay=0)
+            await asyncio.to_thread(mirror, did, edits)
+        except Exception as error:
+            log.error("mirror %s failed: %s", did, error)
 
-    async def sweeper(self):
-        while True:
-            await self.sweep()
-            await asyncio.sleep(SWEEP_SECS)
 
-    async def worker(self):
-        while True:
-            now = time.monotonic()
-            due = [did for did, (at, _) in self.pending.items() if at <= now]
-            if not due:
-                self.wake.clear()
-                timeout = None
-                if self.pending:
-                    timeout = min(at for at, _ in self.pending.values()) - now
-                try:
-                    await asyncio.wait_for(self.wake.wait(), timeout)
-                except asyncio.TimeoutError:
-                    pass
-                continue
-            for did in due:
-                _, updates = self.pending.pop(did)
-                name = await asyncio.to_thread(self.names.lookup, did)
-                if name is None or name in EXCLUDE:
-                    continue
-                try:
-                    await asyncio.to_thread(mirror, did, name, updates)
-                except Exception as error:
-                    log.error("mirror %s failed: %s", name, error)
+async def sweeper(queue):
+    while True:
+        try:
+            for did in await asyncio.to_thread(lambda: list(hosted_repos())):
+                queue.put_nowait((did, []))
+        except Exception as error:
+            log.error("sweep failed: %s", error)
+        await asyncio.sleep(SWEEP_SECS)
 
-    async def follow(self):
-        ws_url = KNOT_URL.replace("http", "ws", 1) + "/events"
-        # Start at now: the sweep covers whatever came before.
-        cursor = time.time_ns()
-        backoff = 1
-        while True:
-            try:
-                url = f"{ws_url}?cursor={cursor}"
-                async with websockets.connect(url, max_size=None) as socket:
-                    log.info("following %s", ws_url)
-                    backoff = 1
-                    async for raw in socket:
-                        event = json.loads(raw)
-                        cursor = max(cursor, int(event.get("created", 0)))
-                        if event.get("nsid") != "sh.tangled.git.refUpdate":
-                            continue
-                        payload = event.get("event", {})
-                        if payload.get("ownerDid") not in (None, OWNER_DID):
-                            continue
-                        did = payload.get("repo")
-                        if not did:
-                            continue
-                        ref = payload.get("ref") or None
-                        self.schedule(
-                            did,
-                            ref=ref,
-                            old=payload.get("oldSha"),
-                            new=payload.get("newSha"),
-                        )
-            except Exception as error:
-                log.warning("event stream dropped: %s", error)
-            await asyncio.sleep(backoff)
-            backoff = min(backoff * 2, 60)
+
+async def follow(queue):
+    url = KNOT_URL.replace("http", "ws", 1) + "/xrpc/com.atproto.sync.subscribeRepos"
+    # The first connect starts live (the sweep covers the past); reconnects resume.
+    cursor, backoff = None, 1
+    while True:
+        try:
+            resume = f"?cursor={cursor}" if cursor else ""
+            async with websockets.connect(url + resume, max_size=None) as socket:
+                log.info("following %s", url)
+                backoff = 1
+                async for raw in socket:
+                    header, body = decode_frame(raw)
+                    if header.get("op") != 1:
+                        log.warning("firehose error frame: %s", body)
+                        cursor = None
+                        break
+                    cursor = body.get("seq", cursor)
+                    if header.get("t") == PUSH_EVENT:
+                        queue.put_nowait((body["repo"], body.get("edits", [])))
+        except Exception as error:
+            log.warning("firehose dropped: %s", error)
+        await asyncio.sleep(backoff)
+        backoff = min(backoff * 2, 60)
 
 
 async def main():
     logging.basicConfig(level=logging.INFO, format="%(message)s")
-    syncer = Syncer()
-    await asyncio.gather(syncer.worker(), syncer.sweeper(), syncer.follow())
+    queue = asyncio.Queue()
+    await asyncio.gather(worker(queue), sweeper(queue), follow(queue))
 
 
 if __name__ == "__main__":

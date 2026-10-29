@@ -42,6 +42,9 @@ in
   "knot-master-key.age".publicKeys = [
     kierank
   ];
+  "spindle-key.age".publicKeys = [
+    kierank
+  ];
   "emojibot/hackclub.age".publicKeys = [
     kierank
   ];

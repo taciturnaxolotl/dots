@@ -9,7 +9,10 @@ let
   cfg = config.atelier.services.knot-sync;
 
   syncer = pkgs.writers.writePython3 "knot-sync" {
-    libraries = [ pkgs.python3Packages.websockets ];
+    libraries = [
+      pkgs.python3Packages.cbor2
+      pkgs.python3Packages.websockets
+    ];
     flakeIgnore = [ "E501" ];
   } (builtins.readFile ./knot-sync.py);
 in
@@ -20,12 +23,7 @@ in
     knotUrl = lib.mkOption {
       type = lib.types.str;
       default = "http://127.0.0.1:5555";
-      description = "The knot's local HTTP listener, used for the event stream and for fetching";
-    };
-
-    knotHostname = lib.mkOption {
-      type = lib.types.str;
-      description = "Public hostname of the knot; only repo records pointing at it are mirrored";
+      description = "The knot's local HTTP listener, for its firehose and for fetching";
     };
 
     ownerDid = lib.mkOption {
@@ -70,13 +68,10 @@ in
       path = [ pkgs.git ];
       environment = {
         KNOT_URL = cfg.knotUrl;
-        KNOT_HOSTNAME = cfg.knotHostname;
         OWNER_DID = cfg.ownerDid;
         GITHUB_USERNAME = cfg.githubUsername;
         EXCLUDE = lib.concatStringsSep "," cfg.exclude;
         SWEEP_SECS = toString cfg.sweepInterval;
-        STATE_DIR = "/var/lib/knot-sync";
-        PYTHONUNBUFFERED = "1";
       };
       serviceConfig = {
         ExecStart = syncer;

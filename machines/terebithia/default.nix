@@ -166,8 +166,7 @@ in
       owner = "caddy";
     };
     github-knot-sync.file = ../../secrets/github-knot-sync.age;
-    # Unseals the knot's per-repo signing keys. The encrypted copy here is
-    # the off-server backup; lose both and every sealed key is gone.
+    # The knot's master key; this encrypted copy is the off-server backup.
     knot-master-key.file = ../../secrets/knot-master-key.age;
     "bore/auth-token".file = ../../secrets/bore/auth-token.age;
     "bore/cookie-hash-key".file = ../../secrets/bore/cookie-hash-key.age;
@@ -304,16 +303,12 @@ in
     # botme and cap both live on prattle now, and the matching entry is there.
     # What stays here is the access log, which caddy still writes because this
     # box is still the public face, and the account itself, which is the way in:
-    # idk has no tailnet identity, so they come in on this box's sshd (port
-    # 2200, since the knot owns 22) and jump from here to prattle's sshd on
-    # 2222 (Tailscale SSH owns 22 and would want an identity they do not have).
+    # idk has no tailnet identity, so they come in on sshd (2200, the knot owns
+    # 22) and jump to prattle's sshd on 2222 (Tailscale SSH owns 22 there).
     logFiles.botme-access = "/var/log/caddy/access-botme.dunkirk.sh.log";
   };
 
-  # Port 22 belongs to the knot, so the appview's port-less clone URLs keep
-  # working. Admin access goes over the tailnet, where Tailscale SSH claims 22
-  # on the tailnet address before the knot ever sees it; sshd stays on 2200
-  # for accounts with no tailnet identity (idk) and as a fallback.
+  # The knot owns 22; admins use Tailscale SSH, and sshd on 2200 is the fallback.
   services.openssh = {
     enable = true;
     openFirewall = true;

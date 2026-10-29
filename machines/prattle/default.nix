@@ -91,6 +91,8 @@
     "/etc/ssh/id_rsa"
   ];
   age.secrets = {
+    # P-256 key behind the spindle's did:web document.
+    spindle-key.file = ../../secrets/spindle-key.age;
     wakatime = {
       file = ../../secrets/wakatime.age;
       path = "/home/kierank/.wakatime.cfg";
@@ -564,6 +566,7 @@
     spindle = {
       enable = true;
       hostname = "spindle.dunkirk.sh";
+      keyFile = config.age.secrets.spindle-key.path;
       # Bind all interfaces so terebithia (the public front) can reach it over
       # Tailscale; the port is restricted to tailscale0 in the firewall below,
       # so it isn't exposed on the LAN.
