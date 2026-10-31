@@ -126,17 +126,6 @@
     nameserver 163.11.75.119
   '';
 
-  # GP Relay menu bar applet: launch at login, keep alive.
-  launchd.user.agents.gp-relay = {
-    serviceConfig = {
-      Label = "sh.dunkirk.gp-relay";
-      ProgramArguments = [ "${pkgs.gp-menubar}/Applications/GP Relay.app/Contents/MacOS/gp-menubar" ];
-      RunAtLoad = true;
-      KeepAlive = true;
-      ProcessType = "Interactive";
-    };
-  };
-
   # Upsert the prattle NAS password into the login keychain at login (user
   # session, so the keychain is unlocked) for prompt-free Finder connects.
   launchd.user.agents.smb-keychain = {
