@@ -8,16 +8,16 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "drift";
-  version = "0.0.12";
+  version = "0.0.14";
 
   src = fetchFromGitHub {
     owner = "aymanbagabas";
     repo = "drift";
     tag = "v${finalAttrs.version}";
-    hash = "sha256-8q26qYXup4Kh7/Xp1ZJeADqcPq5MTjXo05ofIFsYHh4=";
+    hash = "sha256-BqftFoNiwPZkB6VXeDjXbesd8JfWsc5xd4ueRTJS5f0=";
   };
 
-  cargoHash = "sha256-bUp46uzHAACS6QyurLGkyPQMDB1ZtapHjbgw54bRM9A=";
+  cargoHash = "sha256-+LVqftXPup2DpQdbhCJsJw5zopcxxX5lbDzATIm/1ZA=";
 
   nativeBuildInputs = [ makeWrapper ];
 
