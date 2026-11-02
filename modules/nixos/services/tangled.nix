@@ -125,6 +125,9 @@ in
             hostname = cfg.spindle.hostname;
             listenAddr = "${cfg.spindle.bindAddr}:${toString cfg.spindle.port}";
             maxJobCount = cfg.spindle.maxJobCount;
+            # Upstream defaults to 9091, which is transmission's RPC port on
+            # prattle, so spindle died on bind every start.
+            metricsListenAddr = "127.0.0.1:9101";
           };
 
           # We have no S3 credentials, so keep artifacts on the disk store only.
