@@ -108,6 +108,9 @@ in
   "paperless.age".publicKeys = [
     kierank
   ];
+  "photoprism.age".publicKeys = [
+    kierank
+  ];
   "paperless-oidc.age".publicKeys = [
     kierank
   ];

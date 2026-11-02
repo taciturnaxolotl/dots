@@ -985,6 +985,9 @@ in
 
   services.caddy.virtualHosts."s3.dunkirk.sh".extraConfig = proxyTo "prattle:3900";
 
+  # PhotoPrism runs on prattle, next to the pool its originals live on.
+  services.caddy.virtualHosts."photos.dunkirk.sh".extraConfig = proxyTo "prattle:2342";
+
   # ── Beef reverse proxy (over Tailscale) ──────────────────────────────
   # integrand serves its own landing page, so there is only one thing to proxy.
   services.caddy.virtualHosts."integrand.dunkirk.sh" = {

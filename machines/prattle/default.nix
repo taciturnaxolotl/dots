@@ -133,6 +133,10 @@
     cap = {
       file = ../../secrets/cap.age;
     };
+    photoprism = {
+      file = ../../secrets/photoprism.age;
+      owner = "photoprism";
+    };
   };
 
   # `hashedPasswordFile` is a no-op while users.mutableUsers is true: NixOS only
@@ -402,7 +406,8 @@
   # and kloe's workspaces, and wrong for bulk media, which would push every
   # downloaded byte through the SSD to be read once. So the two bulk trees are
   # pinned to writearound instead: straight to rust, promoted to flash only when
-  # something actually reads them.
+  # something actually reads them. Photos join them: PhotoPrism reads each
+  # original once to thumbnail it and serves the cache on the SSD after that.
   systemd.services.storage-tiering = {
     description = "bcachefs tiering policy for /storage";
     after = [ "storage.mount" ];
@@ -443,7 +448,7 @@
       # (The subcommand is set-file-option; older bcachefs-tools called it
       # setattr.)
       ${pkgs.bcachefs-tools}/bin/bcachefs set-file-option \
-        --foreground_target=hdd /storage/media /storage/torrents
+        --foreground_target=hdd /storage/media /storage/torrents /storage/photos
     '';
   };
 
@@ -621,6 +626,34 @@
     listenAddresses = [
       "127.0.0.1" # botme's siteverify
       "100.105.247.54" # terebithia's caddy, fronting the public name
+    ];
+  };
+
+  # Photos live on the pool because that is where the space is, and the index
+  # and thumbnail cache stay on the root SSD where sqlite and random reads are
+  # cheap. terebithia holds the public name, same arrangement as botme. Drop
+  # files into /storage/photos/import over samba and PhotoPrism files them.
+  atelier.services.photoprism = {
+    enable = true;
+    domain = "photos.dunkirk.sh";
+    healthUrl = "https://photos.dunkirk.sh/api/v1/status";
+    serveVhost = false;
+    # Every interface, but 2342 is not in allowedTCPPorts, so only the tailnet
+    # reaches it. Binding the tailnet address would race tailscaled at boot.
+    listenAddress = "0.0.0.0";
+    originalsPath = "/storage/photos/originals";
+    importPath = "/storage/photos/import";
+    adminUser = "kierank";
+    passwordFile = config.age.secrets.photoprism.path;
+    # Clear of the dynamic range that already renumbered garage and kloe once.
+    uid = 970;
+    # samba writes into /storage as group media.
+    extraGroups = [ "media" ];
+    # The P4000 jellyfin already uses; Quadros have no session cap to share.
+    nvidiaGpu = true;
+    trustedProxies = [
+      "127.0.0.1/32"
+      "100.64.0.0/10"
     ];
   };
 
