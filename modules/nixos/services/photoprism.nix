@@ -182,6 +182,10 @@ in
         # Upstream's 0066 leaves imported files unreadable to the shared group,
         # so the samba side could drop photos in but never see them again.
         UMask = lib.mkForce "0002";
+        # Upstream emits an empty `LoadCredential=` when no database password
+        # is set, and systemd reads an empty assignment as "clear the list", so
+        # the admin password never reached the service.
+        LoadCredential = lib.mkForce [ "PHOTOPRISM_ADMIN_PASSWORD_FILE:${cfg.passwordFile}" ];
       }
       // lib.optionalAttrs cfg.nvidiaGpu {
         # Upstream hides every device node. Open just the GPU: the nodes are
