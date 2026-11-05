@@ -34,6 +34,28 @@ func hasRemote(name string) bool {
 	return err == nil
 }
 
+// pushBranch pushes branch to remote; origin gets -u so a secondary remote never steals the upstream.
+func pushBranch(remote, branch string) error {
+	args := []string{"push"}
+	if remote == "origin" {
+		args = append(args, "-u")
+	}
+	err := gitQuiet(append(args, remote, branch)...)
+	if err != nil && remoteHasHead(remote, branch) {
+		return nil // the knot mirror got there first
+	}
+	return err
+}
+
+func remoteHasHead(remote, branch string) bool {
+	head, err := gitOut("rev-parse", "HEAD")
+	if err != nil {
+		return false
+	}
+	out, err := gitOut("ls-remote", remote, "refs/heads/"+branch)
+	return err == nil && strings.HasPrefix(out, head+"\t")
+}
+
 func remoteURL(name string) string {
 	out, _ := gitOut("remote", "get-url", name)
 	return out

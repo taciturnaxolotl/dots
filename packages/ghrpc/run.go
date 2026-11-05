@@ -227,16 +227,8 @@ func (r *runner) publish(paths []string) {
 		if !hasRemote(f.remote) {
 			continue
 		}
-		// origin gets -u so the branch tracks it; any secondary remote gets a
-		// plain push so it can never steal the upstream.
-		args := []string{"push"}
-		if f.remote == "origin" {
-			args = append(args, "-u")
-		}
-		args = append(args, f.remote, r.cfg.branch)
-
 		var err error
-		r.work.step("pushing to "+f.remote, func() { err = gitQuiet(args...) })
+		r.work.step("pushing to "+f.remote, func() { err = pushBranch(f.remote, r.cfg.branch) })
 		if err != nil {
 			r.work.fail(f.remote, "could not push")
 		}
