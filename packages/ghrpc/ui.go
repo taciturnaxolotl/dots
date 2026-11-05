@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	tea "charm.land/bubbletea/v2"
 	"charm.land/huh/v2"
 	"charm.land/huh/v2/spinner"
 	"charm.land/lipgloss/v2"
@@ -71,12 +72,15 @@ func (s *section) step(title string, action func()) {
 		action()
 		return
 	}
-	_ = spinner.New().
+	err := spinner.New().
 		Type(spinner.Dots).
 		Title(strings.Repeat(" ", s.width) + title).
 		WithTheme(spinnerTheme).
 		Action(action).
 		Run()
+	if err != nil {
+		abort(err)
+	}
 }
 
 func dim(text string) string { return dimStyle.Render(text) }
@@ -96,10 +100,9 @@ func stdoutIsTerminal() bool {
 	return err == nil && info.Mode()&os.ModeCharDevice != 0
 }
 
-// abort ends the run when the user hits ctrl-c inside a form: no message, and
-// the conventional 128+SIGINT status.
+// abort ends the run: silently with 128+SIGINT for ctrl-c in a form or spinner, loudly otherwise.
 func abort(err error) {
-	if errors.Is(err, huh.ErrUserAborted) {
+	if errors.Is(err, huh.ErrUserAborted) || errors.Is(err, tea.ErrInterrupted) {
 		os.Exit(130)
 	}
 	fmt.Fprintln(os.Stderr, err)

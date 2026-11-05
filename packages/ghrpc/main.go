@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
 	"regexp"
-	"syscall"
 
 	"github.com/charmbracelet/fang"
 	"github.com/spf13/cobra"
@@ -46,10 +44,7 @@ type config struct {
 var validName = regexp.MustCompile(`^[a-zA-Z0-9._-]+$`)
 
 func main() {
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer cancel()
-
-	if err := fang.Execute(ctx, newRootCmd(),
+	if err := fang.Execute(context.Background(), newRootCmd(),
 		fang.WithVersion(version),
 		fang.WithColorSchemeFunc(fang.AnsiColorScheme),
 		// The man page is written by hand and installed by the derivation.
