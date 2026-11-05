@@ -116,17 +116,6 @@ func composeLicense(slots []licenseSlot, chosen map[string]string, data template
 	return out.String(), nil
 }
 
-// licenseSummary names the chosen licences for the "Created LICENSE.md" line.
-func licenseSummary(slots []licenseSlot, chosen map[string]string) string {
-	var badges []string
-	for _, slot := range slots {
-		if info, found := licenseRegistry[chosen[slot.Key]]; found {
-			badges = append(badges, strings.ReplaceAll(info.Badge, "+", " "))
-		}
-	}
-	return strings.Join(badges, " + ")
-}
-
 // writeSlotLicenses drops a standalone LICENSE.md into each slot's directory.
 // The root LICENSE.md stays authoritative; these are copies for anyone who
 // takes a single directory away with them.

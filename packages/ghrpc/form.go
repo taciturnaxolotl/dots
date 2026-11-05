@@ -187,16 +187,6 @@ func splittable(scaffold string) bool {
 	return false
 }
 
-// slotFor returns the named slot of a scaffold, or a zero slot when it has none.
-func slotFor(scaffold, key string) licenseSlot {
-	for _, slot := range slotsFor(scaffold) {
-		if slot.Key == key {
-			return slot
-		}
-	}
-	return licenseSlot{}
-}
-
 // chosenScaffold resolves the template while the form is still running: a
 // project type with a single layout never shows the template question, but the
 // licence steps behind it still need to know what was picked.

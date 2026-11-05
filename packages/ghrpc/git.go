@@ -1,18 +1,10 @@
 package main
 
 import (
-	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 )
-
-func git(args ...string) error {
-	cmd := exec.Command(gitBin, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
-}
 
 // gitQuiet runs git with its output discarded, the way `2>/dev/null` did.
 func gitQuiet(args ...string) error {

@@ -124,70 +124,91 @@ func resolvePDS(plcID string) (string, error) {
 	return "", fmt.Errorf("no PDS in PLC document")
 }
 
-// createTangledRepo creates the repo on the knot, then writes the sh.tangled.repo
-// record to the PDS so it shows up on tangled.org.
-func createTangledRepo(cfg config, name, description string) error {
+// atSession is a logged-in PDS session that can mint knot service tokens.
+type atSession struct {
+	pds       string
+	DID       string `json:"did"`
+	AccessJwt string `json:"accessJwt"`
+}
+
+func login(cfg config) (*atSession, error) {
 	creds, err := loadCredentials(cfg.credentialsFile)
+	if err != nil {
+		return nil, err
+	}
+	pds, err := resolvePDS(cfg.plcID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve PDS for %s: %w", cfg.plcID, err)
+	}
+	s := &atSession{pds: pds}
+	err = call(http.MethodPost, pds+"/xrpc/com.atproto.server.createSession", "",
+		map[string]string{"identifier": creds.Identifier, "password": creds.Password}, s)
+	if err != nil {
+		return nil, fmt.Errorf("failed to authenticate with PDS: %w", err)
+	}
+	return s, nil
+}
+
+// knotCall POSTs an XRPC procedure to the knot under a service token scoped to nsid.
+func (s *atSession) knotCall(knotHost, nsid string, body, out any) error {
+	authURL := fmt.Sprintf("%s/xrpc/com.atproto.server.getServiceAuth?aud=did:web:%s&exp=%d&lxm=%s",
+		s.pds, url.QueryEscape(knotHost), time.Now().Add(time.Minute).Unix(), nsid)
+	var auth struct {
+		Token string `json:"token"`
+	}
+	if err := call(http.MethodGet, authURL, s.AccessJwt, nil, &auth); err != nil {
+		return fmt.Errorf("failed to get service auth token: %w", err)
+	}
+	return call(http.MethodPost, "https://"+knotHost+"/xrpc/"+nsid, auth.Token, body, out)
+}
+
+type createRepoInput struct {
+	Name          string `json:"name"`
+	DefaultBranch string `json:"defaultBranch"`
+	Description   string `json:"description,omitempty"`
+}
+
+// maxDescriptionRunes matches the cap tangled's own migrator applies.
+const maxDescriptionRunes = 140
+
+// createTangledRepo creates the repo on the knot, then declares it on the PDS so tangled.org lists it.
+func createTangledRepo(cfg config, name, description string) error {
+	session, err := login(cfg)
 	if err != nil {
 		return err
 	}
 
-	pds, err := resolvePDS(cfg.plcID)
-	if err != nil {
-		return fmt.Errorf("failed to resolve PDS for %s: %w", cfg.plcID, err)
+	input := createRepoInput{Name: name, DefaultBranch: cfg.branch}
+	if runes := []rune(strings.TrimSpace(description)); len(runes) > 0 {
+		input.Description = string(runes[:min(len(runes), maxDescriptionRunes)])
 	}
-
-	var session struct {
-		AccessJwt string `json:"accessJwt"`
-		DID       string `json:"did"`
+	var repo struct {
+		DID string `json:"did"`
 	}
-	err = call(http.MethodPost, pds+"/xrpc/com.atproto.server.createSession", "",
-		map[string]string{"identifier": creds.Identifier, "password": creds.Password}, &session)
-	if err != nil {
-		return fmt.Errorf("failed to authenticate with PDS: %w", err)
-	}
-
-	authURL := fmt.Sprintf("%s/xrpc/com.atproto.server.getServiceAuth?aud=did:web:%s&exp=%d&lxm=sh.tangled.repo.create",
-		pds, url.QueryEscape(cfg.knotHost), time.Now().Add(time.Minute).Unix())
-	var serviceAuth struct {
-		Token string `json:"token"`
-	}
-	if err := call(http.MethodGet, authURL, session.AccessJwt, nil, &serviceAuth); err != nil {
-		return fmt.Errorf("failed to get service auth token: %w", err)
-	}
-
-	rkey := strings.ToLower(name)
-	var knot struct {
-		RepoDID string `json:"repoDid"`
-	}
-	err = call(http.MethodPost, "https://"+cfg.knotHost+"/xrpc/sh.tangled.repo.create", serviceAuth.Token,
-		map[string]string{"rkey": rkey, "name": name, "defaultBranch": cfg.branch}, &knot)
-	if err != nil {
+	if err := session.knotCall(cfg.knotHost, "org.tangled.repo.createRepo", input, &repo); err != nil {
 		return fmt.Errorf("failed to create repo on knot: %w", err)
 	}
-	if knot.RepoDID == "" {
-		return fmt.Errorf("knot returned no repoDid")
+	if repo.DID == "" {
+		return fmt.Errorf("knot returned no repo did")
 	}
 
-	record := map[string]any{
-		"$type":     "sh.tangled.repo",
-		"knot":      cfg.knotHost,
-		"repoDid":   knot.RepoDID,
-		"name":      name,
-		"createdAt": time.Now().UTC().Format("2006-01-02T15:04:05Z"),
-	}
-	if description != "" {
-		record["description"] = description
-	}
-
-	err = call(http.MethodPost, pds+"/xrpc/com.atproto.repo.createRecord", session.AccessJwt, map[string]any{
+	err = call(http.MethodPost, session.pds+"/xrpc/com.atproto.repo.createRecord", session.AccessJwt, map[string]any{
 		"repo":       session.DID,
-		"collection": "sh.tangled.repo",
-		"rkey":       rkey,
-		"record":     record,
+		"collection": "org.tangled.repo.declaration",
+		"rkey":       strings.ToLower(name), // the knot derives its rkey the same way
+		"record": map[string]any{
+			"$type":     "org.tangled.repo.declaration",
+			"repo":      repo.DID,
+			"createdAt": time.Now().UTC().Format(time.RFC3339),
+		},
 	}, nil)
-	if err != nil {
-		return fmt.Errorf("failed to write record to PDS: %w", err)
+	if err == nil {
+		return nil
 	}
-	return nil
+
+	// an undeclared knot repo would make every retry fail with a name conflict
+	if rbErr := session.knotCall(cfg.knotHost, "org.tangled.repo.deleteRepo", map[string]string{"repo": repo.DID}, nil); rbErr != nil {
+		return fmt.Errorf("failed to write record to PDS: %w (and rolling back %s failed: %v)", err, repo.DID, rbErr)
+	}
+	return fmt.Errorf("failed to write record to PDS: %w", err)
 }
