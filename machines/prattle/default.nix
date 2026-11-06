@@ -961,6 +961,15 @@
         handle /garage-ui/* {
           reverse_proxy localhost:3909
         }
+
+        # Garage's admin API is loopback-only, and its S3 API rejects anything
+        # unsigned (403), so neither is a health check. Expose just the admin
+        # /health here; terebithia puts it on s3.dunkirk.sh/_health for the
+        # status worker, which only speaks public HTTPS.
+        handle /_health {
+          rewrite * /health
+          reverse_proxy localhost:3903
+        }
       '';
     };
   };
@@ -1083,12 +1092,6 @@
     script = ''
       set -euo pipefail
       GARAGE="${config.services.garage.package}/bin/garage"
-      MARKER="/storage/s3/.bootstrapped"
-
-      if [ -f "$MARKER" ]; then
-        echo "Garage already bootstrapped"
-        exit 0
-      fi
 
       # Wait for garage to be ready
       for i in $(seq 1 30); do
@@ -1105,16 +1108,26 @@
       fi
       echo "Node ID: $NODE_ID"
 
-      # Assign layout
-      $GARAGE layout assign -z dc1 -c 1G "$NODE_ID" || true
-      $GARAGE layout apply --version 1 || true
+      # Gate on the layout itself, not a marker file: a marker cannot tell
+      # "applied" from "tried and failed". The old `|| true` here plus an
+      # unconditional touch meant one bad first run left the node with no role
+      # and no way to retry, so garage served nothing and answered 503 from the
+      # admin API while systemd still reported it as running.
+      LAYOUT=$($GARAGE layout show)
+      case "$LAYOUT" in
+        *"No nodes currently have a role"*)
+          VERSION=$(( $(echo "$LAYOUT" | sed -n 's/^Current cluster layout version: //p') + 1 ))
+          $GARAGE layout assign -z dc1 -c 1G "$NODE_ID"
+          $GARAGE layout apply --version "$VERSION"
+          ;;
+      esac
 
-      # Create default bucket and key
+      # Bucket and key creation stay tolerant on purpose: "already exists" is
+      # the expected failure on every boot after the first.
       $GARAGE bucket create default || true
       $GARAGE key create default || true
       $GARAGE bucket allow --read --write --owner default --key default || true
 
-      touch "$MARKER"
       echo "Garage bootstrap complete"
     '';
   };

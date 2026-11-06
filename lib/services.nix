@@ -151,7 +151,10 @@
               port = 3900;
               runtime = "rust";
               repository = null;
-              health_url = null;
+              # The S3 API rejects unsigned requests, so the health check is the
+              # admin API's /health, proxied through prattle's caddy. It answers
+              # 503 while this node has no role in the cluster layout.
+              health_url = "https://s3.dunkirk.sh/_health";
             }
           ))
           (lib.optional ((allServices.arm.enable or false) && (allServices.arm.domain != null)) (

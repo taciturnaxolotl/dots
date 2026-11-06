@@ -987,7 +987,22 @@ in
     '';
   };
 
-  services.caddy.virtualHosts."s3.dunkirk.sh".extraConfig = proxyTo "prattle:3900";
+  # The S3 API is unsigned-hostile, so the status worker's health check rides
+  # the one path prattle's caddy answers from garage's loopback admin API.
+  services.caddy.virtualHosts."s3.dunkirk.sh".extraConfig = ''
+    tls {
+      dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+    header {
+      Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+    handle /_health {
+      reverse_proxy prattle:80
+    }
+    handle {
+      reverse_proxy prattle:3900
+    }
+  '';
 
   # PhotoPrism runs on prattle, next to the pool its originals live on.
   services.caddy.virtualHosts."photos.dunkirk.sh".extraConfig = proxyTo "prattle:2342";
