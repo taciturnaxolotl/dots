@@ -165,7 +165,11 @@ in
       file = ../../secrets/cloudflare.age;
       owner = "caddy";
     };
-    github-knot-sync.file = ../../secrets/github-knot-sync.age;
+    github-knot-sync = {
+      file = ../../secrets/github-knot-sync.age;
+      group = "knot";
+      mode = "0440";
+    };
     # The knot's master key; this encrypted copy is the off-server backup.
     knot-master-key.file = ../../secrets/knot-master-key.age;
     "bore/auth-token".file = ../../secrets/bore/auth-token.age;

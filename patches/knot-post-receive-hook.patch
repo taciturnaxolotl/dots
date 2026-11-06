@@ -1,0 +1,319 @@
+diff --git a/knot2/crates/knot-receive/Cargo.toml b/knot2/crates/knot-receive/Cargo.toml
+index c6a2768..c020f33 100644
+--- a/knot2/crates/knot-receive/Cargo.toml
++++ b/knot2/crates/knot-receive/Cargo.toml
+@@ -17,5 +17,6 @@ knot-maintenance = { workspace = true }
+ knot-postreceive = { workspace = true }
+ knot-messages = { workspace = true }
+ knot-runtime = { workspace = true }
+-tokio = { workspace = true }
++rustix = { workspace = true, features = ["process"] }
++tokio = { workspace = true, features = ["process"] }
+ tracing = { workspace = true }
+diff --git a/knot2/crates/knot-receive/src/hook.rs b/knot2/crates/knot-receive/src/hook.rs
+new file mode 100644
+index 0000000..c278b9d
+--- /dev/null
++++ b/knot2/crates/knot-receive/src/hook.rs
+@@ -0,0 +1,248 @@
++//! Runs `KNOT_POST_RECEIVE_HOOK` after a push, git-hook style, and returns its stdout for the pusher.
++
++use std::path::{Path, PathBuf};
++use std::process::Stdio;
++use std::time::Duration;
++
++use knot_git::RefUpdate;
++use knot_types::{AccountDid, RepoDid};
++use rustix::process::{Pid, Signal, kill_process_group};
++use tokio::io::AsyncWriteExt;
++use tokio::process::Command;
++
++const HOOK_ENV: &str = "KNOT_POST_RECEIVE_HOOK";
++const TIMEOUT_ENV: &str = "KNOT_POST_RECEIVE_TIMEOUT_SECS";
++const DEFAULT_TIMEOUT: Duration = Duration::from_secs(60);
++const MAX_LINES: usize = 50;
++const MAX_LINE_CHARS: usize = 500;
++
++pub(crate) struct HookPush {
++    program: PathBuf,
++    timeout: Duration,
++    git_dir: PathBuf,
++    repo: String,
++    pusher: String,
++    stdin: String,
++}
++
++impl HookPush {
++    pub(crate) fn new(
++        git_dir: &Path,
++        repo: &RepoDid,
++        pusher: &AccountDid,
++        applied: &[RefUpdate],
++    ) -> Option<Self> {
++        let program = std::env::var_os(HOOK_ENV).filter(|value| !value.is_empty())?;
++        let timeout = std::env::var(TIMEOUT_ENV)
++            .ok()
++            .and_then(|secs| secs.parse().ok())
++            .map(Duration::from_secs)
++            .unwrap_or(DEFAULT_TIMEOUT);
++        Some(Self {
++            program: program.into(),
++            timeout,
++            git_dir: git_dir.to_path_buf(),
++            repo: repo.as_str().to_string(),
++            pusher: pusher.as_str().to_string(),
++            stdin: hook_stdin(applied),
++        })
++    }
++}
++
++fn hook_stdin(applied: &[RefUpdate]) -> String {
++    applied
++        .iter()
++        .map(|update| {
++            let transition = update.transition();
++            let old = transition.old_oid().map(|oid| oid.to_hex());
++            let new = transition.new_oid().map(|oid| oid.to_hex());
++            let width = old.as_ref().or(new.as_ref()).map_or(40, String::len);
++            let zero = || "0".repeat(width);
++            format!(
++                "{} {} {}\n",
++                old.unwrap_or_else(zero),
++                new.unwrap_or_else(zero),
++                update.name().as_str(),
++            )
++        })
++        .collect()
++}
++
++enum Failure {
++    Spawn(std::io::Error),
++    TimedOut,
++}
++
++pub(crate) async fn run(push: Option<HookPush>) -> Vec<String> {
++    let Some(push) = push else {
++        return Vec::new();
++    };
++    match invoke(&push).await {
++        Ok(lines) => lines,
++        Err(Failure::Spawn(error)) => {
++            tracing::warn!(repo = push.repo, %error, "post-receive hook failed to run");
++            vec![format!("post-receive hook failed to run: {error}")]
++        }
++        Err(Failure::TimedOut) => {
++            tracing::warn!(repo = push.repo, "post-receive hook timed out");
++            vec![format!(
++                "post-receive hook timed out after {}s",
++                push.timeout.as_secs()
++            )]
++        }
++    }
++}
++
++async fn invoke(push: &HookPush) -> Result<Vec<String>, Failure> {
++    let mut child = Command::new(&push.program)
++        .current_dir(&push.git_dir)
++        .env("GIT_DIR", &push.git_dir)
++        .env("KNOT_REPO_DID", &push.repo)
++        .env("KNOT_PUSHER_DID", &push.pusher)
++        .stdin(Stdio::piped())
++        .stdout(Stdio::piped())
++        .stderr(Stdio::piped())
++        .process_group(0)
++        .kill_on_drop(true)
++        .spawn()
++        .map_err(Failure::Spawn)?;
++    let group = child.id().and_then(|id| Pid::from_raw(id as i32));
++    let stdin = child.stdin.take();
++    let finished = async move {
++        if let Some(mut stdin) = stdin {
++            let _ = stdin.write_all(push.stdin.as_bytes()).await;
++        }
++        child.wait_with_output().await
++    };
++    let output = match tokio::time::timeout(push.timeout, finished).await {
++        Ok(output) => output.map_err(Failure::Spawn)?,
++        Err(_) => {
++            if let Some(group) = group {
++                let _ = kill_process_group(group, Signal::KILL);
++            }
++            return Err(Failure::TimedOut);
++        }
++    };
++    String::from_utf8_lossy(&output.stderr)
++        .lines()
++        .filter(|line| !line.trim().is_empty())
++        .for_each(|line| tracing::info!(repo = push.repo, "post-receive: {line}"));
++    if !output.status.success() {
++        tracing::warn!(repo = push.repo, status = %output.status, "post-receive hook exited unsuccessfully");
++    }
++    Ok(pusher_lines(&String::from_utf8_lossy(&output.stdout)))
++}
++
++fn pusher_lines(text: &str) -> Vec<String> {
++    text.lines()
++        .take(MAX_LINES)
++        .map(|line| {
++            line.chars()
++                .filter(|c| *c == '\u{1b}' || *c == '\t' || !c.is_control())
++                .take(MAX_LINE_CHARS)
++                .collect()
++        })
++        .collect()
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn pusher_lines_keep_colour_and_drop_other_control_bytes() {
++        let text = "\u{1b}[32mmain\u{1b}[0m\tok\r\nbell\u{7}\n";
++        assert_eq!(pusher_lines(text), ["\u{1b}[32mmain\u{1b}[0m\tok", "bell"]);
++    }
++
++    #[test]
++    fn pusher_lines_are_capped() {
++        let many = (0..2 * MAX_LINES)
++            .map(|n| format!("{n}\n"))
++            .collect::<String>();
++        assert_eq!(pusher_lines(&many).len(), MAX_LINES);
++        let long = "x".repeat(2 * MAX_LINE_CHARS);
++        assert_eq!(pusher_lines(&long), ["x".repeat(MAX_LINE_CHARS)]);
++    }
++
++    fn script(dir: &Path, body: &str) -> PathBuf {
++        use std::os::unix::fs::PermissionsExt;
++        let path = dir.join("hook");
++        std::fs::write(&path, format!("#!/bin/sh\n{body}")).unwrap();
++        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o755)).unwrap();
++        path
++    }
++
++    fn push(program: PathBuf, git_dir: &Path, timeout: Duration) -> HookPush {
++        HookPush {
++            program,
++            timeout,
++            git_dir: git_dir.to_path_buf(),
++            repo: "did:plc:repo".to_string(),
++            pusher: "did:plc:pusher".to_string(),
++            stdin: "0000 1111 refs/heads/main\n".to_string(),
++        }
++    }
++
++    fn scratch(name: &str) -> PathBuf {
++        let dir = std::env::temp_dir().join(format!("knot-hook-{name}-{}", std::process::id()));
++        std::fs::create_dir_all(&dir).unwrap();
++        dir
++    }
++
++    #[tokio::test]
++    async fn the_hook_sees_the_updates_and_its_environment_and_its_stdout_comes_back() {
++        let dir = scratch("env");
++        let hook = script(
++            &dir,
++            "read old new ref; echo \"$ref $old..$new $KNOT_REPO_DID $KNOT_PUSHER_DID\"; [ \"$(cd \"$GIT_DIR\" && pwd -P)\" = \"$(pwd -P)\" ] && echo here; echo noise >&2\n",
++        );
++        let lines = run(Some(push(hook, &dir, DEFAULT_TIMEOUT))).await;
++        assert_eq!(
++            lines,
++            [
++                "refs/heads/main 0000..1111 did:plc:repo did:plc:pusher",
++                "here"
++            ]
++        );
++    }
++
++    #[tokio::test]
++    async fn a_failing_hook_still_reports_what_it_printed() {
++        let dir = scratch("fail");
++        let hook = script(&dir, "echo mirror failed; exit 3\n");
++        assert_eq!(
++            run(Some(push(hook, &dir, DEFAULT_TIMEOUT))).await,
++            ["mirror failed"]
++        );
++    }
++
++    #[tokio::test]
++    async fn a_slow_hook_is_cut_off() {
++        let dir = scratch("slow");
++        let hook = script(&dir, "exec sleep 30\n");
++        let started = tokio::time::Instant::now();
++        let lines = run(Some(push(hook, &dir, Duration::from_millis(200)))).await;
++        assert_eq!(lines, ["post-receive hook timed out after 0s"]);
++        assert!(started.elapsed() < Duration::from_secs(5));
++    }
++
++    #[tokio::test]
++    async fn a_slow_hooks_children_die_with_it() {
++        let dir = scratch("children");
++        let late = dir.join("late");
++        let _ = std::fs::remove_file(&late);
++        let hook = script(&dir, "(sleep 1; touch late) &\nexec sleep 30\n");
++        run(Some(push(hook, &dir, Duration::from_millis(200)))).await;
++        tokio::time::sleep(Duration::from_millis(1500)).await;
++        assert!(!late.exists());
++    }
++
++    #[tokio::test]
++    async fn a_missing_hook_says_so() {
++        let dir = scratch("missing");
++        let lines = run(Some(push(dir.join("nope"), &dir, DEFAULT_TIMEOUT))).await;
++        assert_eq!(lines.len(), 1);
++        assert!(lines[0].starts_with("post-receive hook failed to run"));
++    }
++}
+diff --git a/knot2/crates/knot-receive/src/lib.rs b/knot2/crates/knot-receive/src/lib.rs
+index 8b93f5d..4b57828 100644
+--- a/knot2/crates/knot-receive/src/lib.rs
++++ b/knot2/crates/knot-receive/src/lib.rs
+@@ -46,6 +46,8 @@ use std::cell::RefCell;
+ use std::sync::Arc;
+ use std::time::Duration;
+ 
++mod hook;
++
+ use knot_atproto::Atproto;
+ use knot_cob::CobHome;
+ use knot_git::{Layout, RefUpdate, Repo};
+@@ -165,8 +167,8 @@ pub async fn land<H: HttpTransport, C: Clock>(push: Push<'_, H, C>) -> Result<Ve
+         Err(_) => return Err(PackError::Pack("receive-pack task panicked".to_string())),
+     };
+ 
+-    let (mut messages, replies) = match applied.is_empty() {
+-        true => (Vec::new(), Vec::new()),
++    let (mut messages, replies, post_hook) = match applied.is_empty() {
++        true => (Vec::new(), Vec::new(), None),
+         false => {
+             let ci = ci_from_push_options(&outcome.push_options);
+             let push_options = outcome.push_options.clone();
+@@ -197,22 +199,25 @@ pub async fn land<H: HttpTransport, C: Clock>(push: Push<'_, H, C>) -> Result<Ve
+                     pull.as_ref(),
+                     &catalog.push,
+                 ));
++                let post_hook = hook::HookPush::new(repo.path(), &did, &committer, &applied);
+                 let replies = match ref_surface.as_deref() {
+                     Some(project) => {
+                         project.project(&repo, &did, &applied, &committer, &push_options)
+                     }
+                     None => Vec::new(),
+                 };
+-                (messages.collect::<Vec<_>>(), replies)
++                (messages.collect::<Vec<_>>(), replies, post_hook)
+             })
+         }
+         .await
+         .unwrap_or_else(|error| {
+             tracing::error!(repo = repo_did.as_str(), %error, "post-receive task panicked");
+-            (Vec::new(), Vec::new())
++            (Vec::new(), Vec::new(), None)
+         }),
+     };
+-    messages.extend(spindle_messages(replies).await);
++    let (hooked, spindle) = tokio::join!(hook::run(post_hook), spindle_messages(replies));
++    messages.extend(hooked);
++    messages.extend(spindle);
+     maintenance.note_push(repo_did, PushBytes::new(body_len as u64));
+     Ok(frame_report(&outcome.report, &messages, outcome.side_band))
+ }

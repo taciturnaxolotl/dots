@@ -31,6 +31,11 @@ in
   lard = fromInput "lard";
   tangle-of-trust = fromInput "tangle-of-trust";
 
+  # Lets the knot run a post-receive hook; see modules/nixos/services/knot-sync.nix.
+  knot-rs = inputs.tangled.packages.${prev.stdenv.hostPlatform.system}.knot-rs.overrideAttrs (old: {
+    patches = (old.patches or [ ]) ++ [ ../patches/knot-post-receive-hook.patch ];
+  });
+
   # nix 2.34 aborts the daemon whenever a substituter is unreachable. A failing
   # narinfo worker sets the thread pool's quit flag, the next worker logs its own
   # error through TunnelLogger, and that write throws Interrupted from inside a

@@ -1,6 +1,7 @@
 {
   lib,
   config,
+  pkgs,
   ...
 }:
 let
@@ -169,6 +170,7 @@ in
       (lib.mkIf cfg.knot.enable {
         services.tangled.knot-rs = {
           enable = true;
+          package = pkgs.knot-rs;
           environmentFile = cfg.knot.masterKeyFile;
           settings = {
             server = {

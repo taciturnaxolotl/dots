@@ -1,19 +1,35 @@
 # knot-sync
 
-Mirrors Tangled knot repositories to GitHub as a long-running service.
+Mirrors Tangled knot repositories to GitHub.
 
-This is a **custom module**; it does not use mkService. Knot 2 runs no repo hooks, so instead of a post-receive hook it follows the knot's atproto firehose (`com.atproto.sync.subscribeRepos`) and mirrors a repo as soon as an `org.tangled.git.pushEvent` frame says a ref moved. A full sweep of every repo runs at startup and every `sweepInterval`, which catches anything missed while the stream was down.
+This is a **custom module**; it does not use mkService. Upstream knot 2 runs no repo hooks, so the knot here is patched (`patches/knot-post-receive-hook.patch`) to run the executable in `KNOT_POST_RECEIVE_HOOK` after every push and send its output back to the pusher.
 
-It keeps its own bare mirrors in `/var/lib/knot-sync/mirrors`, fetched over the knot's HTTP listener, so it never writes into the knot's repositories. Each repo's name and owner come from its `org.tangled.repo.manifest` record on the knot, read at mirror time, so renames are followed automatically.
+## On push
+
+`knot-sync hook` runs as the knot's post-receive hook. It pushes straight from the knot's repository and reports back as `remote:` lines:
+
+```
+remote: mirrored to github.com/taciturnaxolotl/dots
+remote:   main 58f65e3..1a2b3c4
+```
+
+A ref GitHub refuses is shown in yellow with GitHub's reason, so secret-scanning blocks (GH013) are visible at push time. The knot kills the hook and everything it started after `hookTimeout` seconds; the push itself has landed either way.
+
+## Sweep
+
+A `knot-sync` timer fast-forwards every repo every `sweepInterval`, for ref changes that never arrive as a push (fork and import creation) or a hook that failed. It keeps its own bare mirrors in `/var/lib/knot-sync/mirrors`, fetched over the knot's HTTP listener, so it never writes into the knot's repositories.
+
+Each repo's name and owner come from its `org.tangled.repo.manifest` record, read every time, so renames are followed automatically.
 
 ## GitHub-side work is never clobbered
 
 GitHub is not a pure mirror: dependabot branches, release tags and merged PRs live there too.
 
-- A sweep only **fast-forwards**. It never deletes and never forces; a ref that has diverged on GitHub is logged (`left refs/heads/main alone on GitHub`) and skipped.
-- A **deletion or force-push** only propagates when a push event reports it, and only with `--force-with-lease` on the SHA the knot replaced, so it lands only if GitHub still holds exactly that.
+- By default only **fast-forwards** are pushed. A ref that has diverged on GitHub is left alone and reported (`left alone on GitHub`).
+- A **deletion or force-push** is passed on only by the hook, with `--force-with-lease` on the SHA the knot replaced, so it lands only if GitHub still holds exactly that.
+- Branches deleted from the web UI (`deleteBranch`) are not a push, so they stay on GitHub.
 
-A diverged ref needs reconciling by hand: pull the GitHub commits into the knot, then the next sweep fast-forwards.
+A diverged ref needs reconciling by hand: pull the GitHub commits into the knot and push.
 
 ## Options
 
@@ -25,6 +41,7 @@ A diverged ref needs reconciling by hand: pull the GitHub commits into the knot,
 | `githubUsername` | string | `"taciturnaxolotl"` | Mirrors go to `github.com/<user>/<repo name>` |
 | `secretsFile` | path | — | Agenix env file containing `GITHUB_TOKEN` |
 | `exclude` | list of string | `[ ]` | Repo names never to mirror |
-| `sweepInterval` | int | `21600` | Seconds between full sweeps |
+| `sweepInterval` | string | `"6h"` | systemd time span between sweeps |
+| `hookTimeout` | int | `60` | Seconds the knot waits on the hook |
 
-The GitHub repo must already exist; a missing one is logged and skipped.
+The hook runs as the knot's user, so `secretsFile` must be readable by the `knot` group (on terebithia the agenix secret is `group = "knot"; mode = "0440"`). The GitHub repo must already exist; a missing one is reported and skipped.
