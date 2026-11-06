@@ -3,6 +3,13 @@
 
   inputs = {
     # Nixpkgs
+    # Held at 718f670 (cacert 3.126) instead of following nixos-26.05: from
+    # 7dcdd87 on, cacert is NSS 3.131.1, which drops emSign ECC Root CA - G3.
+    # Tangled's spindle microVM blacklists that root by label
+    # (nix/microvm/base.nix in tangled.org/core), and buildcatrust exits 3 when a
+    # blacklisted label is no longer in the store, so prattle's CI image stops
+    # building. Bump once Tangled drops the entry; their distrust check works by
+    # fingerprint, so it does not need the label.
     nixpkgs.url = "github:nixos/nixpkgs/nixos-26.05";
     nixpkgs-unstable.url = "github:nixos/nixpkgs/nixos-unstable";
 
