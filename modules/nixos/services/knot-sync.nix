@@ -81,7 +81,7 @@ in
       };
     };
 
-    systemd.services.knot-sync = {
+    systemd.services.knot-sync-sweep = {
       description = "Fast-forward every knot repository's GitHub mirror";
       after = [
         "network-online.target"
@@ -104,10 +104,10 @@ in
       };
     };
 
-    systemd.timers.knot-sync = {
+    systemd.timers.knot-sync-sweep = {
       wantedBy = [ "timers.target" ];
       timerConfig = {
-        OnBootSec = "5min";
+        OnActiveSec = "5min";
         OnUnitActiveSec = cfg.sweepInterval;
       };
     };

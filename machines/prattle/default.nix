@@ -1099,13 +1099,8 @@
         sleep 1
       done
 
-      # Get node ID (first field only)
-      NODE_ID=$($GARAGE node id 2>/dev/null | cut -d' ' -f1 | head -1)
-      if [ -z "$NODE_ID" ]; then
-        echo "Waiting for node ID..."
-        sleep 2
-        NODE_ID=$($GARAGE node id 2>/dev/null | cut -d' ' -f1 | head -1)
-      fi
+      # `node id` prints id@addr; `layout assign` only matches the bare id.
+      NODE_ID=$($GARAGE node id 2>/dev/null | head -1 | cut -d@ -f1)
       echo "Node ID: $NODE_ID"
 
       # Gate on the layout itself, not a marker file: a marker cannot tell
