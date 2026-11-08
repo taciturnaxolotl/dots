@@ -72,6 +72,9 @@ in
   "kloe.age".publicKeys = [
     kierank
   ];
+  "crushling.age".publicKeys = [
+    kierank
+  ];
   "restic/env.age".publicKeys = [
     kierank
   ];

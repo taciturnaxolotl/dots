@@ -121,6 +121,10 @@
     smb-kierank = {
       file = ../../secrets/smb-kierank.age;
     };
+    crushling = {
+      file = ../../secrets/crushling.age;
+      owner = "crushling";
+    };
     botme = {
       file = ../../secrets/botme.age;
       owner = "botme";
@@ -730,6 +734,17 @@
     # activation dies with EACCES, failing the whole switch. Linger pins the
     # user manager up so there's no teardown window to race.
     linger = true;
+  };
+
+  # ── crushling: a Crush agent per Slack thread ─────────────────────
+  # Here rather than on terebithia because it talks to each sandbox over a
+  # unix socket in a bind mount. Sandboxes run as uid 979, the bridge's own.
+  atelier.services.crushling = {
+    enable = true;
+    domain = "crushling.dunkirk.sh";
+    repository = "https://github.com/taciturnaxolotl/crushling";
+    secretsFile = config.age.secrets.crushling.path;
+    uid = 979;
   };
 
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
