@@ -16,6 +16,14 @@
 
 let
   cfg = config.atelier.services.cap;
+
+  restartPatiently = {
+    unitConfig = {
+      StartLimitIntervalSec = "5min";
+      StartLimitBurst = 20;
+    };
+    serviceConfig.RestartSec = lib.mkForce "5s";
+  };
   network = "cap";
 in
 {
@@ -174,6 +182,13 @@ in
         }
       '';
     };
+
+    # A deploy that changes docker's daemon settings restarts docker, and the
+    # containers' units restart beside it. Their first tries can land while
+    # the daemon is still coming up; with the default start limit that ends
+    # in start-limit-hit, which fails the switch and rolls back the host.
+    systemd.services.docker-cap = restartPatiently;
+    systemd.services.docker-cap-valkey = restartPatiently;
 
     # Site keys and secrets live in valkey, so losing it means every embedded
     # widget points at a key that no longer exists.
