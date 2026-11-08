@@ -748,7 +748,10 @@
     # terebithia has the public name and proxies Slack's events here over
     # the tailnet, as it does for botme.
     events.address = "100.105.247.54";
+    healthUrl = "https://crushling.dunkirk.sh/health";
   };
+  # A changed secret only takes effect when the bridge restarts.
+  systemd.services.crushling.restartTriggers = [ config.age.secrets.crushling.file ];
 
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────
   # Off until this chassis has an optical drive. The 5820 arrived without one,
