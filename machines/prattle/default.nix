@@ -745,6 +745,9 @@
     repository = "https://github.com/taciturnaxolotl/crushling";
     secretsFile = config.age.secrets.crushling.path;
     uid = 979;
+    # terebithia has the public name and proxies Slack's events here over
+    # the tailnet, as it does for botme.
+    events.address = "100.105.247.54";
   };
 
   # ── ARM (Automatic Ripping Machine) ───────────────────────────────

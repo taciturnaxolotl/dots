@@ -484,6 +484,22 @@ in
   # nobody reads. Same call as cap's, ten times the volume.
   services.caddy.virtualHosts."*.bore.dunkirk.sh".logFormat = lib.mkForce null;
 
+  # crushling runs on prattle, next to the docker it drives. Slack posts its
+  # events here and they go over the tailnet, as botme's requests do.
+  services.caddy.virtualHosts."crushling.dunkirk.sh".extraConfig = ''
+    tls {
+      dns cloudflare {env.CLOUDFLARE_API_TOKEN}
+    }
+    header {
+      Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+    @slack path /slack/events /health
+    handle @slack {
+      reverse_proxy prattle:7470
+    }
+    respond 404
+  '';
+
   services.caddy.virtualHosts."botme.dunkirk.sh" = {
     extraConfig = ''
       tls {

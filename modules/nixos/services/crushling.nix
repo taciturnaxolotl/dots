@@ -128,12 +128,29 @@ let
         type = lib.types.str;
         default = "tag:crushling";
       };
+
+      events = {
+        address = lib.mkOption {
+          type = lib.types.str;
+          default = "127.0.0.1";
+          description = ''
+            Where Slack's events are taken over HTTP, at /slack/events. Only
+            used when the secrets file sets SLACK_SIGNING_SECRET; without it
+            the bridge uses Socket Mode.
+          '';
+        };
+        port = lib.mkOption {
+          type = lib.types.port;
+          default = 7470;
+        };
+      };
     };
 
     extraConfig = cfg: {
       atelier.services.crushling = {
-        # Nothing to serve publicly; the bridge only dials out to Slack.
+        # Slack's events come through a proxy on another host, if at all.
         caddy.enable = false;
+        _ports = [ cfg.events.port ];
         environment = {
           HOME = cfg.dataDir;
           CRUSHLING_ROOT = cfg.threadsDir;
@@ -146,6 +163,8 @@ let
           CRUSHLING_MCP_PORT = toString cfg.port;
           CRUSHLING_MCP_URL = "http://${gateway}:${toString cfg.port}";
           CRUSHLING_TAILSCALE_TAG = cfg.tailscaleTag;
+          CRUSHLING_EVENTS_BIND = cfg.events.address;
+          CRUSHLING_EVENTS_PORT = toString cfg.events.port;
         };
         # Workspaces and logins: files at rest, safe to copy while it runs.
         data = {
