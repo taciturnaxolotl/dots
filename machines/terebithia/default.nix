@@ -888,12 +888,12 @@ in
         {
           id = "hyper";
           apiKey = "$HYPER_API_KEY";
-          apiEndpoint = "https://hyper.charm.land/v1";
+          apiEndpoint = "https://hyper.charmcli.dev/v1";
           type = "hyper";
           maxConcurrency = 4;
           oauth = {
             flow = "hyper-device";
-            baseUrl = "https://hyper.charm.land";
+            baseUrl = "https://hyper.charmcli.dev";
           };
         }
         {
