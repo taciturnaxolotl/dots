@@ -476,8 +476,6 @@ let
     "${ghrpc}/share/ghrpc/init.zsh"
   ];
 
-  impure = "${pkgs.impure}/share/zsh/plugins/impure";
-
 in
 {
   options.atelier.shell = {
@@ -523,8 +521,12 @@ in
   };
 
   config = lib.mkIf cfg.enable {
+    programs.impure.enable = true;
+
     programs.zsh = {
       enable = true;
+      # Set before impure loads, so its key bindings land in this keymap.
+      defaultKeymap = "emacs";
       enableCompletion = true;
       # Cache compinit using fpath hash for accurate invalidation.
       # https://lobste.rs/s/k0sbbv/life_is_too_short_for_slow_terminal#c_mmuxpd
@@ -571,16 +573,6 @@ in
         vim = "nvim";
       };
       initContent = ''
-        bindkey -e
-
-        # Instant prompt: print minimal prompt before heavy init (pre-compiled)
-        source ${impure}/instant-prompt.zsh
-
-        # Impure prompt
-        source ${impure}/async.zsh
-        IMPURE_CMD_MAX_EXEC_TIME=3
-        source ${impure}/impure.zsh
-
         zstyle ':completion:*' matcher-list 'm:{a-z}={A-Za-z}'
         zstyle ':completion:*' list-colors "''${(s.:.)LS_COLORS}"
         zstyle ':completion:*' menu no

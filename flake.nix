@@ -214,6 +214,7 @@
           sharedModules = [
             inputs.catppuccin.homeModules.catppuccin
             inputs.spicetify-nix.homeManagerModules.default
+            inputs.impure.homeModules.default
             (inputs.import-tree ./modules/home)
           ];
         };

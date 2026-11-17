@@ -142,7 +142,7 @@ Two patterns in use — know which machine uses which:
 
 **Explicit imports** (prattle): Individual `imports = [ ... ]` lists. Adding a module requires editing the machine's `default.nix`.
 
-Home modules are not imported per machine. `homeManagerModule` in `flake.nix` puts `import-tree ./modules/home` (plus the catppuccin and spicetify home modules) into `home-manager.sharedModules`, so every user on every host has all of them available. They just won't activate without `atelier.<module>.enable = true`. A machine's `home/*.nix` only sets user details and enables features.
+Home modules are not imported per machine. `homeManagerModule` in `flake.nix` puts `import-tree ./modules/home` (plus the catppuccin, spicetify and impure home modules) into `home-manager.sharedModules`, so every user on every host has all of them available. They just won't activate without `atelier.<module>.enable = true`. A machine's `home/*.nix` only sets user details and enables features.
 
 ### Modules under `modules/` never take `inputs`
 
@@ -158,7 +158,7 @@ Shared modules only see `pkgs`, `lib`, `config` and options, so they stay portab
 
 `overlays/default.nix` is the one overlay for every platform. `overlaysModule` in `flake.nix` applies it (with NUR) to every configuration, Darwin included. It:
 - Adds `pkgs.unstable` (nixpkgs-unstable) — access unstable packages via `pkgs.unstable.<name>`
-- Adds `pkgs.zmx-binary`, `pkgs.drift-diff`, `pkgs.terminal-wakatime`, `pkgs.wakatime-ls`, `pkgs.spicePkgs`, `pkgs.impure` everywhere
+- Adds `pkgs.zmx-binary`, `pkgs.drift-diff`, `pkgs.terminal-wakatime`, `pkgs.wakatime-ls`, `pkgs.spicePkgs` everywhere
 - Linux-only: `pkgs.bore-auth`, `pkgs.pear`, `pkgs.herald`, `pkgs.potluck`, `pkgs.lard`, `pkgs.tangle-of-trust`, and the patched nix
 - Darwin-only: disables the `direnv` test suite and swaps in the patched `yabai`
 
