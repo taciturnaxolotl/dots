@@ -1,10 +1,7 @@
 # Indiko - IndieAuth/OAuth2 server
-#
-# Uses mkService base with custom rate limiting on auth endpoints
 
 let
   mkService = import ../../lib/mkService.nix;
-  mkRateLimit = import ../../lib/mkRateLimit.nix;
 in
 
 mkService {
@@ -25,41 +22,26 @@ mkService {
       TRUSTED_PROXY = "cloudflare";
     };
 
-    # Indiko meters its sensitive endpoints itself; Caddy is only a coarse
-    # backstop. An interactive sign-in is four or five /auth/* requests and a
-    # conformance run (indieauth.rocks) is dozens in a minute, so the old cap
-    # of 10 cut real flows off at the consent step.
-    services.caddy.virtualHosts.${cfg.domain}.extraConfig = ''
-      tls {
-        dns cloudflare {env.CLOUDFLARE_API_TOKEN}
-      }
+    # Local resource servers introspect every user's token; via Cloudflare they all shared one address.
+    networking.hosts = {
+      "127.0.0.1" = [ cfg.domain ];
+      "::1" = [ cfg.domain ];
+    };
 
-      handle /auth/* {
-        ${mkRateLimit {
-          zone = "auth_limit";
-          events = 60;
-        }}
-        reverse_proxy localhost:${toString cfg.port}
-      }
-
-      handle /api/* {
-        ${mkRateLimit {
-          zone = "api_limit";
-          events = 30;
-        }}
-        reverse_proxy localhost:${toString cfg.port}
-      }
-
-      handle {
-        ${mkRateLimit {
-          zone = "general_limit";
-          events = 60;
-        }}
-        reverse_proxy localhost:${toString cfg.port}
-      }
-    '';
-
-    atelier.services.indiko.caddy.enable = false;
+    # Scanner backstop only: real addresses peak at 48/min, indiko meters its own sensitive routes.
+    atelier.services.indiko.caddy = {
+      rateLimit = {
+        enable = true;
+        events = 300;
+        matcher = "@metered";
+      };
+      extraConfig = ''
+        @metered {
+          not remote_ip 127.0.0.1 ::1
+          not path /health
+        }
+      '';
+    };
 
     # Data declarations for automatic backup (SQLite for sessions/tokens)
     atelier.services.indiko.data = {

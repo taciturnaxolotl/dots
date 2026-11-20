@@ -236,6 +236,13 @@ in
           default = "1m";
           description = "Time window for rate limiting";
         };
+
+        matcher = lib.mkOption {
+          type = lib.types.str;
+          default = "";
+          example = "@metered";
+          description = "Caddy matcher selecting which requests count; define it in caddy.extraConfig";
+        };
       };
     };
 
@@ -382,7 +389,7 @@ in
 
           ${lib.optionalString cfg.caddy.rateLimit.enable (mkRateLimit {
             zone = "${name}_limit";
-            inherit (cfg.caddy.rateLimit) events window;
+            inherit (cfg.caddy.rateLimit) events window matcher;
           })}
 
           ${cfg.caddy.extraConfig}
