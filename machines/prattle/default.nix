@@ -48,6 +48,8 @@
     bc
     jq
     psmisc
+    smartmontools
+    nvme-cli
     # cli_utils
     direnv
     zsh
@@ -674,10 +676,10 @@
   };
 
   # microVM host prerequisite: the vsock transport for the spindle's in-guest
-  # agent. iTCO_wdt is the chipset watchdog, see hang recovery below.
+  # agent. softdog backs systemd.watchdog, see hang recovery below.
   boot.kernelModules = [
     "vhost_vsock"
-    "iTCO_wdt"
+    "softdog"
   ];
 
   # ── gVisor (runsc): sandbox runtime for kloe's shell tool ─────────────
@@ -1208,17 +1210,20 @@
     "kernel.panic_on_oops" = 1;
     "kernel.hung_task_panic" = 1;
     "kernel.softlockup_panic" = 1;
+    "kernel.hardlockup_panic" = 1;
     "vm.page-cluster" = 0;
   };
 
-  # Chipset watchdog, for a kernel too wedged to panic. The firmware ships it
-  # fused shut; unlocked out of band, once, and it persists in NVRAM:
-  # `cctk --WatchdogTimer=Enabled` (Dell Command | Configure).
+  # softdog, since BIOS 2.2.0 locks iTCO's NO_REBOOT and has no watchdog token.
+  # Catches hung userspace and shutdowns; hard lockups go through hardlockup_panic.
   systemd.watchdog = {
     device = "/dev/watchdog0";
     runtimeTime = "60s";
     rebootTime = "10min";
   };
+
+  # avoid little fingers messing with the power button
+  services.logind.settings.Login.HandlePowerKey = "ignore";
 
   services.journald.extraConfig = ''
     SystemMaxUse=100M
