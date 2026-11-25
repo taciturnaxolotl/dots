@@ -50,7 +50,7 @@ jobs:
 ```
 
 Omit `health_url` to fall back to `systemctl is-active`. Omit `db_path` for stateless services.
-Set `install_command` for anything that is not bun, e.g. `env UV_PYTHON_DOWNLOADS=never uv sync --frozen` for python/uv services (see `botme`).
+Set `install_command` for anything that is not bun, e.g. `env UV_PYTHON_DOWNLOADS=never uv sync --frozen` for python/uv services.
 
 ## Adding a new service
 

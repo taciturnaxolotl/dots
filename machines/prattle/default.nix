@@ -139,18 +139,6 @@ in
       file = ../../secrets/crushling.age;
       owner = "crushling";
     };
-    botme = {
-      file = ../../secrets/botme.age;
-      owner = "botme";
-    };
-    botme-deploy-key = {
-      file = ../../secrets/botme-deploy-key.age;
-      owner = "botme";
-      mode = "0400";
-    };
-    cap = {
-      file = ../../secrets/cap.age;
-    };
     photoprism = {
       file = ../../secrets/photoprism.age;
       owner = "photoprism";
@@ -609,47 +597,9 @@ in
   # enforced none of them. Tailnet access is governed by Tailscale ACLs; the
   # global allowedTCPPorts above is what actually gates the LAN.
 
-  # Moved here from terebithia, which is 2 cores at load 14 while this box is 8
-  # at under 1. botme is CPU-bound on a single uvicorn worker, so the cores are
-  # the whole point. terebithia keeps the public name and the certificate.
-  atelier.services.botme = {
-    enable = true;
-    domain = "botme.dunkirk.sh";
-    repository = "git@github.com:opticaldrive/BotThisSite.git";
-    deployKeyFile = config.age.secrets.botme-deploy-key.path;
-    secretsFile = config.age.secrets.botme.path;
-    healthUrl = "https://botme.dunkirk.sh/health";
-    # No vhost here: this box has no cloudflare token and is behind campus NAT,
-    # so it could not answer a DNS challenge or take inbound traffic anyway.
-    caddy.enable = false;
-    # The proxy is on terebithia, so loopback would leave it unreachable. The
-    # tailnet address and nothing wider: 3012 is open on tailscale0 only.
-    listenAddress = "100.105.247.54";
-    # Cap namespaces every route under the site key, so the key travels with
-    # the host. Not a secret; the widget ships it to every visitor.
-    environment.CAP_API_ENDPOINT = "https://cap.dunkirk.sh/cbe403f57a";
-    # The widget needs the public name; siteverify does not, and cap runs here
-    # too, so this is loopback. botme calls it once per solve: measured 2.3ms
-    # here against 51ms when cap was a tailnet hop away and 1-6s through caddy.
-    environment.CAP_VERIFY_ENDPOINT = "http://127.0.0.1:${toString config.atelier.services.cap.port}/cbe403f57a";
-  };
-
-  # cap follows botme: they talk once per solve, so they belong on one box.
-  # terebithia keeps the public name because it has the address and the cert.
-  atelier.services.cap = {
-    enable = true;
-    domain = "cap.dunkirk.sh";
-    adminKeyFile = config.age.secrets.cap.path;
-    serveVhost = false;
-    listenAddresses = [
-      "127.0.0.1" # botme's siteverify
-      "100.105.247.54" # terebithia's caddy, fronting the public name
-    ];
-  };
-
   # Photos live on the pool because that is where the space is, and the index
   # and thumbnail cache stay on the root SSD where sqlite and random reads are
-  # cheap. terebithia holds the public name, same arrangement as botme. Drop
+  # cheap. terebithia holds the public name and the certificate. Drop
   # files into /storage/photos/import over samba and PhotoPrism files them.
   atelier.services.photoprism = {
     enable = true;
@@ -673,18 +623,6 @@ in
       "127.0.0.1/32"
       "100.64.0.0/10"
     ];
-  };
-
-  atelier.serviceAdmins.idk = {
-    keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN/587UmFEqNTCKARWmTPwbBYQl/86SYTGEGvCCNxVH4"
-    ];
-    units = [
-      "botme.service"
-      "docker-cap.service"
-      "docker-cap-valkey.service"
-    ];
-    accounts = [ "botme" ];
   };
 
   # microVM host prerequisite: the vsock transport for the spindle's in-guest
@@ -760,7 +698,7 @@ in
     secretsFile = config.age.secrets.crushling.path;
     uid = 979;
     # terebithia has the public name and proxies Slack's events here over
-    # the tailnet, as it does for botme.
+    # the tailnet.
     events.address = "100.105.247.54";
     healthUrl = "https://crushling.dunkirk.sh/health";
   };

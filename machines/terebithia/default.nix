@@ -8,23 +8,11 @@
 let
   mkRateLimit = import ../../modules/lib/mkRateLimit.nix;
 
-  # A single solver pool owns 26 addresses in one /24 and sends 194 req/min
-  # between them, against 0.9 for the median address. Per address it stays under
-  # any limit a real visitor would notice, so the bts zones count the /24.
-  clientPrefix = ''
-    map {client_ip} {client_prefix} {
-      ~^([0-9]+\.[0-9]+\.[0-9]+)\. "''${1}.0/24"
-      default {client_ip}
-    }
-  '';
-
   # prattle already runs flaresolverr as a native service, and reaches this box
   # over the tailnet. Everything here points at that one instead of a second
   # copy in docker: same work, off the two cores that also serve every vhost.
   flaresolverr = "http://prattle:8191";
 
-  # Sampled hard because zap builds every field before this filter deletes it;
-  # logging was 48% of caddy's CPU against 10.5% for the proxy itself.
   # tls + HSTS + one upstream, which is the whole of several vhosts here. Raw
   # extraConfig stays for any vhost with actual logic in it.
   proxyTo = upstream: ''
@@ -37,21 +25,6 @@ let
     reverse_proxy ${upstream}
   '';
 
-  leanAccessLog = host: ''
-    output file /var/log/caddy/access-${host}.log
-    sampling {
-      interval 1s
-      first 5
-      thereafter 100
-    }
-    format filter {
-      wrap json
-      fields {
-        request>headers delete
-        resp_headers delete
-      }
-    }
-  '';
 in
 {
   imports = [
@@ -300,18 +273,6 @@ in
   # Allow passwordless sudo for wheel group (needed for deploy-rs)
   security.sudo.wheelNeedsPassword = false;
 
-  atelier.serviceAdmins.idk = {
-    keys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN/587UmFEqNTCKARWmTPwbBYQl/86SYTGEGvCCNxVH4"
-    ];
-    # botme and cap both live on prattle now, and the matching entry is there.
-    # What stays here is the access log, which caddy still writes because this
-    # box is still the public face, and the account itself, which is the way in:
-    # idk has no tailnet identity, so they come in on sshd (2200, the knot owns
-    # 22) and jump to prattle's sshd on 2222 (Tailscale SSH owns 22 there).
-    logFiles.botme-access = "/var/log/caddy/access-botme.dunkirk.sh.log";
-  };
-
   # The knot owns 22; admins use Tailscale SSH, and sshd on 2200 is the fallback.
   services.openssh = {
     enable = true;
@@ -461,31 +422,12 @@ in
     ];
   };
 
-  # botme runs on prattle now: 8 cores at load 0.9 against this box's 2 at 14.
-  # Same shape as the jellyfin vhost below, terebithia keeps the public name and
-  # the certificate while prattle does the work.
-  # Access logging is most of what caddy does on this two-core box: a 30s CPU
-  # profile put logRequest at 29% against 39% for the whole of ServeHTTP.
-  #
-  # The header maps are the bulk of it, but a `format filter` that deletes them
-  # only saves the write: caddy builds the fields during Check and the filter
-  # runs afterwards, which measured 29% -> 27%. It still shrinks the file by
-  # most of its width, so botme keeps it -- that log is read, by idk, for the
-  # source addresses.
-  #
-  # cap's log is two thirds of the request volume and nobody reads it; the
-  # dashboard's numbers come from stats.db, not from here. Dropping it is the
-  # only thing that actually removes the work. Set it back to
-  # `leanAccessLog "cap.dunkirk.sh"` if that history is ever wanted.
-  services.caddy.virtualHosts."botme.dunkirk.sh".logFormat = leanAccessLog "botme.dunkirk.sh";
-  services.caddy.virtualHosts."cap.dunkirk.sh".logFormat = lib.mkForce null;
-  # bore's wildcard is the worst of both: a dev server behind it turns one page
-  # load into fifty module requests, and each one writes a json line into a log
-  # nobody reads. Same call as cap's, ten times the volume.
+  # A dev server behind bore's wildcard turns one page load into fifty module
+  # requests, each a json log line nobody reads.
   services.caddy.virtualHosts."*.bore.dunkirk.sh".logFormat = lib.mkForce null;
 
   # crushling runs on prattle, next to the docker it drives. Slack posts its
-  # events here and they go over the tailnet, as botme's requests do.
+  # events here and they go over the tailnet.
   services.caddy.virtualHosts."crushling.dunkirk.sh".extraConfig = ''
     tls {
       dns cloudflare {env.CLOUDFLARE_API_TOKEN}
@@ -500,100 +442,31 @@ in
     respond 404
   '';
 
+  # BotThisSite is down; both names serve a static maintenance page. Solvers
+  # still knocking get a cheap 503, with no upstream and no logging.
   services.caddy.virtualHosts."botme.dunkirk.sh" = {
+    logFormat = lib.mkForce null;
     extraConfig = ''
       tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       }
-      header {
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+      @page method GET HEAD
+      handle @page {
+        root * ${./botme-maintenance}
+        rewrite * /index.html
+        file_server
       }
-
-      # 97.7% of requests here are the verify POST, so the limit covers that and
-      # leaves /health and the leaderboard API alone: a 429 on /health would put
-      # cachet's monitor into a false alarm.
-      ${clientPrefix}
-      @verify path /captchas/verify/*
-      ${mkRateLimit {
-        zone = "botme_verify";
-        events = 60;
-        window = "1m";
-        matcher = "@verify";
-        key = "{client_prefix}";
-      }}
-
-      reverse_proxy prattle:3012 {
-        # With one upstream and no health checking, caddy dials every request
-        # even when nothing is listening. With botme stopped, the solvers still
-        # knocking put 1667 dials/s in SYN-SENT and 62% of a core into retrying
-        # a socket that was never going to answer. Three failures in ten seconds
-        # takes it out of rotation, which turns that into one probe per ten
-        # seconds and an immediate 503. The cost is that a blip of three errors
-        # serves 503 to everyone for ten seconds; cheaper than the alternative
-        # measured above.
-        fail_duration 10s
-        max_fails 3
-
-        transport http {
-          # Caddy keeps 32 idle upstream connections per host by default. At
-          # solver load there are ~1500 requests in flight, so 32 went back in
-          # the pool and the rest were closed and redialled: 592 new outbound
-          # connections a second against 300 requests, 10k sockets in TIME-WAIT
-          # to this upstream alone and 35k across the box, against an ephemeral
-          # range of 28k. The whole range cycled about every 90 seconds, which
-          # is where the 502s came from, and a 100ms app answered in 3.4s.
-          #
-          # A 25s CPU profile put 28% of caddy in Transport.dialConnFor and 24%
-          # in the connect() syscall alone. Each redial is also a three-way
-          # handshake through tailscaled's userspace wireguard, about a quarter
-          # of the 15.8k packets/s it was pushing.
-          #
-          # Sized above the concurrency the flood actually reaches: a pool
-          # smaller than that degrades to a dial per request again.
-          keepalive_idle_conns 4000
-          keepalive_idle_conns_per_host 2000
-        }
-      }
+      respond 503
     '';
   };
 
-  # cap runs on prattle now, next to the botme that calls it once per solve.
-  # This box keeps the public name, the certificate, and the userland-proxy work
-  # it no longer has to do.
   services.caddy.virtualHosts."cap.dunkirk.sh" = {
+    logFormat = lib.mkForce null;
     extraConfig = ''
       tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
       }
-
-      # Double botme's: a solve costs cap a challenge and a redeem against one
-      # verify, and abandoned challenges only ever reach this side. Rejecting
-      # here also spares the tailnet hop to prattle.
-      ${clientPrefix}
-      ${mkRateLimit {
-        zone = "cap_solve";
-        events = 120;
-        window = "1m";
-        key = "{client_prefix}";
-      }}
-
-      reverse_proxy prattle:3013 {
-        # Same breaker as botme's vhost, same reason.
-        fail_duration 10s
-        max_fails 3
-
-        # cap trusts the leftmost X-Forwarded-For value, so replace the header
-        # rather than appending to it and leave cap one address it can believe.
-        header_up X-Forwarded-For {client_ip}
-
-        # Same pool as botme's, for the same reason: cap is the widget half of
-        # every solve, so it sees the flood at the same scale and churned
-        # connections the same way.
-        transport http {
-          keepalive_idle_conns 4000
-          keepalive_idle_conns_per_host 2000
-        }
-      }
+      redir https://botme.dunkirk.sh/ 308
     '';
   };
 
