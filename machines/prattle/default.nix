@@ -5,6 +5,18 @@
   pkgs,
   ...
 }:
+let
+  # Tangled blacklists "emSign ECC Root CA - G3" but NSS 3.131.1 already removed it
+  spindleImage =
+    inputs.tangled.packages.${pkgs.stdenv.hostPlatform.system}.spindle-nixos-image.override
+      {
+        nixosSystem = inputs.tangled.nixosConfigurations.spindle-nixos.extendModules {
+          modules = [
+            { security.pki.caCertificateBlacklist = lib.mkForce [ "Comodo AAA Services root" ]; }
+          ];
+        };
+      };
+in
 {
   imports = [
     ./disk-config.nix
@@ -824,9 +836,7 @@
   systemd.tmpfiles.rules = [
     # spindle microVM image (spindle resolves <name>/spec.json under imageDir)
     "d /var/lib/spindle/images 0755 root root -"
-    "L+ /var/lib/spindle/images/nixos - - - - ${
-      inputs.tangled.packages.${pkgs.stdenv.hostPlatform.system}.spindle-nixos-image
-    }"
+    "L+ /var/lib/spindle/images/nixos - - - - ${spindleImage}"
     "d /storage/media/movies 2775 root media -"
     "d /storage/media/tv 2775 root media -"
     "d /storage/torrents 2775 root media -"
@@ -1224,6 +1234,10 @@
 
   # avoid little fingers messing with the power button
   services.logind.settings.Login.HandlePowerKey = "ignore";
+
+  # BIOS updates via LVFS capsules (uefi_capsule needs udisks to find the ESP).
+  services.fwupd.enable = true;
+  services.udisks2.enable = true;
 
   services.journald.extraConfig = ''
     SystemMaxUse=100M
