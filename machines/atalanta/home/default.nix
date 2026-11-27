@@ -152,7 +152,7 @@ in
         };
 
         "b.*" = {
-          hostname = "100.64.146.69"; # beef
+          hostname = "beef";
         };
 
         # Regular hosts
@@ -181,7 +181,7 @@ in
         };
 
         beef = {
-          hostname = "100.64.146.69";
+          hostname = "beef";
           zmx = true;
         };
 
