@@ -121,9 +121,13 @@ let
     passwordFile = config.age.secrets."restic/password".path;
 
     # Tags for easier filtering during restore
-    extraBackupArgs = (map (t: "--tag ${t}") (serviceCfg.tags or [ "service:${name}" ])) ++ [
-      "--verbose"
-    ];
+    extraBackupArgs =
+      (map (t: "--tag ${t}") (
+        if serviceCfg.tags or [ ] != [ ] then serviceCfg.tags else [ "service:${name}" ]
+      ))
+      ++ [
+        "--verbose"
+      ];
 
     # Prune is handled by separate weekly restic-prune-<name> units, so
     # nightly backups don't also fire a prune storm. Empty pruneOpts tells the
@@ -204,83 +208,94 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    # Ensure secrets are defined
-    assertions = [
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
       {
-        assertion = config.age.secrets ? "restic/env";
-        message = "atelier.backup requires age.secrets.\"restic/env\" to be defined";
+        # Ensure secrets are defined
+        assertions = [
+          {
+            assertion = config.age.secrets ? "restic/env";
+            message = "atelier.backup requires age.secrets.\"restic/env\" to be defined";
+          }
+          {
+            assertion = config.age.secrets ? "restic/repo";
+            message = "atelier.backup requires age.secrets.\"restic/repo\" to be defined";
+          }
+          {
+            assertion = config.age.secrets ? "restic/password";
+            message = "atelier.backup requires age.secrets.\"restic/password\" to be defined";
+          }
+        ];
+
+        # Create restic backup jobs for each service (auto + manual)
+        services.restic.backups = lib.mapAttrs mkBackupJob enabledBackups;
+
+        # ONE weekly prune for the whole repository.
+        #
+        # This used to be one prune per service, scattered across the week, on the
+        # theory that spreading them out eased the load on B2. It did the opposite.
+        # `forget --prune --tag service:X` only uses the tag to pick which
+        # *snapshots to forget*; the prune that follows still walks and repacks the
+        # entire repository. So N services meant N full-repo repacks per week, and
+        # the Class B transaction cap got blown -- which then wedged a prune
+        # mid-run and left an exclusive lock that blocked every backup for days.
+        #
+        # `--group-by host,tags` applies the retention policy independently to each
+        # host/tag group, so per-service retention is preserved exactly, but the
+        # repository is only repacked once.
+        systemd.services.restic-prune = {
+          description = "Weekly restic forget/prune for all services";
+          serviceConfig = {
+            Type = "oneshot";
+            EnvironmentFile = config.age.secrets."restic/env".path;
+            # A prune that hangs holds the repo's exclusive lock and blocks every
+            # backup until someone notices. Bound it; restic releases its lock on
+            # SIGTERM.
+            TimeoutStartSec = "6h";
+          };
+          script = ''
+            set -euo pipefail
+
+            restic() {
+              ${pkgs.restic}/bin/restic \
+                --repository-file ${config.age.secrets."restic/repo".path} \
+                --password-file ${config.age.secrets."restic/password".path} \
+                "$@"
+            }
+
+            # Clear locks whose owning process is gone (e.g. a prune killed
+            # mid-run). This only removes *stale* locks, never a live one.
+            restic unlock || true
+
+            restic forget --prune --verbose \
+              --group-by host,tags \
+              --keep-last 3 --keep-daily 7 --keep-weekly 5 --keep-monthly 12
+          '';
+        };
+
+        systemd.timers.restic-prune = {
+          description = "Weekly restic prune (Sun)";
+          wantedBy = [ "timers.target" ];
+          timerConfig = {
+            OnCalendar = "Sun *-*-* 05:00:00";
+            RandomizedDelaySec = "1h";
+            Persistent = true;
+          };
+        };
+
+        # Add restic and sqlite to system packages for manual operations
+        environment.systemPackages = [
+          pkgs.restic
+          pkgs.sqlite
+        ];
       }
+
       {
-        assertion = config.age.secrets ? "restic/repo";
-        message = "atelier.backup requires age.secrets.\"restic/repo\" to be defined";
+        # A hung restic otherwise keeps the stopped service down until postStop, i.e. forever.
+        systemd.services = lib.mapAttrs' (
+          name: _: lib.nameValuePair "restic-backups-${name}" { serviceConfig.TimeoutStartSec = "30min"; }
+        ) enabledBackups;
       }
-      {
-        assertion = config.age.secrets ? "restic/password";
-        message = "atelier.backup requires age.secrets.\"restic/password\" to be defined";
-      }
-    ];
-
-    # Create restic backup jobs for each service (auto + manual)
-    services.restic.backups = lib.mapAttrs mkBackupJob enabledBackups;
-
-    # ONE weekly prune for the whole repository.
-    #
-    # This used to be one prune per service, scattered across the week, on the
-    # theory that spreading them out eased the load on B2. It did the opposite.
-    # `forget --prune --tag service:X` only uses the tag to pick which
-    # *snapshots to forget*; the prune that follows still walks and repacks the
-    # entire repository. So N services meant N full-repo repacks per week, and
-    # the Class B transaction cap got blown -- which then wedged a prune
-    # mid-run and left an exclusive lock that blocked every backup for days.
-    #
-    # `--group-by host,tags` applies the retention policy independently to each
-    # host/tag group, so per-service retention is preserved exactly, but the
-    # repository is only repacked once.
-    systemd.services.restic-prune = {
-      description = "Weekly restic forget/prune for all services";
-      serviceConfig = {
-        Type = "oneshot";
-        EnvironmentFile = config.age.secrets."restic/env".path;
-        # A prune that hangs holds the repo's exclusive lock and blocks every
-        # backup until someone notices. Bound it; restic releases its lock on
-        # SIGTERM.
-        TimeoutStartSec = "6h";
-      };
-      script = ''
-        set -euo pipefail
-
-        restic() {
-          ${pkgs.restic}/bin/restic \
-            --repository-file ${config.age.secrets."restic/repo".path} \
-            --password-file ${config.age.secrets."restic/password".path} \
-            "$@"
-        }
-
-        # Clear locks whose owning process is gone (e.g. a prune killed
-        # mid-run). This only removes *stale* locks, never a live one.
-        restic unlock || true
-
-        restic forget --prune --verbose \
-          --group-by host,tags \
-          --keep-last 3 --keep-daily 7 --keep-weekly 5 --keep-monthly 12
-      '';
-    };
-
-    systemd.timers.restic-prune = {
-      description = "Weekly restic prune (Sun)";
-      wantedBy = [ "timers.target" ];
-      timerConfig = {
-        OnCalendar = "Sun *-*-* 05:00:00";
-        RandomizedDelaySec = "1h";
-        Persistent = true;
-      };
-    };
-
-    # Add restic and sqlite to system packages for manual operations
-    environment.systemPackages = [
-      pkgs.restic
-      pkgs.sqlite
-    ];
-  };
+    ]
+  );
 }

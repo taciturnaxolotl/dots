@@ -20,16 +20,16 @@ mkdir -p restic
 # Repository encryption password
 echo "choose-a-strong-encryption-password" | agenix -e restic/password.age
 
-# B2 credentials
+# B2 application key, used through B2's S3 API (prattle's network blocks the native B2 download host)
 cat > /tmp/restic-env << 'EOF'
-B2_ACCOUNT_ID="your-account-id"
-B2_ACCOUNT_KEY="your-application-key"
+AWS_ACCESS_KEY_ID="your-key-id"
+AWS_SECRET_ACCESS_KEY="your-application-key"
 EOF
 agenix -e restic/env.age < /tmp/restic-env
 rm /tmp/restic-env
 
 # Repository URL
-echo "b2:your-bucket-name:/" | agenix -e restic/repo.age
+echo "s3:https://s3.us-east-005.backblazeb2.com/your-bucket-name" | agenix -e restic/repo.age
 ```
 
 ### 3. Add Secrets to Machine Config
