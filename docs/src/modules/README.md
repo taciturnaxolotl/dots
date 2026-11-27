@@ -26,7 +26,7 @@ These have detailed option references and examples:
 
 Many more modules exist without dedicated doc pages. Browse the source:
 
-- `modules/home/apps/` — ghostty, alacritty, git, jj, qutebrowser, spotify, halloy, irssi, tofi
+- `modules/home/apps/` — ghostty, alacritty, git, jj, qutebrowser, spotify, irssi, tofi
 - `modules/home/aesthetics/` — theming (Catppuccin), wallpapers
 - `modules/home/wm/` — hyprland, yabai/skhd
 - `modules/nixos/system/` — authentication, machine metadata

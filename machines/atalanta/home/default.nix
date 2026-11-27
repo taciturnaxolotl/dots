@@ -112,7 +112,6 @@ in
       };
     };
     apps = {
-      halloy.enable = true;
       minicom.enable = true;
 
       helix = {
