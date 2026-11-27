@@ -115,100 +115,6 @@ let
     done
   '';
 
-  hackatime-summary = pkgs.writeShellScriptBin "hackatime-summary" ''
-    # Hackatime summary
-    user_id=""
-    use_waka=false
-
-    # Parse arguments
-    while [[ $# -gt 0 ]]; do
-      case "$1" in
-        --waka)
-          use_waka=true
-          shift
-          ;;
-        *)
-          user_id="$1"
-          shift
-          ;;
-      esac
-    done
-
-    if [[ -z "$user_id" ]]; then
-      user_id=$(${pkgs.gum}/bin/gum input --placeholder "Enter user ID" --prompt "User ID: ")
-      if [[ -z "$user_id" ]]; then
-        ${pkgs.gum}/bin/gum style --foreground 196 "No user ID provided"
-        exit 1
-      fi
-    fi
-
-    if [[ "$use_waka" = true ]]; then
-      host="waka.hackclub.com"
-    else
-      host="hackatime.hackclub.com"
-    fi
-
-    # A predictable name in a shared directory is somebody else's to write.
-    summary=$(mktemp -t hackatime.XXXXXX)
-    trap 'rm -f "$summary"' EXIT
-
-    ${pkgs.gum}/bin/gum spin --spinner dot --title "Fetching summary from $host for $user_id..." -- \
-      ${pkgs.curl}/bin/curl -s -X 'GET' \
-        "https://$host/api/summary?user=''${user_id}&interval=month" \
-        -H 'accept: application/json' \
-        -H 'Authorization: Bearer 2ce9e698-8a16-46f0-b49a-ac121bcfd608' \
-      > "$summary"
-
-    ${pkgs.gum}/bin/gum style --bold --foreground 212 "Summary for $user_id"
-    echo
-
-    # Extract and display total time
-    total_seconds=$(${pkgs.jq}/bin/jq -r '
-      if (.categories | length) > 0 then
-        (.categories | map(.total) | add)
-      elif (.projects | length) > 0 then
-        (.projects | map(.total) | add)
-      else
-        0
-      end
-    ' "$summary")
-
-    if [[ "$total_seconds" -gt 0 ]]; then
-      hours=$((total_seconds / 3600))
-      minutes=$(((total_seconds % 3600) / 60))
-      seconds=$((total_seconds % 60))
-      ${pkgs.gum}/bin/gum style --foreground 35 "Total time: ''${hours}h ''${minutes}m ''${seconds}s"
-    else
-      ${pkgs.gum}/bin/gum style --foreground 214 "No activity recorded"
-    fi
-
-    echo
-
-    # Top projects
-    ${pkgs.gum}/bin/gum style --bold "Top Projects:"
-    ${pkgs.jq}/bin/jq -r '
-      if (.projects | length) > 0 then
-        .projects | sort_by(-.total) | .[0:10] | .[] | 
-        "  \(.key): \((.total / 3600 | floor))h \(((.total % 3600) / 60) | floor)m"
-      else
-        "  No projects"
-      end
-    ' "$summary"
-
-    echo
-
-    # Top languages
-    ${pkgs.gum}/bin/gum style --bold "Top Languages:"
-    ${pkgs.jq}/bin/jq -r '
-      if (.languages | length) > 0 then
-        .languages | sort_by(-.total) | .[0:10] | .[] | 
-        "  \(.key): \((.total / 3600 | floor))h \(((.total % 3600) / 60) | floor)m"
-      else
-        "  No languages"
-      end
-    ' "$summary"
-  '';
-
   crush-wakatime = pkgs.writeShellScriptBin "crush-wakatime" ''
     # Heartbeat for Crush, fired from its PreToolUse hook. wakatime-cli
     # already reads Claude's transcripts on its own; Crush keeps its
@@ -825,7 +731,6 @@ in
       tangled-setup
       ghrpc
       assh
-      hackatime-summary
       crush-wakatime
       now
       ghostty-setup
