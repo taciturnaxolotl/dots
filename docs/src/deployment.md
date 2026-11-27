@@ -4,13 +4,14 @@ Two deploy paths: **infrastructure** (NixOS config changes) and **application co
 
 ## Infrastructure
 
-Pushing to `main` triggers `.github/workflows/deploy.yaml` which runs `deploy-rs` over Tailscale to rebuild NixOS on the target machine.
+Pushing to `main` triggers `.github/workflows/deploy.yaml` which runs `deploy-rs` over Tailscale to rebuild each affected machine. The targets live in `lib/deploy-targets.json`.
 
 ```sh
 # From the dev shell (preferred)
 nix develop
 deploy .#terebithia
 deploy .#prattle
+deploy .#beef
 
 # Manual one-off
 nix develop .#default --command deploy --ssh-user kierank .#terebithia

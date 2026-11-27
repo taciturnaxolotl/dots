@@ -59,7 +59,7 @@ modules/
     apps/              — NixOS-level app configs (tuigreet)
   darwin/
     defaults.nix       — macOS defaults, the Lix pin, Darwin-only overlays
-    nix-cache.nix      — prattle attic substituter (server Macs only)
+    server.nix         — attic substituter + deploy trust (server Macs only)
   home/
     system/            — home-manager system (shell)
     aesthetics/        — theming (Catppuccin), wallpapers
@@ -172,7 +172,7 @@ formatter.aarch64-darwin = nixpkgs.legacyPackages.aarch64-darwin.nixfmt-tree;
 
 ## CI/CD
 
-**Servers (terebithia, prattle)**: `.github/workflows/deploy.yaml` — triggers on push to `main`, gated on which paths changed. Builds on an arch-matched GitHub runner (`ubuntu-24.04-arm` for terebithia), substituting our own packages from prattle's attic cache, then deploy-rs copies only the closure diff over Tailscale. Captures pre-deploy generations and rolls back the failing node in its own matrix leg. Docs build/publish follows a successful deploy.
+**Servers (terebithia, prattle, beef)**: `.github/workflows/deploy.yaml` — triggers on push to `main`, gated on which paths changed. `lib/deploy-targets.json` (node → platform) is the one list of deploy targets: the flake builds `deploy.nodes` from it and CI picks nodes and runners from it, so adding a server is one line there. Each node builds on a platform-matched runner (`ubuntu-24.04-arm`, `ubuntu-latest`, `macos-latest`), substituting our own packages from prattle's attic cache, then deploy-rs copies only the closure diff over Tailscale SSH. Each node is its own matrix leg, so deploy-rs's rollback only ever reverts the node that failed. Docs build/publish follows a successful deploy.
 
 **Application services**: `.github/workflows/deploy-service.yml` — SSH over Tailscale to service user, git pull, `bun install`, `sudo systemctl restart <name>`. Service users can restart their own service (sudoers rule from mkService).
 

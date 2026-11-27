@@ -363,26 +363,25 @@
         };
       });
 
-      # Deploy-rs configurations
-      deploy.nodes = {
-        # NixOS servers
-        terebithia = {
-          hostname = "100.105.182.50";
+      # Deploy-rs nodes; CI reads the same file to pick nodes and runners.
+      deploy.nodes = builtins.mapAttrs (
+        name: system:
+        let
+          inherit (deployRsLib system) activate;
+        in
+        {
+          hostname = name;
           profiles.system = {
             sshUser = "kierank";
             user = "root";
-            path = (deployRsLib "aarch64-linux").activate.nixos self.nixosConfigurations.terebithia;
+            path =
+              if nixpkgs.lib.hasSuffix "darwin" system then
+                activate.darwin self.darwinConfigurations.${name}
+              else
+                activate.nixos self.nixosConfigurations.${name};
           };
-        };
-        prattle = {
-          hostname = "prattle";
-          profiles.system = {
-            sshUser = "kierank";
-            user = "root";
-            path = (deployRsLib "x86_64-linux").activate.nixos self.nixosConfigurations.prattle;
-          };
-        };
-      };
+        }
+      ) (builtins.fromJSON (builtins.readFile ./lib/deploy-targets.json));
 
       # Validation checks
       checks = builtins.mapAttrs (system: deployLib: deployLib.deployChecks self.deploy) deploy-rs.lib;

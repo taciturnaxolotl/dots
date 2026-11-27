@@ -8,7 +8,7 @@
     ./home-manager.nix
     (inputs.import-tree ../../modules/shared)
     ../../modules/darwin/defaults.nix
-    ../../modules/darwin/nix-cache.nix
+    ../../modules/darwin/server.nix
   ];
 
   networking.hostName = "beef";
@@ -23,6 +23,9 @@
   };
 
   system.defaults.SoftwareUpdate.AutomaticallyInstallMacOSUpdates = false;
+
+  # Open-source tailscaled, not the app: only it can serve Tailscale SSH, which CI deploys over.
+  services.tailscale.enable = true;
 
   # Sustained compute on an M3 Max: high power mode keeps the performance cores
   # from being wound down under long load. nix-darwin has no option for it, and

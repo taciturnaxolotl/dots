@@ -15,10 +15,7 @@ permissions:
   contents: read
 
 jobs:
-  # Decide which nodes actually need deploying from the diff. A change under
-  # machines/<node> deploys only that node; anything shared (flake, modules,
-  # lib, secrets, packages, or this workflow) deploys both. workflow_dispatch
-  # always deploys everything.
+  # Decide which nodes from lib/deploy-targets.json need deploying from the diff.
   changes:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -31,9 +28,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Classify the diff with plain git: a change under machines/<node>
-      # deploys that node; anything shared (flake, modules, lib, secrets,
-      # packages, this workflow) deploys both; workflow_dispatch deploys all.
+      # machines/<node> deploys that node; shared paths or workflow_dispatch deploy all.
       - id: set
         env:
           EVENT: ${{ github.event_name }}
@@ -57,18 +52,13 @@ jobs:
           match '^(modules|lib|secrets|packages)/'     && shared=1
           match '^\.github/workflows/deploy\.yaml$'     && shared=1
 
-          nodes=()
-          if [ "$shared" = "1" ]; then
-            nodes=(terebithia prattle)
-          else
-            match '^machines/terebithia/' && nodes+=(terebithia)
-            match '^machines/prattle/'    && nodes+=(prattle)
-          fi
-          if [ ${#nodes[@]} -eq 0 ]; then
-            echo "nodes=[]" >> "$GITHUB_OUTPUT"
-          else
-            printf '%s\n' "${nodes[@]}" | jq -R . | jq -sc . | sed 's/^/nodes=/' >> "$GITHUB_OUTPUT"
-          fi
+          selected=()
+          for node in $(jq -r 'keys[]' lib/deploy-targets.json); do
+            { [ "$shared" = "1" ] || match "^machines/${node}/"; } && selected+=("$node")
+          done
+          nodes=$(jq -c 'to_entries | map(select(.key | IN($ARGS.positional[])) | {node: .key, system: .value})' \
+            lib/deploy-targets.json --args "${selected[@]}")
+          echo "nodes=$nodes" >> "$GITHUB_OUTPUT"
 
           docs=false
           if [ "$shared" = "1" ] || match '^(docs/|packages/docs\.nix$)'; then docs=true; fi
@@ -121,54 +111,18 @@ jobs:
             --ignore-upstream-cache-filter \
             --stdin dots < /tmp/input-paths.txt
 
-  pre-deploy:
+  deploy:
     needs: changes
     if: needs.changes.outputs.nodes != '[]'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    outputs:
-      generations: ${{ steps.capture.outputs.generations }}
-
-    steps:
-      - name: Setup Tailscale
-        uses: tailscale/github-action@v4
-        with:
-          oauth-client-id: ${{ secrets.TS_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TS_OAUTH_SECRET }}
-          tags: tag:deploy
-          use-cache: "true"
-
-      - name: Configure SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "StrictHostKeyChecking accept-new" >> ~/.ssh/config
-
-      - name: Capture generations
-        id: capture
-        env:
-          NODES: ${{ needs.changes.outputs.nodes }}
-        run: |
-          GENERATIONS='{}'
-          for NODE in $(echo "$NODES" | jq -r '.[]'); do
-            GEN=$(ssh -n "kierank@${NODE}" \
-              "readlink /nix/var/nix/profiles/system | grep -oP 'system-\K[0-9]+'")
-            GENERATIONS=$(echo "$GENERATIONS" | jq -c --arg node "$NODE" --arg gen "$GEN" '. + {($node): $gen}')
-          done
-          echo "generations=$GENERATIONS" >> "$GITHUB_OUTPUT"
-
-  deploy:
-    needs: [changes, pre-deploy]
-    if: needs.changes.outputs.nodes != '[]'
     strategy:
+      # Legs are isolated: deploy-rs rolls back only the node that failed.
       fail-fast: false
       matrix:
-        node: ${{ fromJSON(needs.changes.outputs.nodes) }}
+        include: ${{ fromJSON(needs.changes.outputs.nodes) }}
 
     name: ${{ matrix.node }}
-    # Build on a runner whose arch matches the target, so the closure builds
-    # natively (no emulation) and we can drop --remote-build. terebithia is
-    # aarch64; everything else is x86_64.
-    runs-on: ${{ matrix.node == 'terebithia' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    # Build natively on the target's platform.
+    runs-on: ${{ fromJSON('{"aarch64-linux":"ubuntu-24.04-arm","x86_64-linux":"ubuntu-latest","aarch64-darwin":"macos-latest"}')[matrix.system] }}
     # Backstop only. deploy-rs' own activationTimeout (240s) and confirmTimeout
     # (30s) do not bound a dead SSH socket: on 2026-08-23 two runs sat in
     # "Waiting for confirmation event..." for over 2h each with those defaults
@@ -218,7 +172,7 @@ jobs:
         run: |
           # Resolve the toplevel once (eval-cache warm) and stash it so the push
           # step reuses the exact path instead of re-evaluating the flake.
-          TOPLEVEL=$(nix eval --raw ".#nixosConfigurations.${{ matrix.node }}.config.system.build.toplevel")
+          TOPLEVEL=$(nix eval --raw ".#deploy.nodes.${{ matrix.node }}.profiles.system.path")
           echo "TOPLEVEL=$TOPLEVEL" >> "$GITHUB_ENV"
           nix develop .#default --command deploy \
             --skip-checks \
@@ -226,8 +180,7 @@ jobs:
             --ssh-opts="-o StrictHostKeyChecking=accept-new -o ServerAliveInterval=15 -o ServerAliveCountMax=4" \
             .#${{ matrix.node }}
 
-      # Best-effort: a cache upload failing says nothing about whether the
-      # system activated, so it must not be able to trigger the rollback below.
+      # Best-effort: a cache upload failing says nothing about the deploy.
       - name: Cache build in attic
         continue-on-error: true
         env:
@@ -236,28 +189,6 @@ jobs:
           set -euo pipefail
           nix run nixpkgs#attic-client -- login prattle http://prattle:8091 "$ATTIC_TOKEN"
           nix run nixpkgs#attic-client -- push dots "$TOPLEVEL"
-
-      # Scoped to this leg. A fleet-wide rollback job would revert the node that
-      # deployed cleanly just because its sibling failed.
-      - name: Roll back ${{ matrix.node }}
-        if: failure()
-        env:
-          GENERATIONS: ${{ needs.pre-deploy.outputs.generations }}
-          NODE: ${{ matrix.node }}
-        run: |
-          set -euo pipefail
-          GEN=$(echo "$GENERATIONS" | jq -r --arg n "$NODE" '.[$n] // empty')
-          if [ -z "$GEN" ]; then
-            echo "no pre-deploy generation recorded for $NODE; nothing to roll back"
-            exit 0
-          fi
-          echo "::group::rollback $NODE → generation $GEN"
-          ssh -n -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
-            "kierank@${NODE}" "
-              sudo nix-env -p /nix/var/nix/profiles/system --switch-generation ${GEN}
-              sudo /nix/var/nix/profiles/system/bin/switch-to-configuration switch
-            "
-          echo "::endgroup::"
 
   docs:
     needs: [changes, deploy]

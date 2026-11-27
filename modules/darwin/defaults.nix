@@ -60,6 +60,16 @@
   security.pam.services.sudo_local.touchIdAuth = true;
   security.pam.services.sudo_local.watchIdAuth = true;
 
+  # lock down ssh
+  services.openssh.extraConfig = ''
+    PasswordAuthentication no
+    KbdInteractiveAuthentication no
+  '';
+  networking.applicationFirewall = {
+    enable = true;
+    enableStealthMode = true;
+  };
+
   # Common macOS defaults
   system.defaults = {
     dock = {

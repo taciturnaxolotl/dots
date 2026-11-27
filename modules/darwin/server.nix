@@ -7,6 +7,8 @@
       nix.settings = {
         extra-substituters = [ "http://prattle:8091/dots" ];
         extra-trusted-public-keys = [ "dots:Mgol9jjaoUcN6pfgLetO3fe/JAm/fVpKXYBZaQ1MhFM=" ];
+        # deploy-rs copies the unsigned CI-built closure in as kierank.
+        trusted-users = [ "kierank" ];
       };
     })
 
@@ -22,6 +24,7 @@
         text = ''
           extra-substituters = http://prattle:8091/dots
           extra-trusted-public-keys = dots:Mgol9jjaoUcN6pfgLetO3fe/JAm/fVpKXYBZaQ1MhFM=
+          extra-trusted-users = kierank
         '';
       };
     })
