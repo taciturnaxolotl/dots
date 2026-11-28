@@ -204,6 +204,9 @@ in
         pkgs.gleam
         pkgs.erlang
         pkgs.rebar3
+        # `gleam run` builds esqlite's NIF (the store's SQLite) with cc.
+        pkgs.stdenv.cc
+        pkgs.gnumake
         pkgs.docker
         pkgs.coreutils
       ];
